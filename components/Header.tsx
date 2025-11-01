@@ -48,10 +48,11 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLogi
 
     return (
         <>
-            {/* Desktop Header */}
-            <header className="hidden md:block bg-gray-900/80 backdrop-blur-lg sticky top-0 z-40 shadow-sm shadow-black/20 border-b border-gray-700/80">
+            {/* Universal Top Bar */}
+            <header className="bg-gray-900/80 backdrop-blur-lg fixed md:sticky top-0 w-full z-40 shadow-sm shadow-black/20 border-b border-gray-700/80">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
+                        {/* Logo and Title - Always visible */}
                         <div 
                             className="flex items-center gap-3 cursor-pointer" 
                             onClick={handleLogoClick} 
@@ -65,7 +66,8 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLogi
                                 <p className="text-xs text-gray-400 hidden sm:block">Panduan Hidup Perantau di Kota Metropolitan</p>
                             </div>
                         </div>
-                        <nav className="flex items-center gap-2">
+                        {/* Desktop Navigation - Hidden on mobile */}
+                        <nav className="hidden md:flex items-center gap-2">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab}
@@ -84,7 +86,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLogi
                 </div>
             </header>
 
-            {/* Mobile Bottom Navigation */}
+            {/* Mobile Bottom Navigation - Only on mobile */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900/80 backdrop-blur-lg border-t border-gray-700 z-50">
                 <div className="flex justify-around">
                     {tabs.map((tab) => (
