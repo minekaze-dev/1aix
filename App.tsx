@@ -178,6 +178,7 @@ export default function App() {
             alert("Panduan berhasil diperbarui!");
         }
     } else {
+        const isAdmin = currentUser === ADMIN_USER;
         const newGuidePayload = {
             ...guideData,
             id: `user-${Date.now()}`,
@@ -186,15 +187,20 @@ export default function App() {
             map_url: "https://www.google.com/maps",
             is_user_contribution: true,
             views: 0,
-            status: 'pending',
+            status: isAdmin ? 'approved' : 'pending',
         };
         const { data, error } = await supabase.from('guides').insert(newGuidePayload).select().single();
         if (error) alert(`Error: ${error.message}`);
         else {
             const newGuide = { ...data, map: data.map_url, user: data.is_user_contribution };
             setGuides([newGuide, ...guides]);
-            setActiveTab("Dari Netizen");
-            alert("Kontribusi berhasil dikirim dan sedang menunggu tinjauan admin.");
+            if (isAdmin) {
+                setActiveTab("Explorer");
+                alert("Panduan berhasil dibuat dan langsung dipublikasikan.");
+            } else {
+                setActiveTab("Dari Netizen");
+                alert("Kontribusi berhasil dikirim dan sedang menunggu tinjauan admin.");
+            }
         }
     }
     handleCloseContributionModal();
