@@ -12,6 +12,8 @@ import AdminTab from './components/AdminTab';
 import GuideDetailModal from './components/GuideDetailModal';
 import ForumThreadModal from './components/ForumThreadModal';
 import AdminLoginModal from './components/AdminLoginModal';
+import TermsModal from './components/TermsModal';
+import PrivacyModal from './components/PrivacyModal';
 
 const REPORT_REASONS = ["Spam", "Konten Tidak Pantas", "Informasi Salah", "Lainnya"];
 
@@ -119,6 +121,8 @@ export default function App() {
   const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<{type: 'thread' | 'post', threadId: string, postId?: string} | null>(null);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [currentUser, setCurrentUser] = useState(GUEST_USER);
@@ -586,7 +590,7 @@ export default function App() {
         {activeTab === 'About' && <AboutTab />}
         {activeTab === 'Admin' && isAdminMode && <AdminTab guides={guides} threads={threads} onApproveGuide={handleApproveGuide} onDeleteGuide={handleDeleteGuide} onDeleteThread={handleDeleteThread} onAdminLogout={handleAdminLogout}/>}
       </main>
-      <Footer />
+      <Footer onOpenTerms={() => setIsTermsModalOpen(true)} onOpenPrivacy={() => setIsPrivacyModalOpen(true)} />
       {selectedGuide && <GuideDetailModal guide={selectedGuide} onClose={handleCloseDetail} currentUser={currentUser} adminUser={ADMIN_USER} onEdit={handleOpenContributionModal} onDelete={handleDeleteGuide}/>}
       {selectedThread && <ForumThreadModal thread={selectedThread} onClose={handleCloseThreadDetail} onAddPost={handleAddPost} onEditPost={handleEditPost} onDeletePost={handleDeletePost} onVote={handleVote} onReport={handleReportThread} onReportPost={handleReportPost} currentUser={currentUser} adminUser={ADMIN_USER}/>}
       {isContributionModalOpen && (
@@ -635,10 +639,15 @@ export default function App() {
                             className="w-full px-3 py-2 text-gray-100 bg-gray-700 border border-gray-600 rounded-md h-20 placeholder:text-gray-400" 
                         />
                     </div>
-                     <div className="px-6 py-4 bg-gray-900/50 border-t border-gray-700 flex gap-3">
-                        <button type="submit" className="px-6 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">{editingGuide ? 'Simpan Perubahan' : 'Kirim'}</button>
-                        <button type="button" onClick={handleResetContributionForm} className="px-4 py-2 border border-gray-600 text-gray-300 font-semibold rounded-md hover:bg-gray-700 transition">Reset</button>
-                        <button type="button" onClick={handleCloseContributionModal} className="ml-auto px-4 py-2 text-gray-400 hover:text-white rounded-md">Batal</button>
+                     <div className="px-6 py-4 bg-gray-900/50 border-t border-gray-700">
+                        <p className="text-xs text-gray-500 mb-3">
+                            Dengan mengirimkan, Anda setuju pada <button type="button" onClick={() => { setIsContributionModalOpen(false); setIsTermsModalOpen(true); }} className="underline hover:text-gray-300">Syarat & Ketentuan</button> kami dan menjamin konten tidak mengandung unsur SARA atau melanggar hukum.
+                        </p>
+                        <div className="flex gap-3">
+                            <button type="submit" className="px-6 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">{editingGuide ? 'Simpan Perubahan' : 'Kirim'}</button>
+                            <button type="button" onClick={handleResetContributionForm} className="px-4 py-2 border border-gray-600 text-gray-300 font-semibold rounded-md hover:bg-gray-700 transition">Reset</button>
+                            <button type="button" onClick={handleCloseContributionModal} className="ml-auto px-4 py-2 text-gray-400 hover:text-white rounded-md">Batal</button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -670,6 +679,9 @@ export default function App() {
                             ))}
                         </div>
                     </div>
+                     <div className="px-6 pb-2 text-xs text-gray-500">
+                        <p>Dengan memposting, Anda setuju untuk mematuhi aturan komunitas, tidak menyebarkan informasi palsu, dan menghindari konten SARA.</p>
+                    </div>
                     <div className="px-6 py-4 bg-gray-900/50 border-t border-gray-700 flex gap-4">
                         <button type="submit" className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Post</button>
                          <button type="button" onClick={() => setIsThreadModalOpen(false)} className="px-4 py-2 border border-gray-600 text-gray-300 rounded-md hover:bg-gray-700">Batal</button>
@@ -686,6 +698,8 @@ export default function App() {
         />
       )}
       {isAdminLoginModalOpen && <AdminLoginModal onClose={() => setIsAdminLoginModalOpen(false)} onLogin={handleAdminLoginSubmit}/>}
+      {isTermsModalOpen && <TermsModal onClose={() => setIsTermsModalOpen(false)} />}
+      {isPrivacyModalOpen && <PrivacyModal onClose={() => setIsPrivacyModalOpen(false)} />}
     </div>
   );
 }
