@@ -134,6 +134,13 @@ export default function App() {
   
   const [visibleGuidesCount, setVisibleGuidesCount] = useState(GUIDES_PER_PAGE);
   const [voterId] = useLocalStorage('jabo-way-guest-id', () => `guest_${Date.now()}_${Math.random()}`);
+  
+  const handleLogout = useCallback(async () => {
+      await supabase.auth.signOut();
+      setSession(null);
+      setProfile(null);
+      setCurrentUser(GUEST_USER);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -149,40 +156,27 @@ export default function App() {
     const fetchProfile = async () => {
         if (session?.user) {
             try {
+                // With the database trigger, the profile should exist. If not, it's an error state.
                 const { data, error } = await supabase
                     .from('profiles')
                     .select('*')
                     .eq('id', session.user.id)
                     .single();
 
-                if (error && error.code !== 'PGRST116') { // PGRST116: No rows found, which is fine
-                    throw error;
-                }
-                
+                if (error) throw error; // Throws if profile not found or any other error
+
                 if (data) {
                     setProfile(data);
-                    setCurrentUser(data.display_name);
+                    setCurrentUser(data.display_name || 'User');
                 } else {
-                    // Profile doesn't exist, create one
-                    const newProfile = {
-                        id: session.user.id,
-                        display_name: session.user.user_metadata?.full_name || session.user.email || 'New User',
-                        name_change_count: 0
-                    };
-                    const { data: insertedData, error: insertError } = await supabase
-                        .from('profiles')
-                        .insert(newProfile)
-                        .select()
-                        .single();
-
-                    if (insertError) throw insertError;
-
-                    setProfile(insertedData);
-                    setCurrentUser(insertedData.display_name);
+                    // This case should ideally not be reached if the trigger is working.
+                    throw new Error("Profil pengguna tidak ditemukan setelah login.");
                 }
+
             } catch (error) {
-                console.error("Error fetching or creating profile:", error);
-                alert("Gagal memuat profil pengguna.");
+                console.error("Gagal memuat profil:", error);
+                alert("Gagal memuat profil pengguna. Anda akan dilogout untuk keamanan. Silakan coba login kembali.");
+                handleLogout(); // Force logout on failure to prevent inconsistent state
             }
         } else {
             setProfile(null);
@@ -191,7 +185,7 @@ export default function App() {
     };
 
     fetchProfile();
-  }, [session]);
+  }, [session, handleLogout]);
 
 
   useEffect(() => {
@@ -635,16 +629,6 @@ export default function App() {
     if (error) console.error("Error logging in:", error);
   };
 
-  const handleLogout = async () => {
-      const { error } = await supabase.auth.signOut();
-      if (error) console.error("Error logging out:", error);
-      else {
-          setSession(null);
-          setProfile(null);
-          setCurrentUser(GUEST_USER);
-      }
-  };
-
   const TABS = useMemo(() => {
     const baseTabs = ['Explorer', 'Panduan Netizen', 'Forum', 'About'];
     if (isAdminMode) return [...baseTabs, 'Admin'];
@@ -676,7 +660,7 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow pt-24 pb-20 md:py-8">
         {/* Render tab content based on activeTab */}
         {activeTab === 'Explorer' && <ExplorerTab guides={guidesToShow} totalGuidesCount={filteredGuides.length} onLoadMore={handleLoadMoreGuides} onOpenDetail={handleOpenDetail} cityFilter={cityFilter} setCityFilter={setCityFilter} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} searchQuery={searchQuery} setSearchQuery={setSearchQuery}/>}
-        {activeTab === 'Panduan Netizen' && <ContributionTab guides={guides} currentUser={currentUser} adminUser={ADMIN_USER} onOpenContributionModal={() => handleOpenContributionModal()} onOpenDetail={handleOpenDetail} onEdit={handleOpenContributionModal} onDelete={handleDeleteGuide} />}
+        {activeTab === 'Panduan Netizen' && <ContributionTab guides={guides} currentUser={currentUser} adminUser={ADMIN_USER} onOpenContributionModal={() => handleOpenContributionModal()} onOpenDetail={handleOpenDetail} onEdit={handleOpenContributionModal} onDelete={handleDeleteGuide} session={session} />}
         {activeTab === 'Forum' && <ForumTab threads={filteredThreads} voterId={session?.user?.id || voterId} session={session} isAdminMode={isAdminMode} onOpenThreadModal={() => setIsThreadModalOpen(true)} onOpenThreadDetail={handleOpenThreadDetail} onVote={handleVote} onReport={handleReportThread} threadCategoryFilter={threadCategoryFilter} setThreadCategoryFilter={setThreadCategoryFilter} />}
         {activeTab === 'About' && <AboutTab />}
         {activeTab === 'Admin' && isAdminMode && <AdminTab guides={guides} threads={threads} onApproveGuide={handleApproveGuide} onDeleteGuide={handleDeleteGuide} onDeleteThread={handleDeleteThread} onAdminLogout={handleAdminLogout}/>}
