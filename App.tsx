@@ -13,6 +13,86 @@ import GuideDetailModal from './components/GuideDetailModal';
 import ForumThreadModal from './components/ForumThreadModal';
 import AdminLoginModal from './components/AdminLoginModal';
 
+const REPORT_REASONS = ["Spam", "Konten Tidak Pantas", "Informasi Salah", "Lainnya"];
+
+interface ReportModalProps {
+    onClose: () => void;
+    onSubmit: (reason: string) => void;
+    type: 'thread' | 'post';
+}
+
+const ReportModal: React.FC<ReportModalProps> = ({ onClose, onSubmit, type }) => {
+    const [selectedReason, setSelectedReason] = useState('');
+    const [otherReason, setOtherReason] = useState('');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const reason = selectedReason === 'Lainnya' ? otherReason.trim() : selectedReason;
+        if (reason) {
+            onSubmit(reason);
+        }
+    };
+
+    return (
+        <div 
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            onClick={onClose}
+        >
+            <div 
+                className="bg-gray-800 w-full max-w-md rounded-xl shadow-2xl border border-gray-700"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <form onSubmit={handleSubmit} className="overflow-hidden rounded-xl">
+                    <div className="p-6 border-b border-gray-700">
+                        <h3 className="text-xl font-bold text-gray-100">Laporkan {type === 'thread' ? 'Diskusi' : 'Komentar'}</h3>
+                        <p className="text-sm text-gray-400 mt-1">Pilih alasan mengapa Anda melaporkan konten ini.</p>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        {REPORT_REASONS.map(reason => (
+                            <div key={reason} className="flex items-center">
+                                <input
+                                    type="radio"
+                                    id={`reason-${reason}`}
+                                    name="report-reason"
+                                    value={reason}
+                                    checked={selectedReason === reason}
+                                    onChange={() => setSelectedReason(reason)}
+                                    className="h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500"
+                                />
+                                <label htmlFor={`reason-${reason}`} className="ml-3 block text-sm font-medium text-gray-300">
+                                    {reason}
+                                </label>
+                            </div>
+                        ))}
+                        {selectedReason === 'Lainnya' && (
+                            <textarea
+                                value={otherReason}
+                                onChange={(e) => setOtherReason(e.target.value)}
+                                placeholder="Jelaskan alasan Anda..."
+                                className="w-full mt-2 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 placeholder-gray-400"
+                                rows={3}
+                                required
+                            />
+                        )}
+                    </div>
+                    <div className="px-6 py-4 bg-gray-900/50 border-t border-gray-700 flex justify-end gap-3">
+                        <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-600 text-gray-300 rounded-md hover:bg-gray-700">
+                            Batal
+                        </button>
+                        <button 
+                            type="submit" 
+                            className="px-6 py-2 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={!selectedReason || (selectedReason === 'Lainnya' && !otherReason.trim())}
+                        >
+                            Kirim Laporan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 const GUEST_USER = 'Guest';
 const ADMIN_USER = 'Admin';
 const GUIDES_PER_PAGE = 9;
@@ -37,6 +117,8 @@ export default function App() {
   const [isContributionModalOpen, setIsContributionModalOpen] = useState(false);
   const [isThreadModalOpen, setIsThreadModalOpen] = useState(false);
   const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{type: 'thread' | 'post', threadId: string, postId?: string} | null>(null);
 
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [currentUser, setCurrentUser] = useState(GUEST_USER);
@@ -351,68 +433,122 @@ export default function App() {
     const thread = threads.find(t => t.id === threadId);
     if (!thread) return;
 
-    let green = [...thread.greenVotes];
-    let yellow = [...thread.yellowVotes];
-    let red = [...thread.redVotes];
-    const voteArrays = { green, yellow, red };
+    const voteArrays = {
+        green: [...(thread.greenVotes || [])],
+        yellow: [...(thread.yellowVotes || [])],
+        red: [...(thread.redVotes || [])],
+    };
     
-    const otherVoteTypes = (['green', 'yellow', 'red'] as const).filter(v => v !== voteType);
-    otherVoteTypes.forEach(type => {
+    const userVotedThisType = voteArrays[voteType].includes(currentUser);
+
+    (['green', 'yellow', 'red'] as const).forEach(type => {
         const index = voteArrays[type].indexOf(currentUser);
-        if (index > -1) voteArrays[type].splice(index, 1);
+        if (index > -1) {
+            voteArrays[type].splice(index, 1);
+        }
     });
 
-    const currentVoteArray = voteArrays[voteType];
-    const userIndex = currentVoteArray.indexOf(currentUser);
-    // FIX: The variable `index` was out of scope. Replaced with `userIndex`.
-    if (userIndex > -1) currentVoteArray.splice(userIndex, 1);
-    else currentVoteArray.push(currentUser);
-
-    const { data, error } = await supabase.from('threads').update({
-        green_votes: voteArrays.green, yellow_votes: voteArrays.yellow, red_votes: voteArrays.red
-    }).eq('id', threadId).select().single();
-
-    if(error) { alert(`Error: ${error.message}`); return; }
-
-    const updatedThread = { ...data, category: thread.category, greenVotes: data.green_votes, yellowVotes: data.yellow_votes, redVotes: data.red_votes, posts: thread.posts, reports: thread.reports };
-    const updatedThreads = threads.map(t => t.id === threadId ? updatedThread : t);
-    setThreads(updatedThreads);
-    if (selectedThread?.id === threadId) setSelectedThread(updatedThread);
-  };
-  
-   const handleReportThread = async (threadId: string) => {
-    const thread = threads.find(t => t.id === threadId);
-    if (!thread || thread.reports.includes(currentUser)) return;
-
-    const newReports = [...thread.reports, currentUser];
-    const { error } = await supabase.from('threads').update({ reports: newReports }).eq('id', threadId);
-
-    if (error) { alert(`Error: ${error.message}`); return; }
-    setThreads(threads.map(t => t.id === threadId ? { ...t, reports: newReports } : t));
-    alert('Terima kasih atas laporan Anda. Admin akan meninjaunya.');
-  };
-
-  const handleReportPost = async (threadId: string, postId: string) => {
-    const thread = threads.find(t => t.id === threadId);
-    const post = thread?.posts.find(p => p.id === postId);
-    if (!thread || !post || post.reports.includes(currentUser)) return;
-
-    const newReports = [...post.reports, currentUser];
+    if (!userVotedThisType) {
+        voteArrays[voteType].push(currentUser);
+    }
     
-    if (newReports.length >= 10) {
-        await handleDeletePost(threadId, postId, true); // skip confirmation
-    } else {
-        const { error } = await supabase.from('posts').update({ reports: newReports }).eq('id', postId);
-        if (error) { alert(`Error: ${error.message}`); return; }
+    try {
+        const { data, error } = await supabase.from('threads').update({
+            green_votes: voteArrays.green,
+            yellow_votes: voteArrays.yellow,
+            red_votes: voteArrays.red
+        }).eq('id', threadId).select().single();
 
-        const updatedPosts = thread.posts.map(p => p.id === postId ? { ...p, reports: newReports } : p);
-        const updatedThreads = threads.map(t => t.id === threadId ? { ...t, posts: updatedPosts } : t);
+        if (error) throw error;
+        
+        const updatedThread = { 
+            ...thread,
+            greenVotes: data.green_votes || [],
+            yellowVotes: data.yellow_votes || [],
+            redVotes: data.red_votes || [],
+        };
+        
+        const updatedThreads = threads.map(t => t.id === threadId ? updatedThread : t);
         setThreads(updatedThreads);
         if (selectedThread?.id === threadId) {
-            setSelectedThread(st => st ? { ...st, posts: updatedPosts } : null);
+            setSelectedThread(updatedThread);
         }
-        alert('Terima kasih atas laporan Anda.');
+    } catch(error: any) {
+        alert(`Error: ${error.message}`);
     }
+  };
+  
+  const handleOpenReportModal = (type: 'thread' | 'post', threadId: string, postId?: string) => {
+    setReportTarget({ type, threadId, postId });
+    setIsReportModalOpen(true);
+  };
+  
+  const handleCloseReportModal = () => {
+    setIsReportModalOpen(false);
+    setReportTarget(null);
+  };
+  
+  const handleSubmitReport = async (reason: string) => {
+    if (!reportTarget) return;
+    const { type, threadId, postId } = reportTarget;
+
+    if (type === 'thread') {
+        const thread = threads.find(t => t.id === threadId);
+        if (!thread || thread.reports.includes(currentUser)) return;
+
+        const newReports = [...thread.reports, currentUser];
+        const { error } = await supabase.from('threads').update({ reports: newReports }).eq('id', threadId);
+
+        if (error) { alert(`Error: ${error.message}`); }
+        else {
+            setThreads(threads.map(t => t.id === threadId ? { ...t, reports: newReports } : t));
+            alert('Terima kasih atas laporan Anda. Admin akan meninjaunya.');
+        }
+
+    } else if (type === 'post' && postId) {
+        const thread = threads.find(t => t.id === threadId);
+        const post = thread?.posts.find(p => p.id === postId);
+        if (!thread || !post || post.reports.includes(currentUser)) return;
+
+        const newReports = [...post.reports, currentUser];
+        
+        if (newReports.length >= 10) {
+            await handleDeletePost(threadId, postId, true); // skip confirmation
+        } else {
+            const { error } = await supabase.from('posts').update({ reports: newReports }).eq('id', postId);
+            if (error) { alert(`Error: ${error.message}`); return; }
+
+            const updatedPosts = thread.posts.map(p => p.id === postId ? { ...p, reports: newReports } : p);
+            const updatedThreads = threads.map(t => t.id === threadId ? { ...t, posts: updatedPosts } : t);
+            setThreads(updatedThreads);
+            if (selectedThread?.id === threadId) {
+                setSelectedThread(st => st ? { ...st, posts: updatedPosts } : null);
+            }
+            alert('Terima kasih atas laporan Anda.');
+        }
+    }
+    handleCloseReportModal();
+  };
+   
+  const handleReportThread = (threadId: string) => {
+    const thread = threads.find(t => t.id === threadId);
+    if (!thread) return;
+    if (thread.reports.includes(currentUser)) {
+        alert('Anda sudah melaporkan diskusi ini.');
+        return;
+    }
+    handleOpenReportModal('thread', threadId);
+  };
+
+  const handleReportPost = (threadId: string, postId: string) => {
+    const thread = threads.find(t => t.id === threadId);
+    const post = thread?.posts.find(p => p.id === postId);
+    if (!thread || !post) return;
+    if (post.reports.includes(currentUser)) {
+        alert('Anda sudah melaporkan komentar ini.');
+        return;
+    }
+    handleOpenReportModal('post', threadId, postId);
   };
 
   const TABS = useMemo(() => {
@@ -527,6 +663,13 @@ export default function App() {
                 </form>
             </div>
         </div>
+      )}
+      {isReportModalOpen && reportTarget && (
+        <ReportModal
+          onClose={handleCloseReportModal}
+          onSubmit={handleSubmitReport}
+          type={reportTarget.type}
+        />
       )}
       {isAdminLoginModalOpen && <AdminLoginModal onClose={() => setIsAdminLoginModalOpen(false)} onLogin={handleAdminLoginSubmit}/>}
     </div>
