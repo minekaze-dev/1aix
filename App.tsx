@@ -429,9 +429,10 @@ export default function App() {
 
   const handleDeleteGuide = async (guideId: string) => {
       if (window.confirm('Anda yakin ingin menghapus panduan ini?')) {
-          const { error } = await supabase.from('guides').delete().eq('id', guideId);
-          if (error) alert(`Error: ${error.message}`);
-          else {
+          const { error } = await supabase.rpc('handle_delete_guide', { guide_id_in: guideId });
+          if (error) {
+              alert(`Error: ${error.message}`);
+          } else {
               setGuides(guides.filter(g => g.id !== guideId));
               setSelectedGuide(null);
               alert('Panduan telah dihapus.');
@@ -490,9 +491,10 @@ export default function App() {
 
   const handleDeleteThread = async (threadId: string) => {
     if (window.confirm('ADMIN: Anda yakin ingin menghapus thread ini secara permanen?')) {
-      const { error } = await supabase.from('threads').delete().eq('id', threadId);
-      if (error) alert(`Error: ${error.message}`);
-      else {
+      const { error } = await supabase.rpc('handle_delete_thread', { thread_id_in: threadId });
+      if (error) {
+          alert(`Error: ${error.message}`);
+      } else {
           setThreads(threads.filter(t => t.id !== threadId));
           setSelectedThread(null);
           alert('Thread telah dihapus.');
@@ -566,8 +568,11 @@ export default function App() {
     if(thread && thread.posts.length <= 1) { alert("Tidak bisa menghapus satu-satunya post."); return; }
     if (!skipConfirm && !window.confirm('Anda yakin ingin menghapus post ini?')) return;
      
-    const { error } = await supabase.from('posts').delete().eq('id', postId);
-    if(error) { alert(`Error: ${error.message}`); return; }
+    const { error } = await supabase.rpc('handle_delete_post', { post_id_in: postId });
+    if(error) { 
+        alert(`Error: ${error.message}`); 
+        return; 
+    }
 
     setThreads(threads.map(t => t.id === threadId ? { ...t, posts: t.posts.filter(p => p.id !== postId) } : t));
     if(selectedThread?.id === threadId) setSelectedThread(t => t ? ({...t, posts: t.posts.filter(p => p.id !== postId) }) : null);
