@@ -12,7 +12,7 @@ interface GuideDetailModalProps {
 }
 
 const GuideDetailModal: React.FC<GuideDetailModalProps> = ({ guide, currentUser, adminUser, onClose, onEdit, onDelete }) => {
-    const canModify = guide.user && (guide.author === currentUser || currentUser === adminUser);
+    const canModify = guide.user ? (guide.author === currentUser || currentUser === adminUser) : currentUser === adminUser;
 
     return (
         <div 
@@ -28,7 +28,10 @@ const GuideDetailModal: React.FC<GuideDetailModalProps> = ({ guide, currentUser,
                         <div>
                             <h2 className="text-2xl font-bold text-gray-100">{guide.title}</h2>
                             <div className="text-sm text-gray-400 mt-1">{guide.city} · {guide.category}</div>
-                            {guide.user && <div className="text-xs text-gray-400 mt-1">Kontribusi oleh: <span className="font-medium text-gray-300">{guide.author}</span></div>}
+                            <div className="text-xs text-gray-400 mt-1">
+                                {guide.user ? 'Kontribusi oleh: ' : 'Oleh: '} 
+                                <span className="font-medium text-gray-300">{guide.author}</span>
+                            </div>
                         </div>
                         <button onClick={onClose} className="text-gray-500 hover:text-gray-300 transition-colors">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>

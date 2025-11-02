@@ -17,6 +17,7 @@ interface ForumThreadModalProps {
     voterId: string;
     adminUser: string;
     session: Session | null;
+    isAdminMode: boolean;
 }
 
 const getThreadStatus = (thread: Thread): ThreadStatus => {
@@ -52,7 +53,7 @@ const statusText: { [key in ThreadStatus]: string } = {
     danger: 'Hoax',
 };
 
-const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, onAddPost, onEditPost, onDeletePost, onVote, onReport, onReportPost, currentUser, voterId, adminUser, session }) => {
+const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, onAddPost, onEditPost, onDeletePost, onVote, onReport, onReportPost, currentUser, voterId, adminUser, session, isAdminMode }) => {
     const [newPostText, setNewPostText] = useState('');
     const [editingPostId, setEditingPostId] = useState<string | null>(null);
     const [editingText, setEditingText] = useState('');
@@ -83,7 +84,7 @@ const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, on
                      thread.yellowVotes.includes(voterId) ? 'yellow' :
                      thread.redVotes.includes(voterId) ? 'red' : null;
     const hasReportedThread = thread.reports.includes(voterId);
-    const isLoggedIn = !!session;
+    const canPost = !!session || isAdminMode;
 
     return (
         <div 
@@ -183,7 +184,7 @@ const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, on
                                                 <p className="text-gray-300 whitespace-pre-wrap flex-grow">
                                                     <strong className="text-gray-100 block">
                                                         {post.author}
-                                                        {isCurrentUserPost && isLoggedIn && <span className="text-xs font-normal text-blue-400 ml-2">(Anda)</span>}
+                                                        {isCurrentUserPost && canPost && <span className="text-xs font-normal text-blue-400 ml-2">(Anda)</span>}
                                                         {isOriginalPost && <span className="text-xs font-normal text-amber-400 ml-2">(Pembuat Thread)</span>}
                                                     </strong>
                                                     {post.text}
@@ -225,7 +226,7 @@ const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, on
                 </div>
 
                 <div className="px-6 py-4 bg-gray-900/50 border-t border-gray-700">
-                    {isLoggedIn ? (
+                    {canPost ? (
                         <form onSubmit={handleAddPostSubmit} className="space-y-2">
                             <div className="flex flex-wrap gap-2">
                                 {QUICK_SUGGESTIONS.map((suggestion) => (

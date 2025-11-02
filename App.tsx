@@ -221,7 +221,12 @@ export default function App() {
       try {
         const { data: guidesData, error: guidesError } = await supabase.from('guides').select('*').order('created_at', { ascending: false });
         if (guidesError) throw guidesError;
-        setGuides(guidesData.map((g: any) => ({ ...g, map: g.map_url, user: g.is_user_contribution })));
+        setGuides(guidesData.map((g: any) => ({ 
+            ...g, 
+            map: g.map_url, 
+            user: g.is_user_contribution,
+            author: g.is_user_contribution ? g.author : ADMIN_USER
+        })));
 
         const { data: threadsData, error: threadsError } = await supabase.from('threads').select('*, posts(*, author:author)').order('created_at', { ascending: false });
         if (threadsError) throw threadsError;
@@ -364,7 +369,7 @@ export default function App() {
         const { data, error } = await supabase.from('guides').update(guideData).eq('id', editingGuide.id).select().single();
         if (error) alert(`Error: ${error.message}`);
         else {
-            const updatedGuide = { ...data, map: data.map_url, user: data.is_user_contribution };
+            const updatedGuide = { ...data, map: data.map_url, user: data.is_user_contribution, author: data.is_user_contribution ? data.author : ADMIN_USER };
             setGuides(guides.map(g => g.id === editingGuide.id ? updatedGuide : g));
             alert("Panduan berhasil diperbarui!");
         }
@@ -383,7 +388,7 @@ export default function App() {
         const { data, error } = await supabase.from('guides').insert(newGuidePayload).select().single();
         if (error) alert(`Error: ${error.message}`);
         else {
-            const newGuide = { ...data, map: data.map_url, user: data.is_user_contribution };
+            const newGuide = { ...data, map: data.map_url, user: data.is_user_contribution, author: data.is_user_contribution ? data.author : ADMIN_USER };
             setGuides([newGuide, ...guides]);
             if (isAdmin) {
                 setActiveTab("Explorer");
@@ -420,7 +425,7 @@ export default function App() {
 
   const handleCreateThread = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!threadForm.title.trim() || !threadForm.text.trim() || !session) return;
+    if (!threadForm.title.trim() || !threadForm.text.trim() || (!session && !isAdminMode)) return;
 
     const threadId = `th-${Date.now()}`;
     const { data: threadData, error: threadError } = await supabase.from('threads').insert({
@@ -485,7 +490,7 @@ export default function App() {
   const handleCloseThreadDetail = () => setSelectedThread(null);
   
   const handleAddPost = async (threadId: string, text: string) => {
-    if (!text.trim() || !session) return;
+    if (!text.trim() || (!session && !isAdminMode)) return;
     const { data, error } = await supabase.from('posts').insert({
         id: `p-${Date.now()}`, thread_id: threadId, author: currentUser, content: text, reports: []
     }).select().single();
@@ -687,14 +692,14 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow pt-24 pb-20 md:py-8">
         {/* Render tab content based on activeTab */}
         {activeTab === 'Explorer' && <ExplorerTab guides={guidesToShow} totalGuidesCount={filteredGuides.length} onLoadMore={handleLoadMoreGuides} onOpenDetail={handleOpenDetail} cityFilter={cityFilter} setCityFilter={setCityFilter} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} searchQuery={searchQuery} setSearchQuery={setSearchQuery}/>}
-        {activeTab === 'Panduan Netizen' && <ContributionTab guides={guides} currentUser={currentUser} adminUser={ADMIN_USER} onOpenContributionModal={() => handleOpenContributionModal()} onOpenDetail={handleOpenDetail} onEdit={handleOpenContributionModal} onDelete={handleDeleteGuide} session={session} />}
+        {activeTab === 'Panduan Netizen' && <ContributionTab guides={guides} currentUser={currentUser} adminUser={ADMIN_USER} onOpenContributionModal={() => handleOpenContributionModal()} onOpenDetail={handleOpenDetail} onEdit={handleOpenContributionModal} onDelete={handleDeleteGuide} session={session} isAdminMode={isAdminMode} />}
         {activeTab === 'Forum' && <ForumTab threads={filteredThreads} voterId={session?.user?.id || voterId} session={session} isAdminMode={isAdminMode} onOpenThreadModal={() => setIsThreadModalOpen(true)} onOpenThreadDetail={handleOpenThreadDetail} onVote={handleVote} onReport={handleReportThread} threadCategoryFilter={threadCategoryFilter} setThreadCategoryFilter={setThreadCategoryFilter} />}
         {activeTab === 'About' && <AboutTab />}
         {activeTab === 'Admin' && isAdminMode && <AdminTab guides={guides} threads={threads} onApproveGuide={handleApproveGuide} onDeleteGuide={handleDeleteGuide} onDeleteThread={handleDeleteThread} onAdminLogout={handleAdminLogout}/>}
       </main>
       <Footer onOpenTerms={() => setIsTermsModalOpen(true)} onOpenPrivacy={() => setIsPrivacyModalOpen(true)} />
       {selectedGuide && <GuideDetailModal guide={selectedGuide} onClose={handleCloseDetail} currentUser={currentUser} adminUser={ADMIN_USER} onEdit={handleOpenContributionModal} onDelete={handleDeleteGuide}/>}
-      {selectedThread && <ForumThreadModal thread={selectedThread} onClose={handleCloseThreadDetail} onAddPost={handleAddPost} onEditPost={handleEditPost} onDeletePost={handleDeletePost} onVote={handleVote} onReport={handleReportThread} onReportPost={handleReportPost} currentUser={currentUser} voterId={session?.user?.id || voterId} adminUser={ADMIN_USER} session={session}/>}
+      {selectedThread && <ForumThreadModal thread={selectedThread} onClose={handleCloseThreadDetail} onAddPost={handleAddPost} onEditPost={handleEditPost} onDeletePost={handleDeletePost} onVote={handleVote} onReport={handleReportThread} onReportPost={handleReportPost} currentUser={currentUser} voterId={session?.user?.id || voterId} adminUser={ADMIN_USER} session={session} isAdminMode={isAdminMode}/>}
       {isContributionModalOpen && (
          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={handleCloseContributionModal}>
             <div className="bg-gray-800 text-gray-200 w-full max-w-2xl rounded-lg shadow-2xl border border-gray-700" onClick={(e) => e.stopPropagation()}>

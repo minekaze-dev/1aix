@@ -8,18 +8,19 @@ interface ContributionTabProps {
     currentUser: string;
     adminUser: string;
     session: Session | null;
+    isAdminMode: boolean;
     onOpenDetail: (id: string) => void;
     onOpenContributionModal: () => void;
     onEdit: (guide: Guide) => void;
     onDelete: (id: string) => void;
 }
 
-const ContributionTab: React.FC<ContributionTabProps> = ({ guides, currentUser, adminUser, session, onOpenDetail, onOpenContributionModal, onEdit, onDelete }) => {
+const ContributionTab: React.FC<ContributionTabProps> = ({ guides, currentUser, adminUser, session, isAdminMode, onOpenDetail, onOpenContributionModal, onEdit, onDelete }) => {
     const userGuides = guides.filter(g => g.user);
     const myApprovedGuides = userGuides.filter(g => g.author === currentUser && g.status === 'approved');
     const myPendingGuides = userGuides.filter(g => g.author === currentUser && g.status === 'pending');
     const otherApprovedGuides = userGuides.filter(g => g.author !== currentUser && g.status === 'approved');
-    const isLoggedIn = !!session;
+    const canContribute = !!session || isAdminMode;
 
     return (
         <section>
@@ -38,14 +39,14 @@ const ContributionTab: React.FC<ContributionTabProps> = ({ guides, currentUser, 
                  <div className="flex-shrink-0 w-full sm:w-auto text-center">
                     <button 
                         onClick={onOpenContributionModal}
-                        disabled={!isLoggedIn}
-                        title={isLoggedIn ? 'Buat panduan baru' : 'Anda harus login untuk membuat panduan'}
+                        disabled={!canContribute}
+                        title={canContribute ? 'Buat panduan baru' : 'Anda harus login untuk membuat panduan'}
                         className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
                         <PlusCircleIcon className="h-5 w-5" />
                         Buat Panduan Baru
                     </button>
-                     {!isLoggedIn && (
+                     {!canContribute && (
                         <p className="text-xs text-gray-400 mt-2">
                             Silakan login untuk berkontribusi.
                         </p>
