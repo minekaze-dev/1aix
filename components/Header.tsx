@@ -63,9 +63,11 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLogi
                             onClick={handleLogoClick} 
                             title="Klik 1x ke Home, Klik 5x untuk akses admin"
                         >
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
-                                JW
-                            </div>
+                            <img
+                                src="https://i.imgur.com/2cQj0kc.jpg"
+                                alt="Jabodetabek Way Logo"
+                                className="w-10 h-10 rounded-full object-cover shadow-md"
+                            />
                             <div>
                                 <h1 className="text-xl font-bold tracking-tight text-gray-100">JABODETABEK WAY</h1>
                                 <p className="text-xs text-gray-400 hidden sm:block">Panduan Hidup Perantau di Kota Metropolitan</p>
