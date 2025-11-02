@@ -462,7 +462,6 @@ export default function App() {
         voteArrays[voteType].push(voterId);
     }
     
-    // Optimistic UI update
     const updatedThread = { 
         ...thread,
         greenVotes: voteArrays.green,
@@ -475,17 +474,16 @@ export default function App() {
         setSelectedThread(updatedThread);
     }
 
-    // Persist change to database
-    const { error } = await supabase.from('threads').update({
-        green_votes: voteArrays.green,
-        yellow_votes: voteArrays.yellow,
-        red_votes: voteArrays.red
-    }).eq('id', threadId);
+    // Persist change to database using an RPC function for security and reliability
+    const { error } = await supabase.rpc('handle_thread_vote', {
+        thread_id_in: threadId,
+        vote_type_in: voteType,
+        voter_id_in: voterId
+    });
 
     if (error) {
-        console.error("Error voting:", error);
+        console.error("Error voting via RPC:", error);
         alert(`Gagal menyimpan suara Anda. Perubahan akan dibatalkan.`);
-        // Revert UI on failure
         setThreads(originalThreads);
         if (originalSelectedThread && originalSelectedThread.id === threadId) {
             setSelectedThread(originalSelectedThread);
