@@ -153,66 +153,65 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const manageProfile = async () => {
         if (session?.user) {
-            // Increased retries to handle potential database trigger delays
-            const maxRetries = 5;
-            const retryDelay = 1000; // 1 second
+            try {
+                // 1. Try to fetch the profile
+                let { data: profileData, error: fetchError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
 
-            for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                try {
-                    const { data, error } = await supabase
+                // 2. If profile doesn't exist (e.g., first login), create it
+                if (fetchError && fetchError.code === 'PGRST116') { // PGRST116 = "The result contains 0 rows"
+                    console.log('Profil tidak ditemukan, membuat profil baru...');
+                    const { data: newProfile, error: insertError } = await supabase
                         .from('profiles')
-                        .select('*')
-                        .eq('id', session.user.id)
+                        .insert({
+                            id: session.user.id,
+                            display_name: session.user.user_metadata?.full_name || session.user.email || 'Pengguna Baru'
+                        })
+                        .select()
                         .single();
                     
-                    if (data) {
-                        setProfile(data);
-                        setCurrentUser(data.display_name || session.user.user_metadata?.full_name || 'User');
-                        return; // Success, profile loaded.
+                    if (insertError) {
+                        throw insertError; // Throw error to be caught by the catch block
                     }
-
-                    // If there's a real error (not just 'not found'), log it and break.
-                    if (error && error.code !== 'PGRST116') { // PGRST116 = "The result contains 0 rows"
-                        throw error;
-                    }
-
-                    // If profile is not found, wait and retry.
-                    if (attempt < maxRetries) {
-                        await new Promise(resolve => setTimeout(resolve, retryDelay));
-                    } else {
-                        // All retries failed. The user's request is NOT to be logged out.
-                        console.error("Gagal memuat profil setelah beberapa kali percobaan. Pengguna tetap login.");
-                        alert("Gagal memuat profil. Beberapa fitur mungkin tidak berfungsi dengan benar, tapi Anda tetap login. Coba refresh halaman nanti.");
-                        
-                        // Fallback to session data for display name to allow participation.
-                        const fallbackName = session.user.user_metadata?.full_name || session.user.email || 'User';
-                        setCurrentUser(fallbackName);
-                        setProfile(null); // Explicitly set profile to null
-                        return;
-                    }
-
-                } catch (error) {
-                    console.error("Terjadi kesalahan saat memuat profil:", error);
-                     // On the last attempt, show an error but keep the user logged in.
-                    if (attempt === maxRetries) {
-                        alert("Terjadi kesalahan saat memuat profil. Anda tetap login.");
-                        const fallbackName = session.user.user_metadata?.full_name || session.user.email || 'User';
-                        setCurrentUser(fallbackName);
-                        setProfile(null);
-                        return;
-                    }
+                    
+                    profileData = newProfile; // Use the newly created profile data
+                } else if (fetchError) {
+                    throw fetchError; // Throw other types of fetch errors
                 }
+
+                // 3. Set the profile and current user state
+                if (profileData) {
+                    setProfile(profileData);
+                    setCurrentUser(profileData.display_name || 'User');
+                } else {
+                    // This case is unlikely but serves as a fallback
+                    const fallbackName = session.user.user_metadata?.full_name || session.user.email || 'User';
+                    setCurrentUser(fallbackName);
+                    setProfile(null);
+                }
+
+            } catch (error) {
+                console.error("Terjadi kesalahan saat mengelola profil:", error);
+                alert("Gagal memuat atau membuat profil Anda. Anda tetap login, namun beberapa fitur mungkin tidak bekerja dengan benar.");
+                
+                // Fallback to session data for display name, but keep user logged in.
+                const fallbackName = session.user.user_metadata?.full_name || session.user.email || 'User';
+                setCurrentUser(fallbackName);
+                setProfile(null);
             }
         } else {
-            // No session, user is logged out or a guest.
+            // No session, user is a guest.
             setProfile(null);
             setCurrentUser(GUEST_USER);
         }
     };
 
-    fetchProfile();
+    manageProfile();
   }, [session]);
 
 

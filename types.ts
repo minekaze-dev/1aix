@@ -59,5 +59,4 @@ export interface ThreadForm {
 export interface Profile {
   id: string;
   display_name: string;
-  name_change_count: number;
 }
