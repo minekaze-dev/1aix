@@ -453,19 +453,20 @@ export default function App() {
     }
     
     try {
-        const { data, error } = await supabase.from('threads').update({
+        const { error } = await supabase.from('threads').update({
             green_votes: voteArrays.green,
             yellow_votes: voteArrays.yellow,
             red_votes: voteArrays.red
-        }).eq('id', threadId).select().single();
+        }).eq('id', threadId);
 
         if (error) throw error;
         
+        // On success, update state
         const updatedThread = { 
             ...thread,
-            greenVotes: data.green_votes,
-            yellowVotes: data.yellow_votes,
-            redVotes: data.red_votes,
+            greenVotes: voteArrays.green,
+            yellowVotes: voteArrays.yellow,
+            redVotes: voteArrays.red,
         };
         
         const updatedThreads = threads.map(t => t.id === threadId ? updatedThread : t);
@@ -474,7 +475,8 @@ export default function App() {
             setSelectedThread(updatedThread);
         }
     } catch(error: any) {
-        alert(`Error: ${error.message}`);
+        console.error("Error voting:", error);
+        alert(`Gagal memberikan suara. Silakan coba lagi nanti.`);
     }
   };
   
