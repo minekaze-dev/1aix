@@ -366,11 +366,20 @@ export default function App() {
     };
 
     if (editingGuide) {
-        const { data, error } = await supabase.from('guides').update(guideData).eq('id', editingGuide.id).select().single();
-        if (error) alert(`Error: ${error.message}`);
-        else {
-            const updatedGuide = { ...data, map: data.map_url, user: data.is_user_contribution, author: data.is_user_contribution ? data.author : ADMIN_USER };
-            setGuides(guides.map(g => g.id === editingGuide.id ? updatedGuide : g));
+        const originalGuides = guides;
+        const optimisticUpdate = { ...editingGuide, ...guideData };
+        setGuides(guides.map(g => g.id === editingGuide.id ? optimisticUpdate : g));
+        handleCloseContributionModal();
+        
+        const { error } = await supabase.rpc('handle_edit_guide', {
+            guide_id_in: editingGuide.id,
+            update_data: guideData
+        });
+
+        if (error) {
+            alert(`Error: ${error.message}\nPerubahan gagal disimpan. Mengembalikan data...`);
+            setGuides(originalGuides);
+        } else {
             alert("Panduan berhasil diperbarui!");
         }
     } else {
@@ -386,8 +395,10 @@ export default function App() {
             status: isAdmin ? 'approved' : 'pending',
         };
         const { data, error } = await supabase.from('guides').insert(newGuidePayload).select().single();
-        if (error) alert(`Error: ${error.message}`);
-        else {
+        if (error) {
+            alert(`Error: ${error.message}`);
+            handleCloseContributionModal();
+        } else {
             const newGuide = { ...data, map: data.map_url, user: data.is_user_contribution, author: data.is_user_contribution ? data.author : ADMIN_USER };
             setGuides([newGuide, ...guides]);
             if (isAdmin) {
@@ -397,9 +408,9 @@ export default function App() {
                 setActiveTab("Panduan Netizen");
                 alert("Kontribusi berhasil dikirim dan sedang menunggu tinjauan admin.");
             }
+            handleCloseContributionModal();
         }
     }
-    handleCloseContributionModal();
   };
   
   const handleApproveGuide = async (guideId: string) => {
@@ -504,11 +515,27 @@ export default function App() {
 
   const handleEditPost = async (threadId: string, postId: string, newText: string) => {
     if (!newText.trim()) return;
-    const { error } = await supabase.from('posts').update({ content: newText }).eq('id', postId);
-    if(error) { alert(`Error: ${error.message}`); return; }
+    
+    const originalThreads = [...threads];
+    const updatedThreads = threads.map(t => 
+        t.id === threadId 
+        ? { ...t, posts: t.posts.map(p => p.id === postId ? { ...p, text: newText } : p) } 
+        : t
+    );
+    setThreads(updatedThreads);
+    if(selectedThread?.id === threadId) {
+        setSelectedThread(t => t ? ({...t, posts: t.posts.map(p => p.id === postId ? { ...p, text: newText } : p) }) : null);
+    }
 
-    setThreads(threads.map(t => t.id === threadId ? { ...t, posts: t.posts.map(p => p.id === postId ? { ...p, text: newText } : p) } : t));
-    if(selectedThread?.id === threadId) setSelectedThread(t => t ? ({...t, posts: t.posts.map(p => p.id === postId ? { ...p, text: newText } : p) }) : null);
+    const { error } = await supabase.rpc('handle_edit_post', {
+        post_id_in: postId,
+        new_content_in: newText
+    });
+
+    if(error) { 
+        alert(`Error: ${error.message}\nPerubahan gagal disimpan.`);
+        setThreads(originalThreads); // Revert on failure
+    }
   };
 
   const handleDeletePost = async (threadId: string, postId: string, skipConfirm = false) => {
