@@ -14,6 +14,7 @@ interface ForumThreadModalProps {
     onReport: (threadId: string) => void;
     onReportPost: (threadId: string, postId: string) => void;
     currentUser: string;
+    voterId: string;
     adminUser: string;
 }
 
@@ -50,7 +51,7 @@ const statusText: { [key in ThreadStatus]: string } = {
     danger: 'Hoax',
 };
 
-const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, onAddPost, onEditPost, onDeletePost, onVote, onReport, onReportPost, currentUser, adminUser }) => {
+const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, onAddPost, onEditPost, onDeletePost, onVote, onReport, onReportPost, currentUser, voterId, adminUser }) => {
     const [newPostText, setNewPostText] = useState('');
     const [editingPostId, setEditingPostId] = useState<string | null>(null);
     const [editingText, setEditingText] = useState('');
@@ -77,10 +78,10 @@ const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, on
     };
 
     const status = getThreadStatus(thread);
-    const userVote = thread.greenVotes.includes(currentUser) ? 'green' : 
-                     thread.yellowVotes.includes(currentUser) ? 'yellow' :
-                     thread.redVotes.includes(currentUser) ? 'red' : null;
-    const hasReportedThread = thread.reports.includes(currentUser);
+    const userVote = thread.greenVotes.includes(voterId) ? 'green' : 
+                     thread.yellowVotes.includes(voterId) ? 'yellow' :
+                     thread.redVotes.includes(voterId) ? 'red' : null;
+    const hasReportedThread = thread.reports.includes(voterId);
 
     return (
         <div 
@@ -146,7 +147,7 @@ const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, on
                             const isOriginalPost = index === 0;
                             const isCurrentUserPost = post.author === currentUser;
                             const canModify = isCurrentUserPost || currentUser === adminUser;
-                            const hasReportedPost = post.reports.includes(currentUser);
+                            const hasReportedPost = post.reports.includes(voterId);
                             const canReportPost = !isCurrentUserPost && !hasReportedPost;
 
 

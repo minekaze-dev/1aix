@@ -5,7 +5,7 @@ import { THREAD_CATEGORIES } from '../constants';
 
 interface ForumTabProps {
     threads: Thread[];
-    currentUser: string;
+    voterId: string;
     isAdminMode: boolean;
     onOpenThreadModal: () => void;
     onOpenThreadDetail: (id: string) => void;
@@ -55,7 +55,7 @@ const threadCategoryColors: { [key in ThreadCategory]: string } = {
 };
 
 
-const ForumTab: React.FC<ForumTabProps> = ({ threads, currentUser, isAdminMode, onOpenThreadModal, onOpenThreadDetail, onVote, onReport, threadCategoryFilter, setThreadCategoryFilter }) => {
+const ForumTab: React.FC<ForumTabProps> = ({ threads, voterId, isAdminMode, onOpenThreadModal, onOpenThreadDetail, onVote, onReport, threadCategoryFilter, setThreadCategoryFilter }) => {
     const [isInfoVisible, setIsInfoVisible] = useState(true);
     
     const visibleThreads = threads.filter(t => isAdminMode || t.reports.length < 10);
@@ -114,10 +114,10 @@ const ForumTab: React.FC<ForumTabProps> = ({ threads, currentUser, isAdminMode, 
                     <div className="space-y-4">
                         {visibleThreads.map(thread => {
                             const status = getThreadStatus(thread);
-                            const userVote = thread.greenVotes.includes(currentUser) ? 'green' : 
-                                             thread.yellowVotes.includes(currentUser) ? 'yellow' :
-                                             thread.redVotes.includes(currentUser) ? 'red' : null;
-                            const hasReported = thread.reports.includes(currentUser);
+                            const userVote = thread.greenVotes.includes(voterId) ? 'green' : 
+                                             thread.yellowVotes.includes(voterId) ? 'yellow' :
+                                             thread.redVotes.includes(voterId) ? 'red' : null;
+                            const hasReported = thread.reports.includes(voterId);
 
                             return (
                                 <div key={thread.id} className="bg-gray-800 rounded-lg shadow-sm border border-gray-700 hover:border-blue-500 transition-colors flex flex-col">

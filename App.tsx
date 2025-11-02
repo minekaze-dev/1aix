@@ -14,6 +14,7 @@ import ForumThreadModal from './components/ForumThreadModal';
 import AdminLoginModal from './components/AdminLoginModal';
 import TermsModal from './components/TermsModal';
 import PrivacyModal from './components/PrivacyModal';
+import { useLocalStorage } from './hooks/useLocalStorage';
 
 const REPORT_REASONS = ["Spam", "Konten Tidak Pantas", "Informasi Salah", "Lainnya"];
 
@@ -128,6 +129,8 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(GUEST_USER);
   
   const [visibleGuidesCount, setVisibleGuidesCount] = useState(GUIDES_PER_PAGE);
+  const [voterId] = useLocalStorage('jabo-way-guest-id', () => `guest_${Date.now()}_${Math.random()}`);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -446,17 +449,17 @@ export default function App() {
         red: [...(thread.redVotes || [])],
     };
     
-    const userVotedThisType = voteArrays[voteType].includes(currentUser);
+    const userVotedThisType = voteArrays[voteType].includes(voterId);
 
     (['green', 'yellow', 'red'] as const).forEach(type => {
-        const index = voteArrays[type].indexOf(currentUser);
+        const index = voteArrays[type].indexOf(voterId);
         if (index > -1) {
             voteArrays[type].splice(index, 1);
         }
     });
 
     if (!userVotedThisType) {
-        voteArrays[voteType].push(currentUser);
+        voteArrays[voteType].push(voterId);
     }
     
     // Optimistic UI update
@@ -506,9 +509,9 @@ export default function App() {
 
     if (type === 'thread') {
         const thread = threads.find(t => t.id === threadId);
-        if (!thread || thread.reports.includes(currentUser)) return;
+        if (!thread || thread.reports.includes(voterId)) return;
 
-        const newReports = [...thread.reports, currentUser];
+        const newReports = [...thread.reports, voterId];
         const { error } = await supabase.from('threads').update({ reports: newReports }).eq('id', threadId);
 
         if (error) { alert(`Error: ${error.message}`); }
@@ -520,9 +523,9 @@ export default function App() {
     } else if (type === 'post' && postId) {
         const thread = threads.find(t => t.id === threadId);
         const post = thread?.posts.find(p => p.id === postId);
-        if (!thread || !post || post.reports.includes(currentUser)) return;
+        if (!thread || !post || post.reports.includes(voterId)) return;
 
-        const newReports = [...post.reports, currentUser];
+        const newReports = [...post.reports, voterId];
         
         if (newReports.length >= 10) {
             await handleDeletePost(threadId, postId, true); // skip confirmation
@@ -545,7 +548,7 @@ export default function App() {
   const handleReportThread = (threadId: string) => {
     const thread = threads.find(t => t.id === threadId);
     if (!thread) return;
-    if (thread.reports.includes(currentUser)) {
+    if (thread.reports.includes(voterId)) {
         alert('Anda sudah melaporkan diskusi ini.');
         return;
     }
@@ -556,7 +559,7 @@ export default function App() {
     const thread = threads.find(t => t.id === threadId);
     const post = thread?.posts.find(p => p.id === postId);
     if (!thread || !post) return;
-    if (post.reports.includes(currentUser)) {
+    if (post.reports.includes(voterId)) {
         alert('Anda sudah melaporkan komentar ini.');
         return;
     }
@@ -592,13 +595,13 @@ export default function App() {
         {/* Render tab content based on activeTab */}
         {activeTab === 'Explorer' && <ExplorerTab guides={guidesToShow} totalGuidesCount={filteredGuides.length} onLoadMore={handleLoadMoreGuides} onOpenDetail={handleOpenDetail} cityFilter={cityFilter} setCityFilter={setCityFilter} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} searchQuery={searchQuery} setSearchQuery={setSearchQuery}/>}
         {activeTab === 'Panduan Netizen' && <ContributionTab guides={guides} currentUser={currentUser} adminUser={ADMIN_USER} onOpenContributionModal={() => handleOpenContributionModal()} onOpenDetail={handleOpenDetail} onEdit={handleOpenContributionModal} onDelete={handleDeleteGuide} />}
-        {activeTab === 'Forum' && <ForumTab threads={filteredThreads} currentUser={currentUser} isAdminMode={isAdminMode} onOpenThreadModal={() => setIsThreadModalOpen(true)} onOpenThreadDetail={handleOpenThreadDetail} onVote={handleVote} onReport={handleReportThread} threadCategoryFilter={threadCategoryFilter} setThreadCategoryFilter={setThreadCategoryFilter} />}
+        {activeTab === 'Forum' && <ForumTab threads={filteredThreads} voterId={voterId} isAdminMode={isAdminMode} onOpenThreadModal={() => setIsThreadModalOpen(true)} onOpenThreadDetail={handleOpenThreadDetail} onVote={handleVote} onReport={handleReportThread} threadCategoryFilter={threadCategoryFilter} setThreadCategoryFilter={setThreadCategoryFilter} />}
         {activeTab === 'About' && <AboutTab />}
         {activeTab === 'Admin' && isAdminMode && <AdminTab guides={guides} threads={threads} onApproveGuide={handleApproveGuide} onDeleteGuide={handleDeleteGuide} onDeleteThread={handleDeleteThread} onAdminLogout={handleAdminLogout}/>}
       </main>
       <Footer onOpenTerms={() => setIsTermsModalOpen(true)} onOpenPrivacy={() => setIsPrivacyModalOpen(true)} />
       {selectedGuide && <GuideDetailModal guide={selectedGuide} onClose={handleCloseDetail} currentUser={currentUser} adminUser={ADMIN_USER} onEdit={handleOpenContributionModal} onDelete={handleDeleteGuide}/>}
-      {selectedThread && <ForumThreadModal thread={selectedThread} onClose={handleCloseThreadDetail} onAddPost={handleAddPost} onEditPost={handleEditPost} onDeletePost={handleDeletePost} onVote={handleVote} onReport={handleReportThread} onReportPost={handleReportPost} currentUser={currentUser} adminUser={ADMIN_USER}/>}
+      {selectedThread && <ForumThreadModal thread={selectedThread} onClose={handleCloseThreadDetail} onAddPost={handleAddPost} onEditPost={handleEditPost} onDeletePost={handleDeletePost} onVote={handleVote} onReport={handleReportThread} onReportPost={handleReportPost} currentUser={currentUser} voterId={voterId} adminUser={ADMIN_USER}/>}
       {isContributionModalOpen && (
          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={handleCloseContributionModal}>
             <div className="bg-gray-800 text-gray-200 w-full max-w-2xl rounded-lg shadow-2xl border border-gray-700" onClick={(e) => e.stopPropagation()}>
