@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { CITIES, CATEGORIES, THREAD_CATEGORIES, QUICK_SUGGESTIONS } from './constants';
-import type { Guide, Thread, ContributionForm, ThreadForm, City, Category, Post, ThreadCategory } from './types';
+import type { Guide, Thread, ContributionForm, ThreadForm, City, Category, Post, ThreadCategory, Profile } from './types';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ExplorerTab from './components/ExplorerTab';
@@ -15,6 +15,8 @@ import AdminLoginModal from './components/AdminLoginModal';
 import TermsModal from './components/TermsModal';
 import PrivacyModal from './components/PrivacyModal';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import type { Session } from '@supabase/supabase-js';
+
 
 const REPORT_REASONS = ["Spam", "Konten Tidak Pantas", "Informasi Salah", "Lainnya"];
 
@@ -127,9 +129,69 @@ export default function App() {
 
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [currentUser, setCurrentUser] = useState(GUEST_USER);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   
   const [visibleGuidesCount, setVisibleGuidesCount] = useState(GUIDES_PER_PAGE);
   const [voterId] = useLocalStorage('jabo-way-guest-id', () => `guest_${Date.now()}_${Math.random()}`);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+        if (session?.user) {
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') { // PGRST116: No rows found, which is fine
+                    throw error;
+                }
+                
+                if (data) {
+                    setProfile(data);
+                    setCurrentUser(data.display_name);
+                } else {
+                    // Profile doesn't exist, create one
+                    const newProfile = {
+                        id: session.user.id,
+                        display_name: session.user.user_metadata?.full_name || session.user.email || 'New User',
+                        name_change_count: 0
+                    };
+                    const { data: insertedData, error: insertError } = await supabase
+                        .from('profiles')
+                        .insert(newProfile)
+                        .select()
+                        .single();
+
+                    if (insertError) throw insertError;
+
+                    setProfile(insertedData);
+                    setCurrentUser(insertedData.display_name);
+                }
+            } catch (error) {
+                console.error("Error fetching or creating profile:", error);
+                alert("Gagal memuat profil pengguna.");
+            }
+        } else {
+            setProfile(null);
+            setCurrentUser(GUEST_USER);
+        }
+    };
+
+    fetchProfile();
+  }, [session]);
 
 
   useEffect(() => {
@@ -214,11 +276,11 @@ export default function App() {
   const handleAdminLogout = useCallback(() => {
     if (window.confirm('Anda yakin ingin keluar dari Mode Admin?')) {
         setIsAdminMode(false);
-        setCurrentUser(GUEST_USER);
+        setCurrentUser(session && profile ? profile.display_name : GUEST_USER);
         setActiveTab('Explorer');
         alert('Mode Admin dinonaktifkan.');
     }
-  }, []);
+  }, [session, profile]);
 
   const handleAdminLoginSubmit = (password: string): boolean => {
       if (password === 'adminjabo1') {
@@ -337,7 +399,7 @@ export default function App() {
 
   const handleCreateThread = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!threadForm.title.trim() || !threadForm.text.trim()) return;
+    if (!threadForm.title.trim() || !threadForm.text.trim() || !session) return;
 
     const threadId = `th-${Date.now()}`;
     const { data: threadData, error: threadError } = await supabase.from('threads').insert({
@@ -402,7 +464,7 @@ export default function App() {
   const handleCloseThreadDetail = () => setSelectedThread(null);
   
   const handleAddPost = async (threadId: string, text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || !session) return;
     const { data, error } = await supabase.from('posts').insert({
         id: `p-${Date.now()}`, thread_id: threadId, author: currentUser, content: text, reports: []
     }).select().single();
@@ -442,6 +504,7 @@ export default function App() {
 
     const originalThreads = threads;
     const originalSelectedThread = selectedThread;
+    const currentVoterId = session?.user?.id || voterId;
 
     const voteArrays = {
         green: [...(thread.greenVotes || [])],
@@ -449,17 +512,17 @@ export default function App() {
         red: [...(thread.redVotes || [])],
     };
     
-    const userVotedThisType = voteArrays[voteType].includes(voterId);
+    const userVotedThisType = voteArrays[voteType].includes(currentVoterId);
 
     (['green', 'yellow', 'red'] as const).forEach(type => {
-        const index = voteArrays[type].indexOf(voterId);
+        const index = voteArrays[type].indexOf(currentVoterId);
         if (index > -1) {
             voteArrays[type].splice(index, 1);
         }
     });
 
     if (!userVotedThisType) {
-        voteArrays[voteType].push(voterId);
+        voteArrays[voteType].push(currentVoterId);
     }
     
     const updatedThread = { 
@@ -478,7 +541,7 @@ export default function App() {
     const { error } = await supabase.rpc('handle_thread_vote', {
         thread_id_in: threadId,
         vote_type_in: voteType,
-        voter_id_in: voterId
+        voter_id_in: currentVoterId
     });
 
     if (error) {
@@ -504,12 +567,13 @@ export default function App() {
   const handleSubmitReport = async (reason: string) => {
     if (!reportTarget) return;
     const { type, threadId, postId } = reportTarget;
+    const currentVoterId = session?.user?.id || voterId;
 
     if (type === 'thread') {
         const thread = threads.find(t => t.id === threadId);
-        if (!thread || thread.reports.includes(voterId)) return;
+        if (!thread || thread.reports.includes(currentVoterId)) return;
 
-        const newReports = [...thread.reports, voterId];
+        const newReports = [...thread.reports, currentVoterId];
         const { error } = await supabase.from('threads').update({ reports: newReports }).eq('id', threadId);
 
         if (error) { alert(`Error: ${error.message}`); }
@@ -521,9 +585,9 @@ export default function App() {
     } else if (type === 'post' && postId) {
         const thread = threads.find(t => t.id === threadId);
         const post = thread?.posts.find(p => p.id === postId);
-        if (!thread || !post || post.reports.includes(voterId)) return;
+        if (!thread || !post || post.reports.includes(currentVoterId)) return;
 
-        const newReports = [...post.reports, voterId];
+        const newReports = [...post.reports, currentVoterId];
         
         if (newReports.length >= 10) {
             await handleDeletePost(threadId, postId, true); // skip confirmation
@@ -546,7 +610,8 @@ export default function App() {
   const handleReportThread = (threadId: string) => {
     const thread = threads.find(t => t.id === threadId);
     if (!thread) return;
-    if (thread.reports.includes(voterId)) {
+    const currentVoterId = session?.user?.id || voterId;
+    if (thread.reports.includes(currentVoterId)) {
         alert('Anda sudah melaporkan diskusi ini.');
         return;
     }
@@ -557,11 +622,27 @@ export default function App() {
     const thread = threads.find(t => t.id === threadId);
     const post = thread?.posts.find(p => p.id === postId);
     if (!thread || !post) return;
-    if (post.reports.includes(voterId)) {
+    const currentVoterId = session?.user?.id || voterId;
+    if (post.reports.includes(currentVoterId)) {
         alert('Anda sudah melaporkan komentar ini.');
         return;
     }
     handleOpenReportModal('post', threadId, postId);
+  };
+
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+    if (error) console.error("Error logging in:", error);
+  };
+
+  const handleLogout = async () => {
+      const { error } = await supabase.auth.signOut();
+      if (error) console.error("Error logging out:", error);
+      else {
+          setSession(null);
+          setProfile(null);
+          setCurrentUser(GUEST_USER);
+      }
   };
 
   const TABS = useMemo(() => {
@@ -588,18 +669,21 @@ export default function App() {
         onTabChange={handleTabChange} 
         tabs={TABS} 
         onOpenAdminLoginModal={() => setIsAdminLoginModalOpen(true)}
+        session={session}
+        onLogin={handleGoogleLogin}
+        onLogout={handleLogout}
       />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow pt-24 pb-20 md:py-8">
         {/* Render tab content based on activeTab */}
         {activeTab === 'Explorer' && <ExplorerTab guides={guidesToShow} totalGuidesCount={filteredGuides.length} onLoadMore={handleLoadMoreGuides} onOpenDetail={handleOpenDetail} cityFilter={cityFilter} setCityFilter={setCityFilter} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} searchQuery={searchQuery} setSearchQuery={setSearchQuery}/>}
         {activeTab === 'Panduan Netizen' && <ContributionTab guides={guides} currentUser={currentUser} adminUser={ADMIN_USER} onOpenContributionModal={() => handleOpenContributionModal()} onOpenDetail={handleOpenDetail} onEdit={handleOpenContributionModal} onDelete={handleDeleteGuide} />}
-        {activeTab === 'Forum' && <ForumTab threads={filteredThreads} voterId={voterId} isAdminMode={isAdminMode} onOpenThreadModal={() => setIsThreadModalOpen(true)} onOpenThreadDetail={handleOpenThreadDetail} onVote={handleVote} onReport={handleReportThread} threadCategoryFilter={threadCategoryFilter} setThreadCategoryFilter={setThreadCategoryFilter} />}
+        {activeTab === 'Forum' && <ForumTab threads={filteredThreads} voterId={session?.user?.id || voterId} session={session} isAdminMode={isAdminMode} onOpenThreadModal={() => setIsThreadModalOpen(true)} onOpenThreadDetail={handleOpenThreadDetail} onVote={handleVote} onReport={handleReportThread} threadCategoryFilter={threadCategoryFilter} setThreadCategoryFilter={setThreadCategoryFilter} />}
         {activeTab === 'About' && <AboutTab />}
         {activeTab === 'Admin' && isAdminMode && <AdminTab guides={guides} threads={threads} onApproveGuide={handleApproveGuide} onDeleteGuide={handleDeleteGuide} onDeleteThread={handleDeleteThread} onAdminLogout={handleAdminLogout}/>}
       </main>
       <Footer onOpenTerms={() => setIsTermsModalOpen(true)} onOpenPrivacy={() => setIsPrivacyModalOpen(true)} />
       {selectedGuide && <GuideDetailModal guide={selectedGuide} onClose={handleCloseDetail} currentUser={currentUser} adminUser={ADMIN_USER} onEdit={handleOpenContributionModal} onDelete={handleDeleteGuide}/>}
-      {selectedThread && <ForumThreadModal thread={selectedThread} onClose={handleCloseThreadDetail} onAddPost={handleAddPost} onEditPost={handleEditPost} onDeletePost={handleDeletePost} onVote={handleVote} onReport={handleReportThread} onReportPost={handleReportPost} currentUser={currentUser} voterId={voterId} adminUser={ADMIN_USER}/>}
+      {selectedThread && <ForumThreadModal thread={selectedThread} onClose={handleCloseThreadDetail} onAddPost={handleAddPost} onEditPost={handleEditPost} onDeletePost={handleDeletePost} onVote={handleVote} onReport={handleReportThread} onReportPost={handleReportPost} currentUser={currentUser} voterId={session?.user?.id || voterId} adminUser={ADMIN_USER} session={session}/>}
       {isContributionModalOpen && (
          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={handleCloseContributionModal}>
             <div className="bg-gray-800 text-gray-200 w-full max-w-2xl rounded-lg shadow-2xl border border-gray-700" onClick={(e) => e.stopPropagation()}>
@@ -613,7 +697,7 @@ export default function App() {
                             value={contribution.author} 
                             onChange={(e) => setContribution({...contribution, author: e.target.value})} 
                             placeholder="Nama Kontributor" 
-                            disabled={currentUser === ADMIN_USER}
+                            disabled={!!session || currentUser === ADMIN_USER}
                             className="w-full px-3 py-2 text-gray-100 bg-gray-700 border border-gray-600 rounded-md disabled:opacity-70 disabled:cursor-not-allowed placeholder:text-gray-400" 
                         />
                         <input 

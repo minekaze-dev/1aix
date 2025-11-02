@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { Thread, ThreadStatus, ThreadCategory } from '../types';
 import { ChatAlt2Icon, PlusCircleIcon } from './icons';
 import { THREAD_CATEGORIES } from '../constants';
+import { useLocalStorage } from '../hooks/useLocalStorage';
+import type { Session } from '@supabase/supabase-js';
+
 
 interface ForumTabProps {
     threads: Thread[];
     voterId: string;
+    session: Session | null;
     isAdminMode: boolean;
     onOpenThreadModal: () => void;
     onOpenThreadDetail: (id: string) => void;
@@ -55,10 +59,11 @@ const threadCategoryColors: { [key in ThreadCategory]: string } = {
 };
 
 
-const ForumTab: React.FC<ForumTabProps> = ({ threads, voterId, isAdminMode, onOpenThreadModal, onOpenThreadDetail, onVote, onReport, threadCategoryFilter, setThreadCategoryFilter }) => {
-    const [isInfoVisible, setIsInfoVisible] = useState(true);
+const ForumTab: React.FC<ForumTabProps> = ({ threads, voterId, session, isAdminMode, onOpenThreadModal, onOpenThreadDetail, onVote, onReport, threadCategoryFilter, setThreadCategoryFilter }) => {
+    const [isInfoVisible, setIsInfoVisible] = useLocalStorage('jabo-way-forum-info-seen', true);
     
     const visibleThreads = threads.filter(t => isAdminMode || t.reports.length < 10);
+    const isLoggedIn = !!session;
     
     return (
         <section>
@@ -205,11 +210,16 @@ const ForumTab: React.FC<ForumTabProps> = ({ threads, voterId, isAdminMode, onOp
                         <p className="text-gray-400">Punya pertanyaan atau ingin berbagi informasi? Buat thread baru agar komunitas bisa ikut berdiskusi.</p>
                          <button
                             onClick={onOpenThreadModal}
-                            className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform hover:scale-105"
+                            disabled={!isLoggedIn}
+                            title={isLoggedIn ? 'Buat thread diskusi baru' : 'Anda harus login untuk membuat thread'}
+                            className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:hover:scale-100"
                         >
                             <PlusCircleIcon className="h-5 w-5" />
                             Buat Thread Baru
                         </button>
+                        {!isLoggedIn && (
+                            <p className="text-xs text-center text-gray-400">Silakan login untuk memulai diskusi.</p>
+                        )}
                     </div>
                 </div>
             </div>

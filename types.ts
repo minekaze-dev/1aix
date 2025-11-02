@@ -55,3 +55,9 @@ export interface ThreadForm {
     text: string;
     category: ThreadCategory;
 }
+
+export interface Profile {
+  id: string;
+  display_name: string;
+  name_change_count: number;
+}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { Thread, Post, ThreadStatus } from '../types';
 import { PencilIcon, TrashIcon, EyeIcon } from './icons';
 import { QUICK_SUGGESTIONS } from '../constants';
-
+import type { Session } from '@supabase/supabase-js';
 
 interface ForumThreadModalProps {
     thread: Thread;
@@ -16,6 +16,7 @@ interface ForumThreadModalProps {
     currentUser: string;
     voterId: string;
     adminUser: string;
+    session: Session | null;
 }
 
 const getThreadStatus = (thread: Thread): ThreadStatus => {
@@ -51,7 +52,7 @@ const statusText: { [key in ThreadStatus]: string } = {
     danger: 'Hoax',
 };
 
-const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, onAddPost, onEditPost, onDeletePost, onVote, onReport, onReportPost, currentUser, voterId, adminUser }) => {
+const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, onAddPost, onEditPost, onDeletePost, onVote, onReport, onReportPost, currentUser, voterId, adminUser, session }) => {
     const [newPostText, setNewPostText] = useState('');
     const [editingPostId, setEditingPostId] = useState<string | null>(null);
     const [editingText, setEditingText] = useState('');
@@ -82,6 +83,7 @@ const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, on
                      thread.yellowVotes.includes(voterId) ? 'yellow' :
                      thread.redVotes.includes(voterId) ? 'red' : null;
     const hasReportedThread = thread.reports.includes(voterId);
+    const isLoggedIn = !!session;
 
     return (
         <div 
@@ -181,7 +183,7 @@ const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, on
                                                 <p className="text-gray-300 whitespace-pre-wrap flex-grow">
                                                     <strong className="text-gray-100 block">
                                                         {post.author}
-                                                        {isCurrentUserPost && <span className="text-xs font-normal text-blue-400 ml-2">(Anda)</span>}
+                                                        {isCurrentUserPost && isLoggedIn && <span className="text-xs font-normal text-blue-400 ml-2">(Anda)</span>}
                                                         {isOriginalPost && <span className="text-xs font-normal text-amber-400 ml-2">(Pembuat Thread)</span>}
                                                     </strong>
                                                     {post.text}
@@ -223,32 +225,38 @@ const ForumThreadModal: React.FC<ForumThreadModalProps> = ({ thread, onClose, on
                 </div>
 
                 <div className="px-6 py-4 bg-gray-900/50 border-t border-gray-700">
-                    <form onSubmit={handleAddPostSubmit} className="space-y-2">
-                        <div className="flex flex-wrap gap-2">
-                            {QUICK_SUGGESTIONS.map((suggestion) => (
-                                <button
-                                key={suggestion.text}
-                                type="button"
-                                onClick={() => setNewPostText(prev => (prev ? prev + ' ' : '') + suggestion.text)}
-                                className="px-3 py-1.5 text-xs bg-gray-600 text-gray-200 rounded-full hover:bg-gray-500 transition-colors"
-                                >
-                                {suggestion.text}
+                    {isLoggedIn ? (
+                        <form onSubmit={handleAddPostSubmit} className="space-y-2">
+                            <div className="flex flex-wrap gap-2">
+                                {QUICK_SUGGESTIONS.map((suggestion) => (
+                                    <button
+                                    key={suggestion.text}
+                                    type="button"
+                                    onClick={() => setNewPostText(prev => (prev ? prev + ' ' : '') + suggestion.text)}
+                                    className="px-3 py-1.5 text-xs bg-gray-600 text-gray-200 rounded-full hover:bg-gray-500 transition-colors"
+                                    >
+                                    {suggestion.text}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={newPostText}
+                                    onChange={(e) => setNewPostText(e.target.value)}
+                                    placeholder="Tulis balasan..."
+                                    className="flex-grow px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-100 placeholder-gray-400"
+                                />
+                                <button type="submit" className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 disabled:bg-gray-500" disabled={!newPostText.trim()}>
+                                    Kirim
                                 </button>
-                            ))}
-                        </div>
-                        <div className="flex gap-2">
-                            <input
-                                type="text"
-                                value={newPostText}
-                                onChange={(e) => setNewPostText(e.target.value)}
-                                placeholder="Tulis balasan..."
-                                className="flex-grow px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-100 placeholder-gray-400"
-                            />
-                            <button type="submit" className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 disabled:bg-gray-500" disabled={!newPostText.trim()}>
-                                Kirim
-                            </button>
-                        </div>
-                    </form>
+                            </div>
+                        </form>
+                    ) : (
+                        <p className="text-center text-sm text-gray-400">
+                            Anda harus login untuk membalas diskusi ini.
+                        </p>
+                    )}
                 </div>
             </div>
         </div>
