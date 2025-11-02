@@ -155,28 +155,46 @@ export default function App() {
   useEffect(() => {
     const fetchProfile = async () => {
         if (session?.user) {
-            try {
-                // With the database trigger, the profile should exist. If not, it's an error state.
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', session.user.id)
-                    .single();
+            // Retry mechanism to handle the delay in profile creation by the trigger
+            const maxRetries = 3;
+            const retryDelay = 1000; // 1 second
 
-                if (error) throw error; // Throws if profile not found or any other error
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', session.user.id)
+                        .single();
+                    
+                    // If we get data, profile exists, success!
+                    if (data) {
+                        setProfile(data);
+                        setCurrentUser(data.display_name || 'User');
+                        return; // Exit the function successfully
+                    }
 
-                if (data) {
-                    setProfile(data);
-                    setCurrentUser(data.display_name || 'User');
-                } else {
-                    // This case should ideally not be reached if the trigger is working.
-                    throw new Error("Profil pengguna tidak ditemukan setelah login.");
+                    // If there's an error, but it's not "row not found", it's a real error.
+                    if (error && error.code !== 'PGRST116') { // PGRST116 = "The result contains 0 rows"
+                        throw error;
+                    }
+
+                    // If profile is not found, wait and retry, unless it's the last attempt.
+                    if (attempt < maxRetries) {
+                        await new Promise(resolve => setTimeout(resolve, retryDelay));
+                    } else {
+                        throw new Error("Profil pengguna tidak dapat ditemukan setelah beberapa kali percobaan.");
+                    }
+
+                } catch (error) {
+                    // If this is the last attempt or an unrecoverable error, handle it.
+                    if (attempt === maxRetries) {
+                        console.error("Gagal memuat profil setelah retries:", error);
+                        alert("Gagal memuat profil pengguna. Anda akan dilogout untuk keamanan. Silakan coba login kembali.");
+                        handleLogout();
+                        return;
+                    }
                 }
-
-            } catch (error) {
-                console.error("Gagal memuat profil:", error);
-                alert("Gagal memuat profil pengguna. Anda akan dilogout untuk keamanan. Silakan coba login kembali.");
-                handleLogout(); // Force logout on failure to prevent inconsistent state
             }
         } else {
             setProfile(null);
