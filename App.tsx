@@ -355,6 +355,11 @@ export default function App() {
   const handleSubmitContribution = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (!contribution.title.trim() || !contribution.stepsText.trim() || !contribution.author.trim()) {
+        alert('Mohon isi semua kolom yang wajib diisi (Judul, Nama, dan Langkah-langkah).');
+        return;
+    }
+
     const guideData = {
         title: contribution.title || "Panduan dari Netizen",
         author: contribution.author.trim() || "Anonim",
@@ -436,7 +441,14 @@ export default function App() {
 
   const handleCreateThread = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!threadForm.title.trim() || !threadForm.text.trim() || (!session && !isAdminMode)) return;
+    if (!threadForm.title.trim() || !threadForm.text.trim()) {
+        alert('Judul diskusi dan pesan pertama tidak boleh kosong.');
+        return;
+    }
+    if (!session && !isAdminMode) {
+        alert('Anda harus login untuk membuat diskusi.');
+        return;
+    }
 
     const threadId = `th-${Date.now()}`;
     const { data: threadData, error: threadError } = await supabase.from('threads').insert({
@@ -501,7 +513,15 @@ export default function App() {
   const handleCloseThreadDetail = () => setSelectedThread(null);
   
   const handleAddPost = async (threadId: string, text: string) => {
-    if (!text.trim() || (!session && !isAdminMode)) return;
+    if (!text.trim()) {
+        alert('Komentar tidak boleh kosong.');
+        return;
+    }
+    if (!session && !isAdminMode) {
+        alert('Anda harus login untuk berkomentar.');
+        return;
+    }
+    
     const { data, error } = await supabase.from('posts').insert({
         id: `p-${Date.now()}`, thread_id: threadId, author: currentUser, content: text, reports: []
     }).select().single();
@@ -514,7 +534,10 @@ export default function App() {
   };
 
   const handleEditPost = async (threadId: string, postId: string, newText: string) => {
-    if (!newText.trim()) return;
+    if (!newText.trim()) {
+        alert('Komentar tidak boleh kosong.');
+        return;
+    }
     
     const originalThreads = [...threads];
     const updatedThreads = threads.map(t => 
