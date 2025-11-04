@@ -498,6 +498,10 @@ export default function App() {
   };
   
   const handleOpenThreadDetail = async (threadId: string) => {
+    if (!session && !isAdminMode) {
+        setIsAuthModalOpen(true);
+        return;
+    }
     const thread = threads.find(t => t.id === threadId);
     if(thread) {
         const newViews = (thread.views || 0) + 1;
