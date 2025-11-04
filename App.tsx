@@ -413,7 +413,7 @@ export default function App() {
                 setActiveTab("Explorer");
                 alert("Panduan berhasil dibuat dan langsung dipublikasikan.");
             } else {
-                setActiveTab("Panduan Netizen");
+                setActiveTab("Panduan");
                 alert("Kontribusi berhasil dikirim dan sedang menunggu tinjauan admin.");
             }
             handleCloseContributionModal();
@@ -727,7 +727,7 @@ export default function App() {
     };
 
   const TABS = useMemo(() => {
-    const baseTabs = ['Explorer', 'Panduan Netizen', 'Forum', 'About'];
+    const baseTabs = ['Explorer', 'Panduan', 'Forum', 'About'];
     if (isAdminMode) return [...baseTabs, 'Admin'];
     return baseTabs;
   }, [isAdminMode]);
@@ -757,7 +757,7 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow pt-24 pb-20 md:py-8">
         {/* Render tab content based on activeTab */}
         {activeTab === 'Explorer' && <ExplorerTab guides={guidesToShow} totalGuidesCount={filteredGuides.length} onLoadMore={handleLoadMoreGuides} onOpenDetail={handleOpenDetail} cityFilter={cityFilter} setCityFilter={setCityFilter} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} searchQuery={searchQuery} setSearchQuery={setSearchQuery}/>}
-        {activeTab === 'Panduan Netizen' && <ContributionTab guides={guides} currentUser={currentUser} adminUser={ADMIN_USER} onOpenContributionModal={() => handleOpenContributionModal()} onOpenDetail={handleOpenDetail} onEdit={handleOpenContributionModal} onDelete={handleDeleteGuide} session={session} isAdminMode={isAdminMode} />}
+        {activeTab === 'Panduan' && <ContributionTab guides={guides} currentUser={currentUser} adminUser={ADMIN_USER} onOpenContributionModal={() => handleOpenContributionModal()} onOpenDetail={handleOpenDetail} onEdit={handleOpenContributionModal} onDelete={handleDeleteGuide} session={session} isAdminMode={isAdminMode} />}
         {activeTab === 'Forum' && <ForumTab threads={filteredThreads} voterId={session?.user?.id || voterId} session={session} isAdminMode={isAdminMode} onOpenThreadModal={() => setIsThreadModalOpen(true)} onOpenThreadDetail={handleOpenThreadDetail} onVote={handleVote} onReport={handleReportThread} threadCategoryFilter={threadCategoryFilter} setThreadCategoryFilter={setThreadCategoryFilter} />}
         {activeTab === 'About' && <AboutTab />}
         {activeTab === 'Admin' && isAdminMode && <AdminTab guides={guides} threads={threads} onApproveGuide={handleApproveGuide} onDeleteGuide={handleDeleteGuide} onDeleteThread={handleDeleteThread} onAdminLogout={handleAdminLogout}/>}

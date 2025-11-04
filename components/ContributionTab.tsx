@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { Guide } from '../types';
 import { PlusCircleIcon, PencilIcon, TrashIcon } from './icons';
@@ -25,7 +26,7 @@ const ContributionTab: React.FC<ContributionTabProps> = ({ guides, currentUser, 
     return (
         <section>
             <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-100">Panduan Netizen</h2>
+                <h2 className="text-3xl font-bold text-gray-100">Panduan Komunitas</h2>
                 <p className="mt-2 text-md text-gray-400 max-w-2xl mx-auto">
                     Lihat semua panduan yang telah dibagikan oleh komunitas. Terima kasih untuk semua kontributor!
                 </p>
@@ -76,7 +77,7 @@ const ContributionTab: React.FC<ContributionTabProps> = ({ guides, currentUser, 
             )}
 
             {/* Contribution Board */}
-            <h3 className="text-xl font-bold text-gray-100 mb-4">Panduan Netizen Terpublikasi</h3>
+            <h3 className="text-xl font-bold text-gray-100 mb-4">Panduan Komunitas Terpublikasi</h3>
             <div className="space-y-3">
                 {[...myApprovedGuides, ...otherApprovedGuides].length > 0 ? (
                     [...myApprovedGuides, ...otherApprovedGuides].map(guide => {

@@ -115,7 +115,6 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLogi
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900/80 backdrop-blur-lg border-t border-gray-700 z-50">
                 <div className="flex justify-around">
                     {tabs.map((tab) => {
-                        const mobileTabText = tab === 'Panduan Netizen' ? 'Panduan' : tab;
                         return (
                             <button
                                 key={tab}
@@ -126,7 +125,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLogi
                                         : `text-gray-300 hover:bg-gray-700 ${tab === 'Admin' ? 'text-red-400' : ''}`
                                 }`}
                             >
-                                {mobileTabText}
+                                {tab}
                             </button>
                         );
                     })}
