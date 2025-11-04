@@ -12,12 +12,13 @@ import AboutTab from './components/AboutTab';
 import AdminTab from './components/AdminTab';
 import GuideDetailModal from './components/GuideDetailModal';
 import ForumThreadModal from './components/ForumThreadModal';
+import AuthModal from './components/AuthModal';
 import AdminLoginModal from './components/AdminLoginModal';
 import TermsModal from './components/TermsModal';
 import PrivacyModal from './components/PrivacyModal';
 import GuidePreview from './components/GuidePreview';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import type { Session } from '@supabase/supabase-js';
+import type { Session, Provider } from '@supabase/supabase-js';
 
 
 const REPORT_REASONS = ["Spam", "Konten Tidak Pantas", "Informasi Salah", "Lainnya"];
@@ -123,6 +124,7 @@ export default function App() {
 
   const [isContributionModalOpen, setIsContributionModalOpen] = useState(false);
   const [isThreadModalOpen, setIsThreadModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<{type: 'thread' | 'post', threadId: string, postId?: string} | null>(null);
@@ -704,8 +706,8 @@ export default function App() {
     handleOpenReportModal('post', threadId, postId);
   };
 
-  const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+  const handleOAuthLogin = async (provider: Provider) => {
+    const { error } = await supabase.auth.signInWithOAuth({ provider });
     if (error) console.error("Error logging in:", error);
   };
   
@@ -749,7 +751,7 @@ export default function App() {
         tabs={TABS} 
         onOpenAdminLoginModal={() => setIsAdminLoginModalOpen(true)}
         session={session}
-        onLogin={handleGoogleLogin}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
       />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow pt-24 pb-20 md:py-8">
@@ -763,6 +765,7 @@ export default function App() {
       <Footer onOpenTerms={() => setIsTermsModalOpen(true)} onOpenPrivacy={() => setIsPrivacyModalOpen(true)} />
       {selectedGuide && <GuideDetailModal guide={selectedGuide} onClose={handleCloseDetail} currentUser={currentUser} adminUser={ADMIN_USER} onEdit={handleOpenContributionModal} onDelete={handleDeleteGuide}/>}
       {selectedThread && <ForumThreadModal thread={selectedThread} onClose={handleCloseThreadDetail} onAddPost={handleAddPost} onEditPost={handleEditPost} onDeletePost={handleDeletePost} onVote={handleVote} onReport={handleReportThread} onReportPost={handleReportPost} currentUser={currentUser} voterId={session?.user?.id || voterId} adminUser={ADMIN_USER} session={session} isAdminMode={isAdminMode}/>}
+      {isAuthModalOpen && <AuthModal onClose={() => setIsAuthModalOpen(false)} onGoogleLogin={() => handleOAuthLogin('google')} />}
       {isContributionModalOpen && (() => {
         const previewGuide: Guide = {
             id: editingGuide?.id || 'preview-id',

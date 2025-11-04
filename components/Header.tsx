@@ -1,6 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { GoogleIcon, LogoutIcon } from './icons';
+import { LogoutIcon, UserCircleIcon } from './icons';
 
 interface HeaderProps {
     activeTab: string;
@@ -8,11 +9,11 @@ interface HeaderProps {
     onOpenAdminLoginModal: () => void;
     tabs: string[];
     session: Session | null;
-    onLogin: () => void;
+    onOpenAuthModal: () => void;
     onLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLoginModal, tabs, session, onLogin, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLoginModal, tabs, session, onOpenAuthModal, onLogout }) => {
     const [logoClickCount, setLogoClickCount] = useState(0);
     const clickTimeoutRef = useRef<number | null>(null);
 
@@ -100,9 +101,9 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLogi
                                     </button>
                                 </div>
                             ) : (
-                                <button onClick={onLogin} className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white font-semibold rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
-                                    <GoogleIcon className="h-5 w-5"/>
-                                    <span className="text-sm">Login</span>
+                                <button onClick={onOpenAuthModal} className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white font-semibold rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+                                    <UserCircleIcon className="h-5 w-5"/>
+                                    <span className="text-sm">Masuk / Daftar</span>
                                 </button>
                             )}
                         </div>
