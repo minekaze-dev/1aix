@@ -37,8 +37,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onGoogleLogin }) => {
                     options: { data: { full_name: displayName } }
                 });
                 if (error) throw error;
-                setMessage('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi.');
-                setView('message');
+                setMessage('Pendaftaran berhasil! Silakan masuk dengan akun baru Anda.');
+                setView('login');
+                setPassword('');
+                setDisplayName('');
             } else if (view === 'forgot_password') {
                 const { error } = await supabase.auth.resetPasswordForEmail(email, {
                     redirectTo: window.location.origin,
@@ -48,7 +50,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onGoogleLogin }) => {
                 setView('message');
             }
         } catch (err: any) {
-            setError(err.error_description || err.message);
+            if (err.message === 'Invalid login credentials') {
+                setError('Email atau password yang Anda masukkan salah.');
+            } else if (err.message === 'User already registered') {
+                setError('Email ini sudah terdaftar. Silakan coba masuk.');
+            } else if (err.message === 'Email not confirmed') {
+                 setError('Email belum dikonfirmasi. Silakan periksa kotak masuk Anda.');
+            }
+            else {
+                setError(err.error_description || err.message);
+            }
         } finally {
             setLoading(false);
         }
@@ -104,32 +115,21 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onGoogleLogin }) => {
                             <input type="text" placeholder="Nama Lengkap" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder:text-gray-400" />
                         </div>
                     )}
+                    
+                    <div className="relative">
+                        <EnvelopeIcon className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                         <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder:text-gray-400" />
+                    </div>
+                    
                     {!isForgotPassword && (
                         <div className="relative">
-                            <EnvelopeIcon className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                             <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder:text-gray-400" />
-                        </div>
-                    )}
-                    {isLogin && (
-                        <div className="relative">
                              <LockClosedIcon className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder:text-gray-400" />
-                        </div>
-                    )}
-                     {isRegister && (
-                        <div className="relative">
-                             <LockClosedIcon className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="password" placeholder="Password (minimal 6 karakter)" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder:text-gray-400" />
-                        </div>
-                    )}
-                     {isForgotPassword && (
-                        <div className="relative">
-                            <EnvelopeIcon className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="email" placeholder="Email Anda" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder:text-gray-400" />
+                            <input type="password" placeholder={isRegister ? "Password (minimal 6 karakter)" : "Password"} value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder:text-gray-400" />
                         </div>
                     )}
 
                     {error && <p className="text-sm text-red-400">{error}</p>}
+                    {message && <p className="text-sm text-green-400">{message}</p>}
 
                     <button type="submit" disabled={loading} className="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:opacity-50">
                         {loading ? 'Memproses...' : (isLogin ? 'Masuk' : isRegister ? 'Daftar' : 'Kirim Instruksi')}
