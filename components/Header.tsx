@@ -5,7 +5,6 @@ import { LogoutIcon, UserCircleIcon } from './icons';
 
 interface HeaderProps {
     activeTab: string;
-    onTabChange: (tab: string) => void;
     onOpenAdminLoginModal: () => void;
     tabs: string[];
     session: Session | null;
@@ -13,7 +12,7 @@ interface HeaderProps {
     onLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLoginModal, tabs, session, onOpenAuthModal, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ activeTab, onOpenAdminLoginModal, tabs, session, onOpenAuthModal, onLogout }) => {
     const [logoClickCount, setLogoClickCount] = useState(0);
     const clickTimeoutRef = useRef<number | null>(null);
 
@@ -44,12 +43,20 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLogi
             clickTimeoutRef.current = window.setTimeout(() => {
                 if (newCount === 1) {
                     // If after the timeout, the count is still 1, it was a single click
-                    onTabChange('Explorer');
+                    window.location.hash = '#/explorer';
                 }
                 // Reset for the next sequence
                 setLogoClickCount(0);
             }, 300); // 300ms window to distinguish single from multi-click
         }
+    };
+    
+    const routeMap: { [key: string]: string } = {
+        'Explorer': '#/explorer',
+        'Panduan': '#/panduan',
+        'Forum': '#/forum',
+        'About': '#/about',
+        'Admin': '#/admin',
     };
 
     return (
@@ -79,9 +86,9 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLogi
                         <div className="hidden md:flex items-center gap-6">
                             <nav className="flex items-center gap-2">
                                 {tabs.map((tab) => (
-                                    <button
+                                    <a
                                         key={tab}
-                                        onClick={() => onTabChange(tab)}
+                                        href={routeMap[tab]}
                                         className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                                             activeTab === tab
                                                 ? 'bg-blue-600 text-white shadow-sm'
@@ -89,7 +96,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLogi
                                         }`}
                                     >
                                         {tab}
-                                    </button>
+                                    </a>
                                 ))}
                             </nav>
                             <div className="border-l border-gray-700 h-8"></div>
@@ -116,9 +123,9 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLogi
                 <div className="flex justify-around">
                     {tabs.map((tab) => {
                         return (
-                            <button
+                            <a
                                 key={tab}
-                                onClick={() => onTabChange(tab)}
+                                href={routeMap[tab]}
                                 className={`flex-1 py-4 text-sm font-medium transition-colors duration-200 ${
                                     activeTab === tab
                                         ? 'bg-blue-600 text-white'
@@ -126,7 +133,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenAdminLogi
                                 }`}
                             >
                                 {tab}
-                            </button>
+                            </a>
                         );
                     })}
                 </div>

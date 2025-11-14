@@ -110,8 +110,11 @@ export default function App() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  const getRouteFromHash = () => window.location.hash.replace(/^#\/?/, '') || 'explorer';
+  const [route, setRoute] = useState(getRouteFromHash());
 
-  const [activeTab, setActiveTab] = useState('Explorer');
   const [cityFilter, setCityFilter] = useState<City | 'All'>("All");
   const [categoryFilter, setCategoryFilter] = useState<Category | 'All'>("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -132,7 +135,6 @@ export default function App() {
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
-  const [isAdminMode, setIsAdminMode] = useState(false);
   const [currentUser, setCurrentUser] = useState(GUEST_USER);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -140,12 +142,41 @@ export default function App() {
   const [visibleGuidesCount, setVisibleGuidesCount] = useState(GUIDES_PER_PAGE);
   const [voterId] = useLocalStorage('jabo-way-guest-id', () => `guest_${Date.now()}_${Math.random()}`);
   
+    useEffect(() => {
+        const handleHashChange = () => {
+            const newRoute = getRouteFromHash();
+            if (newRoute === 'admin' && !isAdminMode) {
+                window.location.hash = '#/explorer';
+                return;
+            }
+            setRoute(newRoute);
+            setSelectedGuide(null); 
+            setSelectedThread(null);
+        };
+        window.addEventListener('hashchange', handleHashChange);
+        handleHashChange();
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, [isAdminMode]);
+
+    const activeTab = useMemo(() => {
+        switch(route) {
+            case 'panduan': return 'Panduan';
+            case 'forum': return 'Forum';
+            case 'about': return 'About';
+            case 'admin':
+                if (isAdminMode) return 'Admin';
+                return 'Explorer';
+            default: return 'Explorer';
+        }
+    }, [route, isAdminMode]);
+
   const handleLogout = useCallback(async () => {
       await supabase.auth.signOut();
       setSession(null);
       setProfile(null);
       setCurrentUser(GUEST_USER);
       setIsAdminMode(false);
+      window.location.hash = '#/explorer';
   }, []);
 
   const isUserBlocked = useCallback(() => {
@@ -328,12 +359,6 @@ export default function App() {
 
   const handleCloseDetail = () => setSelectedGuide(null);
   
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    setSelectedGuide(null); 
-    setSelectedThread(null);
-  };
-
   const handleEnterAdminMode = () => {
     setIsAdminMode(true);
     setCurrentUser(ADMIN_USER);
@@ -344,7 +369,7 @@ export default function App() {
     if (window.confirm('Anda yakin ingin keluar dari Mode Admin?')) {
         setIsAdminMode(false);
         setCurrentUser(session && profile ? profile.display_name : GUEST_USER);
-        setActiveTab('Explorer');
+        window.location.hash = '#/explorer';
         alert('Mode Admin dinonaktifkan.');
     }
   }, [session, profile]);
@@ -462,10 +487,10 @@ export default function App() {
             };
             setGuides([newGuide, ...guides]);
             if (isAdmin) {
-                setActiveTab("Explorer");
+                window.location.hash = '#/explorer';
                 alert("Panduan berhasil dibuat dan langsung dipublikasikan.");
             } else {
-                setActiveTab("Panduan");
+                window.location.hash = '#/panduan';
                 alert("Kontribusi berhasil dikirim dan sedang menunggu tinjauan admin.");
             }
             handleCloseContributionModal();
@@ -794,7 +819,6 @@ export default function App() {
     <div className="min-h-screen bg-gray-900 text-gray-200 font-sans flex flex-col">
       <Header 
         activeTab={activeTab} 
-        onTabChange={handleTabChange} 
         tabs={TABS} 
         onOpenAdminLoginModal={() => setIsAdminLoginModalOpen(true)}
         session={session}
