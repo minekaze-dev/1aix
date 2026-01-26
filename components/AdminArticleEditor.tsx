@@ -1,13 +1,11 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import type { Article, ArticleCategory } from '../types';
+import type { Article } from '../types';
 
 interface AdminArticleEditorProps {
   article: Article | null;
   onClose: () => void;
 }
-
-const CATEGORIES: ArticleCategory[] = ["REVIEW", "NEWS", "LEAK", "GAMING", "UPDATE", "UNBOXING", "EVENT"];
 
 const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClose }) => {
   const [formData, setFormData] = useState<Partial<Article>>({
@@ -23,11 +21,21 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
     ...article
   });
 
+  const [dynamicCategories, setDynamicCategories] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  useEffect(() => {
+    const localCats = localStorage.getItem('1AIX_LOCAL_CATEGORIES');
+    if (localCats) {
+      setDynamicCategories(JSON.parse(localCats));
+    } else {
+      setDynamicCategories(["REVIEW", "NEWS", "LEAK", "GAMING", "UPDATE", "UNBOXING", "EVENT"]);
+    }
+  }, []);
 
   const pushHistory = useCallback((newContent: string) => {
     setHistory(prev => {
@@ -47,35 +55,7 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
     }
   }, [historyIndex, history]);
 
-  useEffect(() => {
-    if (history.length === 0) {
-        setHistory([formData.content || '']);
-        setHistoryIndex(0);
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-            e.preventDefault();
-            handleUndo();
-        }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo]);
-
-  useEffect(() => {
-    if (formData.title && !article) {
-        const slug = formData.title
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '');
-        setFormData(prev => ({ ...prev, permalink: `/news/${slug}` }));
-    }
-  }, [formData.title, article]);
-
-  const insertText = (type: string, param?: string) => {
+  const insertText = useCallback((type: string, param?: string) => {
       const textarea = textareaRef.current;
       if (!textarea) return;
       
@@ -104,13 +84,52 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
         default: return;
       }
 
-      setFormData({ ...formData, content: newContent });
+      setFormData(prev => ({ ...prev, content: newContent }));
       pushHistory(newContent);
       
       setTimeout(() => {
         textarea.focus();
+        if (selection !== 'Teks Anda') {
+            textarea.setSelectionRange(start, start + newContent.length - before.length - after.length);
+        }
       }, 0);
-  };
+  }, [pushHistory]);
+
+  useEffect(() => {
+    if (history.length === 0) {
+        setHistory([formData.content || '']);
+        setHistoryIndex(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.ctrlKey || e.metaKey) {
+            if (e.key === 'z') {
+                e.preventDefault();
+                handleUndo();
+            } else if (e.key === 'b') {
+                e.preventDefault();
+                insertText('B');
+            } else if (e.key === 'i') {
+                e.preventDefault();
+                insertText('I');
+            }
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, insertText]);
+
+  useEffect(() => {
+    if (formData.title && !article) {
+        const slug = formData.title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+        setFormData(prev => ({ ...prev, permalink: `/news/${slug}` }));
+    }
+  }, [formData.title, article]);
 
   const handleTagsChange = (val: string) => {
     const words = val.split(/\s+/);
@@ -160,17 +179,16 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;')
-          // Restore explicitly allowed HTML tags that we inject
           .replace(/&lt;div align="(.*?)"&gt;([\s\S]*?)&lt;\/div&gt;/g, '<div style="text-align: $1">$2</div>')
           .replace(/&lt;span style="(.*?)"&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="$1">$2</span>')
           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
           .replace(/_(.*?)_/g, '<em>$1</em>')
           .replace(/^# (.*$)/gm, '<h1 style="font-size: 2em; font-weight: 900; margin: 0.5em 0;">$1</h1>')
           .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$1</h2>')
-          .replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500 my-4">$1</blockquote>')
+          .replace(/^&gt; (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500">$1</blockquote>')
           .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
           .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 list-decimal">$1</li>')
-          .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="w-full my-6 rounded shadow-lg" />');
+          .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="w-full my-4 rounded shadow-lg" />');
   };
 
   return (
@@ -212,7 +230,7 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
                 </div>
 
                 {/* Metadata */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                     <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm">
                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block mb-4">COVER IMAGE URL</span>
                         <input type="url" placeholder="https://..." value={formData.cover_image_url} onChange={(e) => setFormData({...formData, cover_image_url: e.target.value})} className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded text-[11px] font-bold text-zinc-700 outline-none focus:border-blue-500 transition-colors"/>
@@ -221,18 +239,22 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block mb-4">HASHTAG TAGS</span>
                         <input type="text" placeholder="#gadget #review" value={formData.tags} onChange={(e) => handleTagsChange(e.target.value)} className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded text-[11px] font-bold text-zinc-700 outline-none focus:border-blue-500 transition-colors"/>
                     </div>
+                    <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm">
+                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block mb-4">TANGGAL TAYANG</span>
+                        <input type="date" value={formData.publish_date} onChange={(e) => setFormData({...formData, publish_date: e.target.value})} className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded text-[11px] font-bold text-zinc-700 outline-none focus:border-blue-500 transition-colors"/>
+                    </div>
                 </div>
 
                 {/* Multi Category */}
                 <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm">
                     <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block mb-4">PILIH KATEGORI (BISA MULTI)</span>
                     <div className="flex flex-wrap gap-2">
-                        {CATEGORIES.map(cat => {
-                            const isActive = (formData.categories || []).includes(cat);
+                        {dynamicCategories.map(cat => {
+                            const isActive = (formData.categories || []).includes(cat as any);
                             return (
                                 <button key={cat} onClick={() => {
                                     const current = formData.categories || [];
-                                    setFormData({ ...formData, categories: current.includes(cat) ? current.filter(c => c !== cat) : [...current, cat] });
+                                    setFormData({ ...formData, categories: current.includes(cat as any) ? current.filter(c => c !== cat) : [...current, cat as any] });
                                 }} className={`px-4 py-2 border rounded-sm text-[9px] font-black uppercase tracking-widest transition-all ${isActive ? 'bg-red-600 border-red-600 text-white shadow-md' : 'bg-white border-zinc-200 text-zinc-400 hover:border-zinc-900 hover:text-zinc-900'}`}>{cat}</button>
                             );
                         })}
@@ -242,8 +264,8 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
                 {/* Toolbar & Writing Area */}
                 <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-md flex flex-col">
                     <div className="bg-zinc-50 border-b border-zinc-200 p-2 flex flex-wrap gap-1 sticky top-0 z-10">
-                        <button onClick={() => insertText('B')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600 font-bold">B</button>
-                        <button onClick={() => insertText('I')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600 italic font-serif">I</button>
+                        <button onClick={() => insertText('B')} title="Bold (Ctrl+B)" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600 font-bold">B</button>
+                        <button onClick={() => insertText('I')} title="Italic (Ctrl+I)" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600 italic font-serif">I</button>
                         <div className="h-5 w-px bg-zinc-200 self-center mx-1"></div>
                         <button onClick={() => insertText('LEFT')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16"></path></svg></button>
                         <button onClick={() => insertText('CENTER')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M4 18h16"></path></svg></button>
@@ -262,7 +284,7 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
                             <option value="24px">24PX</option>
                             <option value="32px">32PX</option>
                         </select>
-                        <button onClick={handleUndo} className="ml-auto w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-400 hover:text-zinc-900"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5"></path></svg></button>
+                        <button onClick={handleUndo} className="ml-auto w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-400 hover:text-zinc-900"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5"></path></svg></button>
                     </div>
                     <textarea ref={textareaRef} rows={20} placeholder="Tulis narasi berita Anda disini..." value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} onKeyUp={(e) => { if (e.key === ' ' || e.key === 'Enter') pushHistory(formData.content || ''); }} className="w-full p-10 outline-none text-zinc-800 text-sm leading-relaxed scrollbar-hide bg-white min-h-[500px]"/>
                 </div>
@@ -294,8 +316,9 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
       <style>{`
         .article-preview-body strong { font-weight: 800; color: #000; }
         .article-preview-body em { font-style: italic; }
-        .article-preview-body div[style] { margin: 1em 0; }
+        .article-preview-body div[style] { margin: 0.25em 0; }
         .article-preview-body span[style] { display: inline-block; }
+        .article-preview-body blockquote { margin: 0.25rem 0; padding-top: 0.125rem; padding-bottom: 0.125rem; }
       `}</style>
     </div>
   );

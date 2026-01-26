@@ -31,14 +31,14 @@ export const NEWS_UPDATES = [
 ];
 
 export const TOP_BRANDS = [
-  { name: "SAMSUNG", share: "38.2%", trend: "up" },
-  { name: "OPPO", share: "18.4%", trend: "up" },
-  { name: "IPHONE", share: "14.1%", trend: "up" },
-  { name: "XIAOMI", share: "11.5%", trend: "up" },
-  { name: "VIVO", share: "9.8%", trend: "up" },
-  { name: "REALME", share: "4.2%", trend: "up" },
-  { name: "INFINIX", share: "2.1%", trend: "up" },
-  { name: "LAINNYA", share: "1.7%", trend: "up" },
+  { name: "SAMSUNG", share: "29.8%", trend: "up" },
+  { name: "OPPO", share: "17.4%", trend: "up" },
+  { name: "IPHONE", share: "14.2%", trend: "up" },
+  { name: "XIAOMI", share: "13.5%", trend: "up" },
+  { name: "VIVO", share: "11.2%", trend: "up" },
+  { name: "REALME", share: "7.9%", trend: "up" },
+  { name: "INFINIX", share: "3.2%", trend: "up" },
+  { name: "LAINNYA", share: "2.8%", trend: "up" },
 ];
 
 export const DUMMY_SMARTPHONES: Smartphone[] = [

@@ -32,7 +32,9 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, session }) => {
             <aside className="w-[240px] flex-shrink-0 space-y-8">
                 <div>
                     <div className="flex items-center gap-3 mb-6">
-                        <svg className="w-5 h-5 text-[#ef4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z"></path></svg>
+                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                        </svg>
                         <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">TOP BRAND AWARD</h3>
                     </div>
                     <div className="space-y-1 mb-2">
@@ -50,7 +52,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, session }) => {
                         ))}
                     </div>
                     <div className="mb-8 px-1">
-                        <a href="https://www.topbrand-award.com/" target="_blank" rel="noopener noreferrer" className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest hover:text-blue-600 transition-colors italic">
+                        <a href="https://www.topbrand-award.com/top-brand-index" target="_blank" rel="noopener noreferrer" className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest hover:text-blue-600 transition-colors italic">
                             Source: topbrand-award.com
                         </a>
                     </div>
@@ -74,6 +76,11 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, session }) => {
                     <div className="space-y-4">
                         {articles.slice(0, 3).map(art => (
                             <div key={art.id} onClick={() => setViewArticle(art)} className="group cursor-pointer">
+                                <div className="flex flex-wrap gap-1 mb-1">
+                                    {(art.categories || []).map(cat => (
+                                        <span key={cat} className="text-[7px] font-black text-red-600 uppercase tracking-tighter">{cat}</span>
+                                    ))}
+                                </div>
                                 <p className="text-[10px] font-black text-zinc-800 leading-tight uppercase tracking-tight group-hover:text-blue-600 truncate">{art.title}</p>
                                 <span className="text-[8px] font-bold text-zinc-300 uppercase mt-1 block">{art.publish_date}</span>
                             </div>
@@ -134,7 +141,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, session }) => {
                                         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                                         .replace(/_(.*?)_/g, '<em>$1</em>')
                                         .replace(/^# (.*$)/gm, '<h1 style="font-size: 2em; font-weight: 900; margin: 0.5em 0;">$1</h1>')
-                                        .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$1</h2>')
+                                        .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$2</h2>')
                                         .replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500 my-4">$1</blockquote>')
                                         .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
                                         .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 list-decimal">$1</li>')
@@ -165,8 +172,13 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, session }) => {
                                         <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                                         {idx === 0 && <div className="absolute top-4 left-4 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 uppercase tracking-widest shadow-md">Editor's Pick</div>}
+                                        <div className="absolute top-4 right-4 flex flex-wrap gap-1 justify-end">
+                                            {(art.categories || []).map(cat => (
+                                                <span key={cat} className="bg-white/20 backdrop-blur-md text-white text-[8px] font-black px-2 py-0.5 uppercase tracking-widest border border-white/30">{cat}</span>
+                                            ))}
+                                        </div>
                                         <div className="absolute bottom-6 left-6 right-6">
-                                            <div className="text-zinc-400 text-[9px] font-bold uppercase mb-1">{art.publish_date} // {art.categories?.[0]}</div>
+                                            <div className="text-zinc-400 text-[9px] font-bold uppercase mb-1">{art.publish_date}</div>
                                             <h2 className="text-2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors">{art.title}</h2>
                                         </div>
                                     </div>
@@ -182,11 +194,20 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, session }) => {
                             <div className="grid grid-cols-2 gap-8">
                                 {latestArticles.length > 0 ? latestArticles.map(art => (
                                     <div key={art.id} className="flex gap-4 group cursor-pointer" onClick={() => setViewArticle(art)}>
-                                        <div className="w-32 h-20 flex-shrink-0 overflow-hidden bg-zinc-100 rounded-sm">
+                                        <div className="w-32 h-20 flex-shrink-0 overflow-hidden bg-zinc-100 rounded-sm relative">
                                             <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="" />
+                                            <div className="absolute bottom-1 right-1 flex gap-0.5">
+                                                {(art.categories || []).slice(0, 1).map(cat => (
+                                                    <span key={cat} className="bg-red-600 text-white text-[6px] font-black px-1 py-0.5 uppercase">{cat}</span>
+                                                ))}
+                                            </div>
                                         </div>
                                         <div>
-                                            <div className="text-[8px] font-black text-red-600 uppercase mb-1">{art.categories?.[0]}</div>
+                                            <div className="flex gap-1 mb-1">
+                                                {(art.categories || []).map(cat => (
+                                                    <span key={cat} className="text-[7px] font-black text-red-600 uppercase tracking-widest">{cat}</span>
+                                                ))}
+                                            </div>
                                             <h4 className="text-[11px] font-black text-zinc-900 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">{art.title}</h4>
                                             <div className="text-[8px] font-bold text-zinc-400 uppercase mt-2">{art.publish_date}</div>
                                         </div>

@@ -5,6 +5,9 @@ import type { Session } from '@supabase/supabase-js';
 import AdminGadgetMod from './AdminGadgetMod';
 import AdminArticleMod from './AdminArticleMod';
 import AdminArticleEditor from './AdminArticleEditor';
+import AdminAuthorMod from './AdminAuthorMod';
+import AdminMemberMod from './AdminMemberMod';
+import AdminExtendedMod from './AdminExtendedMod';
 import type { Article } from '../types';
 
 interface AdminDashboardProps {
@@ -22,9 +25,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
     { id: 'dashboard', label: 'DASHBOARD', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
     { id: 'gadget-mod', label: 'GADGET MOD', icon: 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z' },
     { id: 'artikel', label: 'ARTIKEL', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z' },
-    { id: 'kategori', label: 'KATEGORI', icon: 'M7 7h.01M7 3h5a2 2 0 012 2v5a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z' },
     { id: 'penulis', label: 'PENULIS', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
-    { id: 'member', label: 'MEMBER AKUN', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', badge: '2' },
+    { id: 'member', label: 'MEMBER AKUN', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
     { id: 'iklan', label: 'IKLAN', icon: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z' },
     { id: 'extended', label: '1AIX EXTENDED', icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z' },
   ];
@@ -81,11 +83,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
                 </svg>
                 <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
               </div>
-              {item.badge && (
-                <span className="bg-zinc-700 text-white text-[8px] font-black w-5 h-5 flex items-center justify-center rounded-full">
-                  {item.badge}
-                </span>
-              )}
             </button>
           ))}
         </nav>
@@ -160,7 +157,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
           <AdminArticleMod onCreateArticle={handleCreateArticle} onEditArticle={handleEditArticle} />
         )}
 
-        {activeTab !== 'dashboard' && activeTab !== 'gadget-mod' && activeTab !== 'artikel' && (
+        {activeTab === 'penulis' && (
+          <AdminAuthorMod />
+        )}
+
+        {activeTab === 'member' && (
+          <AdminMemberMod />
+        )}
+
+        {activeTab === 'extended' && (
+          <AdminExtendedMod />
+        )}
+
+        {activeTab !== 'dashboard' && activeTab !== 'gadget-mod' && activeTab !== 'artikel' && activeTab !== 'penulis' && activeTab !== 'member' && activeTab !== 'extended' && (
           <div className="flex flex-col items-center justify-center h-full opacity-30 italic text-zinc-500 uppercase tracking-[0.5em] font-black">
             MODUL {activeTab} SEGERA HADIR
           </div>

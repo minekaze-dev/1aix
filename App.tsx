@@ -112,6 +112,7 @@ export default function App() {
     <div className="min-h-screen bg-[#f0f2f5] text-zinc-900 font-sans flex flex-col items-center selection:bg-blue-600 selection:text-white">
       <Header 
         activeTab={activeTab} 
+        selectedBrand={selectedBrand}
         onSelectBrand={(brand) => { setSelectedBrand(brand); window.location.hash = '#/katalog'; }}
         onGoHome={handleGoHome}
         onGoToCatalog={handleGoToCatalog}

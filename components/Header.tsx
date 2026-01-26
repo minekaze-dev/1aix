@@ -5,6 +5,7 @@ import type { Session } from '@supabase/supabase-js';
 
 interface HeaderProps {
     activeTab: string;
+    selectedBrand?: Brand | null;
     onSelectBrand?: (brand: Brand | null) => void;
     onGoHome?: () => void;
     onGoToCatalog?: () => void;
@@ -17,6 +18,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ 
     activeTab, 
+    selectedBrand,
     onSelectBrand, 
     onGoHome, 
     onGoToCatalog, 
@@ -54,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({
                     <div className="relative group">
                         <input 
                             type="text"
-                            placeholder="Cari Gadget & Berita..."
+                            placeholder="Cari Gadget dan Artikel..."
                             value={searchQuery}
                             onChange={(e) => onSearchChange?.(e.target.value)}
                             onFocus={() => {
@@ -94,8 +96,8 @@ const Header: React.FC<HeaderProps> = ({
                 </nav>
             </div>
 
-            {/* Brand Bar */}
-            <div className="w-full flex items-stretch h-12 border-b border-zinc-200">
+            {/* Brand Bar - 2 Rows, No Lines, Font 9px */}
+            <div className="w-full flex items-stretch h-14 border-b border-zinc-200">
                 {/* Left Section (Gray) */}
                 <div className="bg-[#a3a3a3] px-4 flex items-center gap-2 text-white font-black uppercase text-[10px] tracking-widest flex-shrink-0">
                     <svg className="w-3.5 h-3.5 text-[#ef4444]" viewBox="0 0 24 24" fill="currentColor">
@@ -107,17 +109,20 @@ const Header: React.FC<HeaderProps> = ({
                     OFFICIAL BRAND
                 </div>
                 
-                {/* Middle Section */}
-                <div className="flex-1 bg-[#f1f5f9] px-2 py-0.5 grid grid-cols-8 items-center gap-x-1">
-                    {brands.map(brand => (
-                        <button 
-                            key={brand} 
-                            onClick={() => onSelectBrand && onSelectBrand(brand)}
-                            className="text-[10px] font-black text-zinc-700 hover:text-blue-600 uppercase tracking-tighter transition-colors text-center truncate px-1"
-                        >
-                            {brand}
-                        </button>
-                    ))}
+                {/* Middle Section - No internal lines, Font 9px */}
+                <div className="flex-1 bg-[#f1f5f9] grid grid-cols-8 grid-rows-2 items-center px-1">
+                    {brands.map(brand => {
+                        const isActive = selectedBrand === brand;
+                        return (
+                            <button 
+                                key={brand} 
+                                onClick={() => onSelectBrand && onSelectBrand(brand)}
+                                className={`text-[9px] font-black uppercase tracking-tighter transition-colors text-center px-0.5 truncate h-full flex items-center justify-center ${isActive ? 'text-red-600' : 'text-zinc-500 hover:text-zinc-800'}`}
+                            >
+                                {brand}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Right Section (Blue) */}
