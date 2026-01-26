@@ -7,11 +7,9 @@ type ViewType = 'login' | 'register' | 'forgot_password' | 'message';
 
 interface AuthModalProps {
     onClose: () => void;
-    onGoogleLogin?: () => void; // Keep for backward compatibility but unused
-    onMockLogin?: () => void; 
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ onClose, onMockLogin }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
     const [view, setView] = useState<ViewType>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -53,36 +51,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onMockLogin }) => {
             }
         } catch (err: any) {
             setError(err.message || 'Terjadi kesalahan. Silakan coba lagi.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleDemoLogin = async () => {
-        setLoading(true);
-        setError('');
-        const demoEmail = 'admin@1aix.com';
-        const demoPassword = 'password123'; 
-        
-        try {
-            const { error } = await supabase.auth.signInWithPassword({ 
-                email: demoEmail, 
-                password: demoPassword 
-            });
-            if (error) {
-                if (onMockLogin) {
-                    onMockLogin();
-                    return;
-                }
-                throw error;
-            }
-            onClose();
-        } catch (err: any) {
-            if (err.message === 'Failed to fetch' && onMockLogin) {
-                onMockLogin();
-            } else {
-                setError('Login Gagal: Akun demo belum terdaftar atau backend tidak terjangkau.');
-            }
         } finally {
             setLoading(false);
         }
@@ -158,31 +126,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onMockLogin }) => {
                                     )}
                                 </div>
                             </form>
-
-                             {!isForgotPassword && (
-                                <>
-                                    {/* DEMO ACCESS SECTION */}
-                                    <div className="mt-8 bg-[#f8fafc] border border-zinc-100 p-6 rounded-xl">
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <div className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                            </div>
-                                            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">DEMO ACCESS</span>
-                                        </div>
-                                        <button 
-                                            onClick={handleDemoLogin}
-                                            disabled={loading}
-                                            className="w-full flex items-center justify-between group bg-white p-3 rounded-lg border border-zinc-100 hover:border-blue-500 transition-all shadow-sm"
-                                        >
-                                            <div className="flex flex-col items-start">
-                                                <span className="text-[10px] font-black text-zinc-900 uppercase">ADMIN DUMMY 1</span>
-                                                <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-tighter">Instant Dashboard Access</span>
-                                            </div>
-                                            <svg className="w-4 h-4 text-zinc-300 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"></path></svg>
-                                        </button>
-                                    </div>
-                                </>
-                            )}
 
                              <div className="mt-10 text-[9px] font-black text-center text-zinc-400 uppercase tracking-widest space-y-2">
                                 {isLogin && (

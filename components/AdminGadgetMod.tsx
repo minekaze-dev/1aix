@@ -49,8 +49,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
       setSmartphones(data || []);
     } catch (err) {
       console.error(err);
-      const local = JSON.parse(localStorage.getItem('1AIX_LOCAL_PHONES') || '[]');
-      setSmartphones(local);
+      setSmartphones([]);
     } finally {
       setLoading(false);
     }
@@ -111,12 +110,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
         alert('Data berhasil diperbarui di Database!');
     } catch (err) {
         console.error(err);
-        alert("Gagal menyimpan ke database. Menyimpan lokal...");
-        const local = JSON.parse(localStorage.getItem('1AIX_LOCAL_PHONES') || '[]');
-        const updated = editingId ? local.map((p: any) => p.id === editingId ? formData : p) : [{ ...formData, id: `local-${Date.now()}` }, ...local];
-        localStorage.setItem('1AIX_LOCAL_PHONES', JSON.stringify(updated));
-        setShowForm(false);
-        fetchSmartphones();
+        alert("Gagal menyimpan ke database.");
     } finally { setIsSubmitting(false); }
   };
 

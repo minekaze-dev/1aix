@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { BRANDS, PRICE_RANGES, NEWS_UPDATES, DUMMY_SMARTPHONES } from './constants';
+import { NEWS_UPDATES } from './constants';
 import type { Smartphone, Brand } from './types';
 import Header from './components/Header';
 import HomeTab from './components/HomeTab';
@@ -18,7 +18,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [route, setRoute] = useState(() => window.location.hash.replace(/^#\/?/, '') || 'home');
   const [session, setSession] = useState<Session | null>(null);
-  const [isMockAdmin, setIsMockAdmin] = useState(false); 
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Filters
@@ -40,15 +39,11 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const effectiveSession = useMemo(() => {
-    if (session) return session;
-    if (isMockAdmin) return { user: { email: 'admin@1aix.com', user_metadata: { full_name: 'Super Admin' } } } as unknown as Session;
-    return null;
-  }, [session, isMockAdmin]);
-
   const isAdmin = useMemo(() => {
-    return effectiveSession?.user?.email === 'admin@1aix.com' || isMockAdmin;
-  }, [effectiveSession, isMockAdmin]);
+    // In production, you would check a user_role table or metadata.
+    // For now, we use the primary admin email as the single source of truth.
+    return session?.user?.email === 'admin@1aix.com';
+  }, [session]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -62,26 +57,16 @@ export default function App() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch from Supabase
       const { data, error } = await supabase
         .from('smartphones')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      const dbData = data || [];
-      const combined = [...dbData, ...DUMMY_SMARTPHONES];
-      const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
-      setSmartphones(unique);
+      setSmartphones(data || []);
     } catch (err) {
       console.error("Fetch Error:", err);
-      // Fallback to local if error
-      const localSaved = localStorage.getItem('1AIX_LOCAL_PHONES');
-      const localData = localSaved ? JSON.parse(localSaved) : [];
-      const combined = [...localData, ...DUMMY_SMARTPHONES];
-      const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
-      setSmartphones(unique);
+      setSmartphones([]);
     } finally {
       setLoading(false);
     }
@@ -122,7 +107,6 @@ export default function App() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setIsMockAdmin(false);
     window.location.hash = '#/home';
   };
 
@@ -141,7 +125,7 @@ export default function App() {
     if (isAdmin) {
         return (
             <AdminDashboard 
-                session={effectiveSession} 
+                session={session} 
                 onLogout={handleLogout} 
                 onDataChange={fetchData}
             />
@@ -163,7 +147,7 @@ export default function App() {
         onGoToCompare={handleGoToCompare}
         onOpenLogin={handleOpenAuth}
         onLogout={handleLogout}
-        session={effectiveSession}
+        session={session}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
@@ -182,7 +166,7 @@ export default function App() {
       </div>
 
       <main className="max-w-[1000px] w-full flex-grow py-8 bg-white shadow-sm border-x border-zinc-200 px-6">
-        {activeTab === 'Home' && <HomeTab onOpenLogin={handleOpenAuth} session={effectiveSession} />}
+        {activeTab === 'Home' && <HomeTab onOpenLogin={handleOpenAuth} session={session} />}
         {activeTab === 'Katalog' && (
           <CatalogTab 
             items={smartphones} 
@@ -195,7 +179,7 @@ export default function App() {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             onOpenLogin={handleOpenAuth}
-            session={effectiveSession}
+            session={session}
           />
         )}
         {activeTab === 'Segera Rilis' && <ComingSoonTab items={smartphones} />}
@@ -207,7 +191,6 @@ export default function App() {
       {showAuthModal && (
         <AuthModal 
           onClose={() => setShowAuthModal(false)} 
-          onMockLogin={() => { setIsMockAdmin(true); setShowAuthModal(false); window.location.hash = '#/admin'; }}
         />
       )}
 

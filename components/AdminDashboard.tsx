@@ -23,19 +23,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
   const [stats, setStats] = useState({ articles: 0, phones: 0, members: 0, comments: 0, tkdn: 0 });
 
   const fetchStats = async () => {
-    const [arts, phones, members, comments] = await Promise.all([
+    const [arts, phones, members, comments, tkdn] = await Promise.all([
       supabase.from('articles').select('*', { count: 'exact', head: true }),
       supabase.from('smartphones').select('*', { count: 'exact', head: true }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
       supabase.from('comments').select('*', { count: 'exact', head: true }),
+      supabase.from('tkdn_monitor').select('*', { count: 'exact', head: true }),
     ]);
 
     setStats({
       articles: arts.count || 0,
-      phones: (phones.count || 0) + 4,
+      phones: phones.count || 0,
       members: members.count || 0,
       comments: comments.count || 0,
-      tkdn: JSON.parse(localStorage.getItem('1AIX_PUBLISHED_TKDN') || '[]').length
+      tkdn: tkdn.count || 0
     });
   };
 

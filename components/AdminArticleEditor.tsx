@@ -121,12 +121,12 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
         };
 
         let result;
-        if (article?.id && !article.id.startsWith('art-')) { // Existing DB item
+        if (article?.id) {
             result = await supabase
                 .from('articles')
                 .update(payload)
                 .eq('id', article.id);
-        } else { // New DB item
+        } else {
             const { id, ...newPayload } = payload;
             result = await supabase
                 .from('articles')
@@ -139,12 +139,7 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
         onClose();
     } catch (err: any) {
         console.error(err);
-        alert("Gagal menyimpan ke database. Menyimpan secara lokal sebagai cadangan...");
-        // Fallback local save
-        const localArticles = JSON.parse(localStorage.getItem('1AIX_LOCAL_ARTICLES') || '[]');
-        const updated = article ? localArticles.map((a: any) => a.id === article.id ? { ...formData, status } : a) : [{ ...formData, id: `art-${Date.now()}`, status }, ...localArticles];
-        localStorage.setItem('1AIX_LOCAL_ARTICLES', JSON.stringify(updated));
-        onClose();
+        alert("Gagal menyimpan ke database.");
     } finally {
         setIsSaving(false);
     }
@@ -231,7 +226,7 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
                         <div className="h-5 w-px bg-zinc-200 self-center mx-1"></div>
                         <button onClick={() => insertText('LEFT')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16"></path></svg></button>
                         <button onClick={() => insertText('CENTER')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M4 18h16"></path></svg></button>
-                        <button onClick={() => insertText('RIGHT')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 6h16M10 12h10M4 18h16"></path></svg></button>
+                        <button onClick={() => insertText('RIGHT')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M10 12h10M4 18h16"></path></svg></button>
                         <div className="h-5 w-px bg-zinc-200 self-center mx-1"></div>
                         <button onClick={() => insertText('QUOTE')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600 font-serif font-black text-xl">"</button>
                         <button onClick={() => insertText('UL')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M5 6v.01M5 12v.01M5 18v.01"></path></svg></button>
