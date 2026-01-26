@@ -1,18 +1,25 @@
+
 import React from 'react';
 
-interface FooterProps {
-    onOpenTerms: () => void;
-    onOpenPrivacy: () => void;
-}
-
-const Footer: React.FC<FooterProps> = ({ onOpenTerms, onOpenPrivacy }) => {
+const Footer: React.FC = () => {
     return (
-        <footer className="bg-gray-800 border-t border-gray-700 mt-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 text-sm text-gray-400 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="text-center sm:text-left">© {new Date().getFullYear()} JaboWay. All rights reserved.</div>
-                <div className="flex gap-4 sm:gap-6">
-                   <button onClick={onOpenTerms} className="hover:text-white hover:underline transition-colors">Terms & Conditions</button>
-                   <button onClick={onOpenPrivacy} className="hover:text-white hover:underline transition-colors">Privacy Policy</button>
+        <footer className="w-full max-w-[1000px] bg-[#0b0b0b] text-white py-12 border-t border-zinc-900 shadow-2xl">
+            <div className="flex flex-col items-center">
+                <div className="mb-6 cursor-pointer" onClick={() => window.location.hash = '#/home'}>
+                    <img 
+                        src="https://i.imgur.com/8LtVd3P.jpg" 
+                        alt="1AIX Logo" 
+                        className="h-10 w-auto object-contain brightness-110"
+                    />
+                </div>
+                <div className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.6em]">GSMARENA ID // 1AIX PORTAL</div>
+                <div className="mt-6 flex gap-10">
+                    <a href="#/katalog" className="text-[10px] font-black text-zinc-500 hover:text-white transition-colors uppercase tracking-widest">Katalog</a>
+                    <a href="#/bandingkan" className="text-[10px] font-black text-zinc-500 hover:text-white transition-colors uppercase tracking-widest">Bandingkan</a>
+                    <a href="#/coming-soon" className="text-[10px] font-black text-zinc-500 hover:text-white transition-colors uppercase tracking-widest">TKDN Monitor</a>
+                </div>
+                <div className="mt-10 text-[9px] font-bold text-zinc-800 uppercase tracking-widest border-t border-zinc-900 pt-6 w-full text-center">
+                    &copy; {new Date().getFullYear()} 1AIX DATA SYSTEMS. ALL RIGHTS RESERVED.
                 </div>
             </div>
         </footer>

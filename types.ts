@@ -1,66 +1,69 @@
 
-export type City = "Jakarta" | "Bogor" | "Depok" | "Tangerang" | "Bekasi";
-export type Category = "Transport" | "Wisata" | "Belanja" | "Kuliner" | "Umum";
-export type ThreadCategory = "Umum" | "Kuliner" | "Transportasi" | "Lowongan Kerja" | "Hiburan";
-export type ThreadStatus = 'trusted' | 'questionable' | 'danger';
-export type GuideStatus = 'pending' | 'approved';
+// Fix: Added missing brand names "Tecno", "Redmagic", "Honor", "Motorola", "Huawei", "Iqoo" to the Brand union type.
+export type Brand = "Samsung" | "Xiaomi" | "Apple" | "Oppo" | "Vivo" | "Realme" | "Infinix" | "Asus" | "Poco" | "Itel" | "Tecno" | "Redmagic" | "Honor" | "Motorola" | "Huawei" | "Iqoo";
+export type ReleaseStatus = "Tersedia" | "Pre-Order" | "Segera Rilis";
 
-export interface Guide {
+export interface Smartphone {
   id: string;
-  title: string;
-  author?: string;
-  cities: City[];
-  category: Category;
-  difficulty: "Pemula" | "Menengah" | "Ahli";
-  duration: string;
-  cost: string;
-  steps: string[];
-  tips: string[];
-  user?: boolean;
-  views: number;
-  status: GuideStatus;
-  profile_id?: string;
-  profile?: Profile;
-}
-
-export interface Post {
-  id: string;
-  author: { id: string | null; display_name: string; is_blocked?: boolean };
-  text: string;
-  reports: string[];
-  profile_id?: string;
-}
-
-export interface Thread {
-  id: string;
-  title: string;
-  category: ThreadCategory;
-  posts: Post[];
-  views: number;
-  greenVotes: string[]; // Array of voter IDs for 'Trusted'
-  yellowVotes: string[]; // Array of voter IDs for 'Questionable'
-  redVotes: string[]; // Array of voter IDs for 'Danger'
-  reports: string[]; // Array of voter IDs who reported
-}
-
-export interface ContributionForm {
-    title: string;
-    author: string;
-    cities: City[];
-    category: Category;
-    stepsText: string;
-    tipsText: string;
-    cost: string;
-}
-
-export interface ThreadForm {
-    title: string;
-    text: string;
-    category: ThreadCategory;
+  brand: Brand;
+  model_name: string;
+  release_status: ReleaseStatus;
+  launch_date_indo: string;
+  tkdn_score: number;
+  chipset: string;
+  ram_storage: string;
+  price_srp: number;
+  image_url: string;
+  official_store_link: string;
+  postel_cert?: string;
+  model_code?: string;
+  prediction_quarter?: "Q1" | "Q2" | "Q3" | "Q4";
+  software_update_version?: string;
 }
 
 export interface Profile {
   id: string;
   display_name: string;
   is_blocked?: boolean;
+}
+
+// Added missing types to fix compilation errors in legacy components
+export type City = "Jakarta" | "Bogor" | "Depok" | "Tangerang" | "Bekasi";
+export type Category = "Transport" | "Wisata" | "Belanja" | "Kuliner" | "Umum";
+
+export interface Guide {
+  id: string;
+  title: string;
+  cities: City[];
+  category: Category;
+  author: string;
+  steps: string[];
+  tips?: string[];
+  duration: string;
+  cost: string;
+  views: number;
+  user?: boolean;
+  status?: 'pending' | 'approved';
+}
+
+export type ThreadStatus = 'trusted' | 'questionable' | 'danger';
+export type ThreadCategory = "Umum" | "Kuliner" | "Transportasi" | "Lowongan Kerja" | "Hiburan";
+
+export interface Post {
+  id: string;
+  author: Profile;
+  text: string;
+  reports?: string[];
+}
+
+export interface Thread {
+  id: string;
+  title: string;
+  category: ThreadCategory;
+  greenVotes?: string[];
+  yellowVotes?: string[];
+  redVotes?: string[];
+  reports?: string[];
+  views?: number;
+  posts: Post[];
 }

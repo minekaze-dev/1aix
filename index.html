@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="https://raw.githubusercontent.com/minekaze-dev/jway/refs/heads/main/favicon.ico" />
+    <link rel="icon" href="https://via.placeholder.com/32?text=G" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JaboWay</title>
+    <title>GSMArena Indonesia | Katalog HP Resmi</title>
     <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
 {
@@ -17,24 +18,28 @@
 }
 </script>
 <style>
-      /* Modern, minimalist scrollbar for dark theme */
+      body {
+        background-color: #f0f2f5;
+        color: #1a1a1a;
+        margin: 0;
+        padding: 0;
+      }
       ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: #1a202c; /* dark gray */
+        background: #f0f2f5;
       }
       ::-webkit-scrollbar-thumb {
-        background: #4a5568; /* lighter gray */
-        border-radius: 10px;
+        background: #3b82f6;
       }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #718096; /* even lighter gray on hover */
+      ::selection {
+        background: #3b82f6;
+        color: #ffffff;
       }
     </style>
 </head>
-  <body class="bg-gray-900">
+  <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

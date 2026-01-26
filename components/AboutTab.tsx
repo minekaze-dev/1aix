@@ -8,6 +8,10 @@ const AboutTab: React.FC = () => {
                 JABOWAY adalah sebuah inisiatif berbasis komunitas yang bertujuan untuk membantu para perantau baru (dan juga penduduk lama) dalam menavigasi kompleksitas kehidupan di area metropolitan Jakarta, Bogor, Depok, Tangerang, dan Bekasi.
             </p>
             
+            <p className="mt-4 text-center text-gray-500 italic text-sm">
+                Web ini tercipta atas pemikiran 2 pemuda Rifki & Reddy pada beberapa tahun lalu.
+            </p>
+            
             <div className="mt-8 border-t border-gray-700 pt-8">
                 <h3 className="text-2xl font-bold text-gray-100 text-center">Dukung Kami</h3>
                 <p className="mt-3 text-center text-gray-400">
