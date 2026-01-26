@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { UserCircleIcon } from './icons';
 import type { Brand } from '../types';
 
 interface HeaderProps {
@@ -21,9 +20,9 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onSelectBrand, onGoHome, onG
         <header className="w-full max-w-[1000px] flex flex-col shadow-xl">
             {/* Top Header - Black Section */}
             <div className="bg-[#0b0b0b] text-white h-20 flex items-center justify-between px-6">
-                {/* Logo Image */}
+                {/* Logo Image / Home Button */}
                 <div 
-                  className="flex items-center cursor-pointer select-none" 
+                  className="flex items-center cursor-pointer select-none transition-opacity hover:opacity-80" 
                   onClick={() => {
                     if (onGoHome) onGoHome();
                     else window.location.hash = '#/home';
@@ -36,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onSelectBrand, onGoHome, onG
                     />
                 </div>
 
-                {/* Search Bar - Slightly reduced width */}
+                {/* Search Bar */}
                 <div className="flex-1 max-w-[280px] mx-8 relative">
                     <input 
                         type="text" 
@@ -46,8 +45,8 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onSelectBrand, onGoHome, onG
                     <svg className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
 
-                {/* Navigation Links */}
-                <nav className="flex items-center gap-6">
+                {/* Navigation Links - 3 Menus Only */}
+                <nav className="flex items-center gap-8">
                     <button 
                         onClick={() => onGoToCompare ? onGoToCompare() : (window.location.hash = '#/bandingkan')}
                         className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:text-blue-500 transition-colors ${activeTab === 'Bandingkan' ? 'text-blue-500' : 'text-zinc-400'}`}
@@ -67,15 +66,12 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onSelectBrand, onGoHome, onG
                         className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:text-blue-500 transition-colors ${activeTab === 'Segera Rilis' ? 'text-blue-500' : 'text-zinc-400'}`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        TKDN
+                        TKDN MONITOR
                     </button>
-                    <div className="w-8 h-8 rounded-full border border-red-600 flex items-center justify-center text-red-600 hover:bg-red-600 hover:text-white transition-all cursor-pointer ml-2">
-                        <UserCircleIcon className="w-4 h-4" />
-                    </div>
                 </nav>
             </div>
 
-            {/* Brand Bar - Precise Centered 2-row Grid with Compact Gaps */}
+            {/* Brand Bar - Centered 2-row Grid with Compact Gaps */}
             <div className="w-full flex items-stretch h-16 border-b border-zinc-200">
                 {/* Left Section (Gray) */}
                 <div className="bg-[#a3a3a3] px-4 flex items-center gap-2 text-white font-black uppercase text-[10px] tracking-widest flex-shrink-0">
@@ -88,7 +84,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onSelectBrand, onGoHome, onG
                     OFFICIAL BRAND
                 </div>
                 
-                {/* Middle Section (Brand Grid 2 rows x 8 cols) - Tightened for Compactness */}
+                {/* Middle Section (Brand Grid 2 rows x 8 cols) */}
                 <div className="flex-1 bg-[#f1f5f9] px-2 py-1 grid grid-cols-8 items-center gap-x-2">
                     {brands.map(brand => (
                         <button 
