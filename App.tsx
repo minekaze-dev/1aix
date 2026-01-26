@@ -40,8 +40,6 @@ export default function App() {
   }, []);
 
   const isAdmin = useMemo(() => {
-    // In production, you would check a user_role table or metadata.
-    // For now, we use the primary admin email as the single source of truth.
     return session?.user?.email === 'admin@1aix.com';
   }, [session]);
 
@@ -106,8 +104,13 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.hash = '#/home';
+    try {
+        await supabase.auth.signOut();
+        setSession(null); // Force clear session state for immediate UI update
+        window.location.hash = '#/home';
+    } catch (error) {
+        console.error("Logout Error:", error);
+    }
   };
 
   if (loading) {
