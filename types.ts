@@ -19,6 +19,27 @@ export interface Smartphone {
   model_code?: string;
   prediction_quarter?: "Q1" | "Q2" | "Q3" | "Q4";
   software_update_version?: string;
+  
+  // Detailed Specs from Image
+  dimensions_weight?: string;
+  material?: string;
+  colors?: string;
+  network?: string;
+  wifi?: string;
+  display_type?: string;
+  os?: string;
+  cpu?: string;
+  gpu?: string;
+  camera_main?: string;
+  camera_video_main?: string;
+  camera_selfie?: string;
+  camera_video_selfie?: string;
+  battery_capacity?: string;
+  charging?: string;
+  sensors?: string;
+  usb_type?: string;
+  audio?: string;
+  features_extra?: string;
 }
 
 export interface Profile {

@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { supabase } from './lib/supabase';
-import { BRANDS, PRICE_RANGES, NEWS_UPDATES } from './constants';
+import { BRANDS, PRICE_RANGES, NEWS_UPDATES, DUMMY_SMARTPHONES } from './constants';
 import type { Smartphone, Brand } from './types';
 import Header from './components/Header';
 import HomeTab from './components/HomeTab';
@@ -36,9 +36,18 @@ export default function App() {
       try {
         const { data, error } = await supabase.from('smartphones').select('*').order('launch_date_indo', { ascending: false });
         if (error) throw error;
-        setSmartphones(data || []);
+        
+        // Merge Supabase data with dummy data for preview
+        const fetchedData = data || [];
+        // Use a Map to deduplicate by id if necessary
+        const combined = [...DUMMY_SMARTPHONES, ...fetchedData];
+        const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+        
+        setSmartphones(unique);
       } catch (error) {
         console.error("Error fetching data:", error);
+        // Fallback to dummy data on error
+        setSmartphones(DUMMY_SMARTPHONES);
       } finally {
         setLoading(false);
       }
@@ -55,6 +64,20 @@ export default function App() {
       default: return 'Home';
     }
   }, [route]);
+
+  const handleGoToCatalog = () => {
+    setSelectedBrand(null); // Clear brand filter for "All Brands"
+    window.location.hash = '#/katalog';
+  };
+
+  const handleGoHome = () => {
+    setSelectedBrand(null);
+    window.location.hash = '#/home';
+  };
+
+  const handleGoToCompare = () => {
+    window.location.hash = '#/bandingkan';
+  };
 
   if (loading) {
     return (
@@ -80,10 +103,9 @@ export default function App() {
             setSelectedBrand(brand);
             window.location.hash = '#/katalog';
         }}
-        onGoHome={() => {
-          setSelectedBrand(null);
-          window.location.hash = '#/home';
-        }}
+        onGoHome={handleGoHome}
+        onGoToCatalog={handleGoToCatalog}
+        onGoToCompare={handleGoToCompare}
       />
       
       {/* Red News Ticker - Background updated to #d41525 */}
