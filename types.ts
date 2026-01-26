@@ -1,12 +1,14 @@
 
-// Fix: Added missing brand names
+// Fix: Added missing brand names and interactive types
 export type Brand = "Samsung" | "Xiaomi" | "Apple" | "Oppo" | "Vivo" | "Realme" | "Infinix" | "Asus" | "Poco" | "Itel" | "Tecno" | "Redmagic" | "Honor" | "Motorola" | "Huawei" | "Iqoo";
 export type ReleaseStatus = "Tersedia" | "Pre-Order" | "Segera Rilis";
+export type MarketCategory = "Entry-level" | "Mid-range" | "Flagship";
 
 export interface Smartphone {
   id: string;
   brand: Brand;
   model_name: string;
+  market_category?: MarketCategory;
   release_status: ReleaseStatus;
   release_month?: string;
   release_year?: string;
@@ -42,6 +44,18 @@ export interface Smartphone {
   audio?: string;
   features_extra?: string;
   created_at?: string;
+
+  // New Interactive Fields
+  likes?: number;
+  dislikes?: number;
+}
+
+export interface Comment {
+  id: string;
+  target_id: string; // id artikel atau smartphone
+  user_name: string;
+  text: string;
+  created_at: string;
 }
 
 export type ArticleCategory = "REVIEW" | "NEWS" | "LEAK" | "GAMING" | "UPDATE" | "UNBOXING" | "EVENT";
@@ -55,7 +69,7 @@ export interface Article {
   publish_date: string;
   summary: string;
   content: string;
-  categories: ArticleCategory[]; // Updated to array
+  categories: ArticleCategory[]; 
   status: 'DRAFT' | 'PUBLISHED';
   created_at: string;
 }
@@ -85,7 +99,6 @@ export interface Guide {
 }
 
 export type ThreadCategory = "Umum" | "Kuliner" | "Transportasi" | "Lowongan Kerja" | "Hiburan";
-
 export type ThreadStatus = 'trusted' | 'questionable' | 'danger';
 
 export interface Post {

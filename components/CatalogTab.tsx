@@ -41,10 +41,10 @@ const SpecSection = ({ icon, title, children }: { icon: React.ReactNode; title: 
     if (!hasContent) return null;
 
     return (
-        <div className="flex flex-col md:flex-row border border-zinc-200 mb-6 bg-white overflow-hidden rounded-sm shadow-sm">
-            <div className="w-full md:w-[160px] bg-white p-4 flex flex-col items-center justify-center md:border-r border-zinc-200 border-b md:border-b-0">
-                <div className="text-zinc-400 mb-3 scale-110">{icon}</div>
-                <h3 className="text-[10px] font-black text-red-600 uppercase tracking-widest text-center">
+        <div className="flex flex-col md:flex-row border border-zinc-200 mb-6 bg-white overflow-hidden rounded-sm shadow-sm group">
+            <div className="w-full md:w-[160px] bg-white p-4 flex flex-col items-center justify-center md:border-r border-zinc-200 border-b md:border-b-0 transition-colors group-hover:bg-zinc-50">
+                <div className="text-zinc-300 mb-3 transition-colors group-hover:text-blue-500">{icon}</div>
+                <h3 className="text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center leading-tight">
                     {title}
                 </h3>
             </div>
@@ -59,10 +59,73 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
     items, selectedBrand, minPrice, setMinPrice, maxPrice, setMaxPrice, searchQuery, onOpenLogin, session
 }) => {
     const [selectedProduct, setSelectedProduct] = useState<Smartphone | null>(null);
+    const [ratings, setRatings] = useState<Record<string, { likes: number, dislikes: number }>>({});
+    const [userVotes, setUserVotes] = useState<Record<string, 'like' | 'dislike'>>({});
 
     useEffect(() => {
         setSelectedProduct(null);
     }, [selectedBrand, searchQuery, minPrice, maxPrice]);
+
+    useEffect(() => {
+        const localRatings = localStorage.getItem('1AIX_RATINGS');
+        if (localRatings) setRatings(JSON.parse(localRatings));
+
+        const localUserVotes = localStorage.getItem('1AIX_USER_VOTES');
+        if (localUserVotes) setUserVotes(JSON.parse(localUserVotes));
+    }, []);
+
+    const handleRating = (id: string, type: 'like' | 'dislike') => {
+        const currentGlobal = ratings[id] || { likes: 0, dislikes: 0 };
+        const currentUserVote = userVotes[id];
+
+        if (currentUserVote === type) {
+            const newGlobal = {
+                ...ratings,
+                [id]: {
+                    likes: type === 'like' ? Math.max(0, currentGlobal.likes - 1) : currentGlobal.likes,
+                    dislikes: type === 'dislike' ? Math.max(0, currentGlobal.dislikes - 1) : currentGlobal.dislikes
+                }
+            };
+            const newUserVotes = { ...userVotes };
+            delete newUserVotes[id];
+            
+            setRatings(newGlobal);
+            setUserVotes(newUserVotes);
+            localStorage.setItem('1AIX_RATINGS', JSON.stringify(newGlobal));
+            localStorage.setItem('1AIX_USER_VOTES', JSON.stringify(newUserVotes));
+            return;
+        }
+
+        let newLikes = currentGlobal.likes;
+        let newDislikes = currentGlobal.dislikes;
+
+        if (currentUserVote) {
+            if (currentUserVote === 'like') {
+                newLikes = Math.max(0, newLikes - 1);
+                newDislikes += 1;
+            } else {
+                newDislikes = Math.max(0, newDislikes - 1);
+                newLikes += 1;
+            }
+        } else {
+            if (type === 'like') newLikes += 1;
+            else newDislikes += 1;
+        }
+
+        const updatedGlobal = {
+            ...ratings,
+            [id]: { likes: newLikes, dislikes: newDislikes }
+        };
+        const updatedUser = {
+            ...userVotes,
+            [id]: type
+        };
+
+        setRatings(updatedGlobal);
+        setUserVotes(updatedUser);
+        localStorage.setItem('1AIX_RATINGS', JSON.stringify(updatedGlobal));
+        localStorage.setItem('1AIX_USER_VOTES', JSON.stringify(updatedUser));
+    };
 
     const filtered = items.filter(i => {
         const matchesBrand = !selectedBrand || i.brand.toLowerCase() === selectedBrand.toLowerCase();
@@ -70,9 +133,10 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                               i.brand.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesMinPrice = minPrice === 0 || i.price_srp >= minPrice;
         const matchesMaxPrice = maxPrice === 0 || i.price_srp <= maxPrice;
-        
         return matchesBrand && matchesSearch && matchesMinPrice && matchesMaxPrice;
     });
+
+    const isAdmin = session?.user?.email === 'admin@1aix.com';
 
     return (
         <div className="flex gap-8">
@@ -82,38 +146,39 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                         <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
                         <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">TOP BRAND AWARD</h3>
                     </div>
-                    <div className="space-y-1 mb-2">
+                    <div className="space-y-1 mb-8">
                         {TOP_BRANDS.map((brand, idx) => (
                             <div key={brand.name} className="px-1 py-1.5 flex items-center justify-between border-b border-zinc-50 group cursor-pointer hover:bg-zinc-50 transition-colors">
                                 <div className="flex items-center gap-4">
                                     <span className="text-[10px] font-black text-zinc-300 w-4">#{idx + 1}</span>
                                     <span className="text-[11px] font-black text-zinc-700 tracking-wide uppercase group-hover:text-blue-600">{brand.name}</span>
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                    <svg className="w-2.5 h-2.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                                    <span className="text-[10px] font-black text-blue-500/60">{brand.share}</span>
-                                </div>
+                                <span className="text-[10px] font-black text-blue-500/60">{brand.share}</span>
                             </div>
                         ))}
                     </div>
-                    <div className="mb-8 px-1">
-                        <a href="https://www.topbrand-award.com/top-brand-index" target="_blank" rel="noopener noreferrer" className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest hover:text-blue-600 transition-colors italic">
-                            Source: topbrand-award.com
-                        </a>
-                    </div>
                     
-                    {/* Consistent Login Button in Sidebar */}
                     <button 
-                        onClick={() => session ? (window.location.hash = '#/admin') : onOpenLogin?.()}
-                        className="w-full flex items-center justify-between p-4 bg-zinc-900 text-white hover:bg-blue-600 transition-colors group rounded-sm shadow-lg mb-8"
+                        onClick={() => session ? (isAdmin ? window.location.hash = '#/admin' : null) : onOpenLogin?.()}
+                        className={`w-full flex items-center gap-4 p-4 transition-all group rounded-sm shadow-xl mb-8 ${session ? 'bg-blue-600 text-white' : 'bg-zinc-900 text-white hover:bg-blue-600'}`}
                     >
-                        <div className="flex items-center gap-3">
-                            <svg className="w-5 h-5 text-blue-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                            <span className="text-[11px] font-black uppercase tracking-[0.2em]">
-                                {session ? 'MENU ADMIN' : 'LOGIN / MASUK'}
-                            </span>
+                        <div className="w-10 h-10 rounded-sm bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/20">
+                            {session ? (
+                                <span className="text-sm font-black uppercase">{(session.user.user_metadata?.full_name || session.user.email || 'A').charAt(0)}</span>
+                            ) : (
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            )}
                         </div>
-                        <svg className="w-3 h-3 text-zinc-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"></path></svg>
+                        <div className="flex flex-col items-start overflow-hidden">
+                            <span className="text-[11px] font-black uppercase tracking-[0.15em] truncate w-full">
+                                {session ? (session.user.user_metadata?.full_name || session.user.email?.split('@')[0]) : 'LOGIN / MASUK'}
+                            </span>
+                            {session && (
+                                <span className="text-[8px] font-bold opacity-60 uppercase tracking-widest leading-none mt-1">
+                                    {isAdmin ? 'ADMIN REDAKSI' : 'COMMUNITY MEMBER'}
+                                </span>
+                            )}
+                        </div>
                     </button>
                 </div>
                 <div>
@@ -121,15 +186,11 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                     <div className="space-y-6">
                         <div>
                             <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">MINIMAL</label>
-                            <div className="bg-[#f1f5f9] border border-zinc-100 p-4 rounded-sm">
-                                <input type="number" value={minPrice || ''} onChange={(e) => setMinPrice(Number(e.target.value))} className="bg-transparent w-full text-zinc-800 text-sm font-black focus:outline-none placeholder-zinc-300" placeholder="0"/>
-                            </div>
+                            <input type="number" value={minPrice || ''} onChange={(e) => setMinPrice(Number(e.target.value))} className="w-full bg-[#f1f5f9] border border-zinc-100 p-4 rounded-sm text-sm font-black focus:outline-none" placeholder="0"/>
                         </div>
                         <div>
                             <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">MAKSIMAL</label>
-                            <div className="bg-[#f1f5f9] border border-zinc-100 p-4 rounded-sm">
-                                <input type="number" value={maxPrice || ''} onChange={(e) => setMaxPrice(Number(e.target.value))} className="bg-transparent w-full text-zinc-800 text-sm font-black focus:outline-none placeholder-zinc-300" placeholder="0"/>
-                            </div>
+                            <input type="number" value={maxPrice || ''} onChange={(e) => setMaxPrice(Number(e.target.value))} className="w-full bg-[#f1f5f9] border border-zinc-100 p-4 rounded-sm text-sm font-black focus:outline-none" placeholder="0"/>
                         </div>
                     </div>
                 </div>
@@ -155,21 +216,22 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                 <div className="flex-1 flex flex-col justify-end">
                                     <div className="mb-6">
                                         <div className="flex items-center gap-3 mb-2">
-                                            <div className="text-[10px] font-black text-red-600 uppercase tracking-[0.2em]">{selectedProduct.brand} Official</div>
-                                            <div className="bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter">{selectedProduct.release_status}</div>
+                                            <div className="text-[10px] font-black text-red-600 uppercase tracking-[0.2em] leading-none">{selectedProduct.brand} Official</div>
+                                            <div className="bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter leading-none">{selectedProduct.release_status}</div>
+                                            {selectedProduct.market_category && (
+                                                <div className="bg-zinc-900 text-white text-[8px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter leading-none border border-zinc-700">{selectedProduct.market_category}</div>
+                                            )}
                                         </div>
                                         <h1 className="text-4xl font-black text-zinc-900 uppercase tracking-tighter leading-none mb-3">{selectedProduct.model_name}</h1>
                                         <div className="flex items-center gap-4 mb-4">
-                                            <div className="text-2xl font-black text-blue-600">
+                                            <div className="text-2xl font-black text-blue-600 leading-none">
                                                 {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(selectedProduct.price_srp)}
                                             </div>
-                                            <div className="h-6 w-px bg-zinc-200"></div>
-                                            <div className="flex flex-col">
-                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1">Rilis Resmi</span>
-                                                <span className="text-[11px] font-black text-zinc-900 uppercase tracking-tighter">
-                                                    {selectedProduct.release_month || 'Januari'} {selectedProduct.release_year || '2024'}
-                                                </span>
-                                            </div>
+                                            {(selectedProduct.release_month || selectedProduct.release_year) && (
+                                                <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest border-l border-zinc-200 pl-4 py-1">
+                                                    RILIS: {selectedProduct.release_month} {selectedProduct.release_year}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <a href={selectedProduct.official_store_link} target="_blank" rel="noopener noreferrer" className="block w-full text-center py-4 bg-zinc-900 text-white font-black uppercase text-[10px] tracking-[0.3em] hover:bg-blue-600 transition-colors rounded-sm shadow-md">
@@ -178,16 +240,92 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                 </div>
                             </div>
                         </div>
-                        <div className="space-y-4">
-                            <SpecSection title="BODY & MATERIAL" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>}><SpecRow label="DIMENSI / BERAT" value={selectedProduct.dimensions_weight} /><SpecRow label="MATERIAL" value={selectedProduct.material} /><SpecRow label="WARNA" value={selectedProduct.colors} /></SpecSection>
-                            <SpecSection title="CONNECTIVITY" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>}><SpecRow label="JARINGAN" value={selectedProduct.network} /><SpecRow label="WIFI" value={selectedProduct.wifi} /></SpecSection>
-                            <SpecSection title="DISPLAY" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>}><SpecRow label="TIPE LAYAR" value={selectedProduct.display_type} /></SpecSection>
-                            <SpecSection title="PLATFORM" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>}><SpecRow label="OS" value={selectedProduct.os} /><SpecRow label="CHIPSET" value={selectedProduct.chipset} /><SpecRow label="CPU" value={selectedProduct.cpu} /><SpecRow label="GPU" value={selectedProduct.gpu} /></SpecSection>
-                            <SpecSection title="MEMORY" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>}><SpecRow label="RAM / ROM" value={selectedProduct.ram_storage} /></SpecSection>
-                            <SpecSection title="CAMERA" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>}><SpecRow label="UTAMA (BELAKANG)" value={selectedProduct.camera_main} /><SpecRow label="VIDEO BELAKANG" value={selectedProduct.camera_video_main} /><SpecRow label="SELFIE (DEPAN)" value={selectedProduct.camera_selfie} /><SpecRow label="VIDEO DEPAN" value={selectedProduct.camera_video_selfie} /></SpecSection>
-                            <SpecSection title="BATTERY" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>}><SpecRow label="KAPASITAS" value={selectedProduct.battery_capacity} /><SpecRow label="CHARGING" value={selectedProduct.charging} /></SpecSection>
-                            <SpecSection title="HARDWARE" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>}><SpecRow label="SENSOR" value={selectedProduct.sensors} /><SpecRow label="TIPE USB" value={selectedProduct.usb_type} /><SpecRow label="AUDIO" value={selectedProduct.audio} /><SpecRow label="FITUR LAIN" value={selectedProduct.features_extra} /></SpecSection>
-                            <SpecSection title="OFFICIAL DATA" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z"></path></svg>}><SpecRow label="TKDN SCORE" value={selectedProduct.tkdn_score + '%'} /><SpecRow label="MODEL CODE" value={selectedProduct.model_code} /><SpecRow label="CERTIFICATE" value={selectedProduct.postel_cert} /></SpecSection>
+
+                        <div className="flex items-center justify-center mb-10">
+                            <div className="h-px bg-zinc-100 flex-1"></div>
+                            <span className="mx-6 text-[10px] font-black text-zinc-300 uppercase tracking-[0.5em]">SPESIFIKASI LENGKAP</span>
+                            <div className="h-px bg-zinc-100 flex-1"></div>
+                        </div>
+
+                        <div className="space-y-2 mb-16">
+                            <SpecSection title="BODY & MATERIAL" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>}>
+                                <SpecRow label="DIMENSI / BERAT" value={selectedProduct.dimensions_weight} />
+                                <SpecRow label="MATERIAL" value={selectedProduct.material} />
+                                <SpecRow label="WARNA" value={selectedProduct.colors} />
+                            </SpecSection>
+
+                            <SpecSection title="CONNECTIVITY" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M20 10c-2.21-2.21-5.12-3.41-8-3.41s-5.79 1.2-8 3.41m11.21 3.21c-1.39-1.39-3.23-2.14-5.21-2.14s-3.82.75-5.21 2.14m3.42 3.42L12 21l3.79-3.79"></path></svg>}>
+                                <SpecRow label="JARINGAN" value={selectedProduct.network} />
+                                <SpecRow label="WIFI" value={selectedProduct.wifi} />
+                            </SpecSection>
+
+                            <SpecSection title="DISPLAY" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>}>
+                                <SpecRow label="TIPE LAYAR" value={selectedProduct.display_type} />
+                            </SpecSection>
+
+                            <SpecSection title="PLATFORM" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>}>
+                                <SpecRow label="OS" value={selectedProduct.os} />
+                                <SpecRow label="CHIPSET" value={selectedProduct.chipset} />
+                                <SpecRow label="CPU" value={selectedProduct.cpu} />
+                                <SpecRow label="GPU" value={selectedProduct.gpu} />
+                            </SpecSection>
+
+                            <SpecSection title="MEMORY" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75m-16.5-3.75v3.75"></path></svg>}>
+                                <SpecRow label="RAM / ROM" value={selectedProduct.ram_storage} />
+                            </SpecSection>
+
+                            <SpecSection title="CAMERA" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"></path><path d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"></path></svg>}>
+                                <SpecRow label="UTAMA (BELAKANG)" value={selectedProduct.camera_main} />
+                                <SpecRow label="VIDEO BELAKANG" value={selectedProduct.camera_video_main} />
+                                <SpecRow label="SELFIE (DEPAN)" value={selectedProduct.camera_selfie} />
+                                <SpecRow label="VIDEO DEPAN" value={selectedProduct.camera_video_selfie} />
+                            </SpecSection>
+
+                            <SpecSection title="BATTERY" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"></path></svg>}>
+                                <SpecRow label="KAPASITAS" value={selectedProduct.battery_capacity} />
+                                <SpecRow label="CHARGING" value={selectedProduct.charging} />
+                            </SpecSection>
+
+                            <SpecSection title="HARDWARE & FEATURES" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 0015 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m16.5 0H21m-9 8.25V21m0-18v2.25"></path></svg>}>
+                                <SpecRow label="SENSOR" value={selectedProduct.sensors} />
+                                <SpecRow label="TIPE USB" value={selectedProduct.usb_type} />
+                                <SpecRow label="AUDIO" value={selectedProduct.audio} />
+                                <SpecRow label="FITUR LAIN" value={selectedProduct.features_extra} />
+                            </SpecSection>
+
+                            <SpecSection title="OFFICIAL DATA" icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"></path></svg>}>
+                                <SpecRow label="MODEL CODE" value={selectedProduct.model_code} />
+                                <SpecRow label="CERTIFICATE" value={selectedProduct.postel_cert} />
+                            </SpecSection>
+                        </div>
+
+                        {/* RATINGS SECTION */}
+                        <div className="flex flex-col items-center py-12 bg-white border-t border-zinc-100">
+                            <h3 className="text-[12px] font-black text-zinc-900 uppercase tracking-[0.4em] mb-12">BERI PENILAIAN</h3>
+                            <div className="flex gap-16">
+                                <div className="flex flex-col items-center">
+                                    <button 
+                                        onClick={() => handleRating(selectedProduct.id, 'like')}
+                                        className={`w-24 h-24 rounded-full bg-white shadow-[0_10px_40px_rgba(59,130,246,0.15)] flex items-center justify-center text-blue-500 hover:scale-110 active:scale-95 transition-all mb-6 group border ${userVotes[selectedProduct.id] === 'like' ? 'border-blue-500 bg-blue-50 ring-4 ring-blue-100' : 'border-blue-50'}`}
+                                    >
+                                        <svg className={`w-10 h-10 ${userVotes[selectedProduct.id] === 'like' ? 'fill-blue-500' : 'fill-none'}`} stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/>
+                                        </svg>
+                                    </button>
+                                    <span className={`text-2xl font-black tracking-tighter ${userVotes[selectedProduct.id] === 'like' ? 'text-blue-600' : 'text-blue-600/40'}`}>{ratings[selectedProduct.id]?.likes || 0}</span>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <button 
+                                        onClick={() => handleRating(selectedProduct.id, 'dislike')}
+                                        className={`w-24 h-24 rounded-full bg-white shadow-[0_10px_40px_rgba(239,68,68,0.15)] flex items-center justify-center text-zinc-400 hover:scale-110 active:scale-95 transition-all mb-6 group border ${userVotes[selectedProduct.id] === 'dislike' ? 'border-zinc-800 bg-zinc-50 ring-4 ring-zinc-100' : 'border-zinc-50'}`}
+                                    >
+                                        <svg className={`w-10 h-10 ${userVotes[selectedProduct.id] === 'dislike' ? 'fill-zinc-800' : 'fill-none'}`} stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3zm7-13h3a2 2 0 012 2v7a2 2 0 01-2 2h-3"/>
+                                        </svg>
+                                    </button>
+                                    <span className={`text-2xl font-black tracking-tighter ${userVotes[selectedProduct.id] === 'dislike' ? 'text-zinc-800' : 'text-zinc-400'}`}>{ratings[selectedProduct.id]?.dislikes || 0}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 ) : (
@@ -201,15 +339,11 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                     KATALOG <span className="text-zinc-900">{selectedBrand || 'SEMUA BRAND'}</span>
                                 </h2>
                             </div>
-                            <div className="bg-zinc-50 border border-zinc-100 px-4 py-2 text-[9px] font-black text-zinc-400 uppercase tracking-widest rounded-sm">
-                                {filtered.length} DEVICES
-                            </div>
                         </div>
                         <div className="grid grid-cols-3 gap-4">
                             {filtered.map(phone => (
                                 <div key={phone.id} className="group cursor-pointer" onClick={() => setSelectedProduct(phone)}>
                                     <div className="bg-[#f1f1f1] aspect-square p-4 flex items-center justify-center relative transition-all group-hover:bg-[#e8e8e8] rounded-sm shadow-sm">
-                                        <div className="absolute top-1.5 right-1.5 bg-black text-white text-[8px] font-black w-4 h-4 flex items-center justify-center leading-none rounded-sm">{phone.release_status === 'Tersedia' ? 'T' : 'S'}</div>
                                         <img src={phone.image_url} alt={phone.model_name} className="w-full h-full object-contain mix-blend-multiply transition-transform group-hover:scale-105" />
                                     </div>
                                     <h4 className="mt-2 text-[10px] font-black text-zinc-700 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors">{phone.brand} {phone.model_name}</h4>

@@ -1,17 +1,17 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { GoogleIcon, EnvelopeIcon, LockClosedIcon, UserCircleIcon } from './icons';
+import { EnvelopeIcon, LockClosedIcon, UserCircleIcon } from './icons';
 
 type ViewType = 'login' | 'register' | 'forgot_password' | 'message';
 
 interface AuthModalProps {
     onClose: () => void;
-    onGoogleLogin: () => void;
-    onMockLogin?: () => void; // Added mock login callback
+    onGoogleLogin?: () => void; // Keep for backward compatibility but unused
+    onMockLogin?: () => void; 
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ onClose, onGoogleLogin, onMockLogin }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ onClose, onMockLogin }) => {
     const [view, setView] = useState<ViewType>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -61,19 +61,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onGoogleLogin, onMockLog
     const handleDemoLogin = async () => {
         setLoading(true);
         setError('');
-        // This is a dummy admin account for testing purposes
         const demoEmail = 'admin@1aix.com';
         const demoPassword = 'password123'; 
         
         try {
-            // First try real Supabase login
             const { error } = await supabase.auth.signInWithPassword({ 
                 email: demoEmail, 
                 password: demoPassword 
             });
             if (error) {
-                // If the project is paused or user doesn't exist, we fallback to mock login
-                // to satisfy the user's request for a "dummy admin" that just works.
                 if (onMockLogin) {
                     onMockLogin();
                     return;
@@ -82,7 +78,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onGoogleLogin, onMockLog
             }
             onClose();
         } catch (err: any) {
-            // If it's a "Failed to fetch" error, we use mock login automatically
             if (err.message === 'Failed to fetch' && onMockLogin) {
                 onMockLogin();
             } else {
@@ -166,19 +161,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onGoogleLogin, onMockLog
 
                              {!isForgotPassword && (
                                 <>
-                                    <div className="relative flex py-8 items-center">
-                                        <div className="flex-grow border-t border-zinc-100"></div>
-                                        <span className="flex-shrink mx-4 text-zinc-300 text-[8px] font-black uppercase tracking-widest">ATAU</span>
-                                        <div className="flex-grow border-t border-zinc-100"></div>
-                                    </div>
-
-                                    <button onClick={onGoogleLogin} disabled={loading} className="w-full flex items-center justify-center gap-3 py-4 bg-white border border-zinc-100 text-zinc-900 font-black text-[10px] uppercase tracking-widest rounded-sm hover:bg-zinc-50 transition-colors shadow-sm mb-6">
-                                        <GoogleIcon className="h-4 w-4" />
-                                        <span>GOOGLE LOGIN</span>
-                                    </button>
-
-                                    {/* DUMMY ADMIN ACCOUNT SECTION */}
-                                    <div className="bg-[#f8fafc] border border-zinc-100 p-6 rounded-xl">
+                                    {/* DEMO ACCESS SECTION */}
+                                    <div className="mt-8 bg-[#f8fafc] border border-zinc-100 p-6 rounded-xl">
                                         <div className="flex items-center gap-3 mb-4">
                                             <div className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
                                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>

@@ -10,6 +10,7 @@ import ComparisonTab from './components/ComparisonTab';
 import AdminDashboard from './components/AdminDashboard';
 import AuthModal from './components/AuthModal';
 import Footer from './components/Footer';
+import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 
 export default function App() {
@@ -26,11 +27,29 @@ export default function App() {
   const [maxPrice, setMaxPrice] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Sync with Supabase Auth
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const effectiveSession = useMemo(() => {
     if (session) return session;
-    if (isMockAdmin) return { user: { email: 'admin@1aix.com' } } as Session;
+    // Fix: Use unknown cast to satisfy TypeScript when mocking a partial Session object for administrative testing
+    if (isMockAdmin) return { user: { email: 'admin@1aix.com', user_metadata: { full_name: 'Super Admin' } } } as unknown as Session;
     return null;
   }, [session, isMockAdmin]);
+
+  const isAdmin = useMemo(() => {
+    return effectiveSession?.user?.email === 'admin@1aix.com' || isMockAdmin;
+  }, [effectiveSession, isMockAdmin]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -84,6 +103,12 @@ export default function App() {
     setShowAuthModal(true);
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setIsMockAdmin(false);
+    window.location.hash = '#/home';
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0b0b0b] text-blue-500">
@@ -95,17 +120,20 @@ export default function App() {
     );
   }
 
-  if (activeTab === 'Admin' && effectiveSession) {
-    return (
-        <AdminDashboard 
-            session={effectiveSession} 
-            onLogout={() => { setIsMockAdmin(false); window.location.hash = '#/home'; }} 
-            onDataChange={fetchData}
-        />
-    );
-  } else if (activeTab === 'Admin' && !effectiveSession) {
-      window.location.hash = '#/home';
-      return null;
+  // Admin Gating: Only admins can see the dashboard
+  if (activeTab === 'Admin') {
+    if (isAdmin) {
+        return (
+            <AdminDashboard 
+                session={effectiveSession} 
+                onLogout={handleLogout} 
+                onDataChange={fetchData}
+            />
+        );
+    } else {
+        window.location.hash = '#/home';
+        return null;
+    }
   }
 
   return (
@@ -118,6 +146,7 @@ export default function App() {
         onGoToCatalog={handleGoToCatalog}
         onGoToCompare={handleGoToCompare}
         onOpenLogin={handleOpenAuth}
+        onLogout={handleLogout}
         session={effectiveSession}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -162,7 +191,6 @@ export default function App() {
       {showAuthModal && (
         <AuthModal 
           onClose={() => setShowAuthModal(false)} 
-          onGoogleLogin={() => { alert("Login Google dinonaktifkan dalam mode uji coba."); }}
           onMockLogin={() => { setIsMockAdmin(true); setShowAuthModal(false); window.location.hash = '#/admin'; }}
         />
       )}

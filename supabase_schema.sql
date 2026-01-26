@@ -1,20 +1,23 @@
 
--- 1AIX DATABASE SCHEMA (SUPABASE)
--- Execute this script in the Supabase SQL Editor
+-- 1AIX DATABASE SCHEMA (SUPABASE) - FULL REWRITE
+-- Menghapus tabel lama agar skema bersih (CASCADE akan menghapus foreign key terkait)
+DROP TABLE IF EXISTS article_views, ratings, comments, articles, smartphones, profiles CASCADE;
 
--- 1. Profiles Table (Extends Auth Users)
-CREATE TABLE profiles (
+-- 1. Profiles Table (Ekstensi dari auth.users)
+CREATE TABLE public.profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   display_name TEXT,
+  role TEXT DEFAULT 'MEMBER', -- 'MEMBER' atau 'ADMIN'
   is_blocked BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. Smartphones Table (Catalog)
-CREATE TABLE smartphones (
+-- 2. Smartphones Table (Katalog Utama)
+CREATE TABLE public.smartphones (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   brand TEXT NOT NULL,
   model_name TEXT NOT NULL,
+  market_category TEXT DEFAULT 'Mid-range', -- 'Entry-level', 'Mid-range', 'Flagship'
   release_status TEXT DEFAULT 'Tersedia',
   release_month TEXT,
   release_year TEXT,
@@ -49,8 +52,8 @@ CREATE TABLE smartphones (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Articles Table (News/Reviews)
-CREATE TABLE articles (
+-- 3. Articles Table (Berita & Review)
+CREATE TABLE public.articles (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT NOT NULL,
   cover_image_url TEXT,
@@ -59,38 +62,75 @@ CREATE TABLE articles (
   publish_date DATE DEFAULT CURRENT_DATE,
   summary TEXT,
   content TEXT,
-  categories TEXT[], -- Array of categories
-  status TEXT DEFAULT 'DRAFT', -- DRAFT or PUBLISHED
+  categories TEXT[], 
+  status TEXT DEFAULT 'DRAFT', 
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. TKDN Published Table (Monitor Feed)
-CREATE TABLE tkdn_published (
+-- 4. Comments Table
+CREATE TABLE public.comments (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  brand TEXT,
-  codename TEXT,
-  marketing_name TEXT,
-  tkdn_score NUMERIC(5,2),
-  cert_number TEXT,
-  cert_date DATE,
-  status TEXT DEFAULT 'UPCOMING',
+  target_id UUID NOT NULL, 
+  user_id UUID REFERENCES auth.users ON DELETE CASCADE,
+  user_name TEXT,
+  text TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ENABLE ROW LEVEL SECURITY
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE smartphones ENABLE ROW LEVEL SECURITY;
-ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tkdn_published ENABLE ROW LEVEL SECURITY;
+-- 5. Ratings Table (Likes/Dislikes)
+CREATE TABLE public.ratings (
+  target_id UUID PRIMARY KEY,
+  likes INTEGER DEFAULT 0,
+  dislikes INTEGER DEFAULT 0
+);
 
--- PUBLIC READ ACCESS POLICIES
-CREATE POLICY "Public read smartphones" ON smartphones FOR SELECT USING (true);
-CREATE POLICY "Public read articles" ON articles FOR SELECT USING (status = 'PUBLISHED');
-CREATE POLICY "Public read tkdn" ON tkdn_published FOR SELECT USING (true);
-CREATE POLICY "Profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
+-- 6. Article Views (Analitik Sederhana)
+CREATE TABLE public.article_views (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  article_id UUID REFERENCES public.articles(id) ON DELETE CASCADE,
+  viewed_at DATE DEFAULT CURRENT_DATE,
+  reading_time_seconds INTEGER DEFAULT 0
+);
 
--- ADMIN WRITE ACCESS (Assumes an 'admin' role or specific UID - Adjust as needed)
--- For development, you might want to restrict these to authenticated users:
-CREATE POLICY "Auth users can manage smartphones" ON smartphones FOR ALL TO authenticated USING (true);
-CREATE POLICY "Auth users can manage articles" ON articles FOR ALL TO authenticated USING (true);
-CREATE POLICY "Auth users can manage tkdn" ON tkdn_published FOR ALL TO authenticated USING (true);
+-- AKTIFKAN ROW LEVEL SECURITY (RLS)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.smartphones ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.articles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ratings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.article_views ENABLE ROW LEVEL SECURITY;
+
+-- KEBIJAKAN RLS: AKSES BACA PUBLIK
+CREATE POLICY "Public read smartphones" ON public.smartphones FOR SELECT USING (true);
+CREATE POLICY "Public read articles" ON public.articles FOR SELECT USING (status = 'PUBLISHED' OR (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'ADMIN')));
+CREATE POLICY "Public read comments" ON public.comments FOR SELECT USING (true);
+CREATE POLICY "Public read ratings" ON public.ratings FOR SELECT USING (true);
+CREATE POLICY "Public view profiles" ON public.profiles FOR SELECT USING (true);
+
+-- KEBIJAKAN RLS: AKSI PENGGUNA TEROTENTIKASI
+CREATE POLICY "Logged in users can post comments" ON public.comments FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Logged in users can update own profile" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
+
+-- KEBIJAKAN RLS: KONTROL ADMIN (Akses penuh untuk peran ADMIN)
+CREATE POLICY "Admins have full access on smartphones" ON public.smartphones FOR ALL TO authenticated 
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN'));
+
+CREATE POLICY "Admins have full access on articles" ON public.articles FOR ALL TO authenticated 
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN'));
+
+CREATE POLICY "Admins manage comments" ON public.comments FOR DELETE TO authenticated 
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN'));
+
+-- TRIGGER OTOMATIS: BUAT PROFIL SETELAH SIGN UP
+CREATE OR REPLACE FUNCTION public.handle_new_user() 
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, display_name, role)
+  VALUES (new.id, COALESCE(new.raw_user_meta_data->>'full_name', new.email), 'MEMBER');
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();

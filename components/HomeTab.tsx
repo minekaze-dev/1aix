@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { TOP_BRANDS } from '../constants';
 import type { Session } from '@supabase/supabase-js';
-import type { Article } from '../types';
+import type { Article, Comment } from '../types';
 
 interface HomeTabProps {
     onOpenLogin?: () => void;
@@ -12,23 +12,64 @@ interface HomeTabProps {
 const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, session }) => {
     const [viewArticle, setViewArticle] = useState<Article | null>(null);
     const [articles, setArticles] = useState<Article[]>([]);
+    const [comments, setComments] = useState<Comment[]>([]);
+    const [newComment, setNewComment] = useState("");
 
     useEffect(() => {
         const localArticles = localStorage.getItem('1AIX_LOCAL_ARTICLES');
         if (localArticles) {
             const parsed: Article[] = JSON.parse(localArticles);
-            // Only show published ones on home
             setArticles(parsed.filter(a => a.status === 'PUBLISHED'));
+        }
+        
+        const localComments = localStorage.getItem('1AIX_COMMENTS');
+        if (localComments) {
+            setComments(JSON.parse(localComments));
         }
     }, []);
 
-    // Get the two newest articles for the featured hero section
+    const handlePostComment = () => {
+        if (!session) {
+            onOpenLogin?.();
+            return;
+        }
+        if (!newComment.trim() || !viewArticle) return;
+
+        const comment: Comment = {
+            id: `cmt-${Date.now()}`,
+            target_id: viewArticle.id,
+            user_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+            text: newComment,
+            created_at: new Date().toLocaleString('id-ID')
+        };
+
+        const updated = [comment, ...comments];
+        setComments(updated);
+        localStorage.setItem('1AIX_COMMENTS', JSON.stringify(updated));
+        setNewComment("");
+    };
+
+    const handleShare = (platform: string) => {
+        const url = window.location.href;
+        const text = viewArticle?.title || "Cek berita gadget terbaru di 1AIX!";
+        
+        if (platform === 'wa') {
+            window.open(`https://wa.me/?text=${encodeURIComponent(text + " " + url)}`);
+        } else if (platform === 'tw') {
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`);
+        } else {
+            navigator.clipboard.writeText(url);
+            alert("Link disalin ke clipboard!");
+        }
+    };
+
     const heroArticles = articles.slice(0, 2);
-    const latestArticles = articles.slice(2, 6);
+    const latestArticles = articles.slice(2, 8);
+    const articleComments = comments.filter(c => c.target_id === viewArticle?.id);
+    const isAdmin = session?.user?.email === 'admin@1aix.com';
 
     return (
         <div className="flex gap-8 animate-in fade-in duration-700">
-            {/* PERSISTENT SIDEBAR - 240px */}
             <aside className="w-[240px] flex-shrink-0 space-y-8">
                 <div>
                     <div className="flex items-center gap-3 mb-6">
@@ -51,45 +92,32 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, session }) => {
                             </div>
                         ))}
                     </div>
-                    <div className="mb-8 px-1">
-                        <a href="https://www.topbrand-award.com/top-brand-index" target="_blank" rel="noopener noreferrer" className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest hover:text-blue-600 transition-colors italic">
-                            Source: topbrand-award.com
-                        </a>
-                    </div>
 
                     <button 
-                        onClick={() => session ? (window.location.hash = '#/admin') : onOpenLogin?.()}
-                        className="w-full flex items-center justify-between p-4 bg-zinc-900 text-white hover:bg-blue-600 transition-colors group rounded-sm shadow-lg"
+                        onClick={() => session ? (isAdmin ? window.location.hash = '#/admin' : null) : onOpenLogin?.()}
+                        className={`w-full mt-8 flex items-center gap-4 p-4 transition-all group rounded-sm shadow-xl ${session ? 'bg-blue-600 text-white' : 'bg-zinc-900 text-white hover:bg-blue-600'}`}
                     >
-                        <div className="flex items-center gap-3">
-                            <svg className="w-5 h-5 text-blue-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                            <span className="text-[11px] font-black uppercase tracking-[0.2em]">
-                                {session ? 'MENU ADMIN' : 'LOGIN / MASUK'}
-                            </span>
+                        <div className="w-10 h-10 rounded-sm bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/20">
+                            {session ? (
+                                <span className="text-sm font-black uppercase">{(session.user.user_metadata?.full_name || session.user.email || 'A').charAt(0)}</span>
+                            ) : (
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            )}
                         </div>
-                        <svg className="w-3 h-3 text-zinc-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"></path></svg>
+                        <div className="flex flex-col items-start overflow-hidden">
+                            <span className="text-[11px] font-black uppercase tracking-[0.15em] truncate w-full">
+                                {session ? (session.user.user_metadata?.full_name || session.user.email?.split('@')[0]) : 'LOGIN / MASUK'}
+                            </span>
+                            {session && (
+                                <span className="text-[8px] font-bold opacity-60 uppercase tracking-widest leading-none mt-1">
+                                    {isAdmin ? 'ADMIN REDAKSI' : 'COMMUNITY MEMBER'}
+                                </span>
+                            )}
+                        </div>
                     </button>
-                </div>
-                
-                <div className="bg-[#f8f9fa] p-6 border border-zinc-100 rounded shadow-sm">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4">Trending Now</h4>
-                    <div className="space-y-4">
-                        {articles.slice(0, 3).map(art => (
-                            <div key={art.id} onClick={() => setViewArticle(art)} className="group cursor-pointer">
-                                <div className="flex flex-wrap gap-1 mb-1">
-                                    {(art.categories || []).map(cat => (
-                                        <span key={cat} className="text-[7px] font-black text-red-600 uppercase tracking-tighter">{cat}</span>
-                                    ))}
-                                </div>
-                                <p className="text-[10px] font-black text-zinc-800 leading-tight uppercase tracking-tight group-hover:text-blue-600 truncate">{art.title}</p>
-                                <span className="text-[8px] font-bold text-zinc-300 uppercase mt-1 block">{art.publish_date}</span>
-                            </div>
-                        ))}
-                    </div>
                 </div>
             </aside>
 
-            {/* DYNAMIC CONTENT AREA */}
             <div className="flex-grow">
                 {viewArticle ? (
                     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
@@ -117,66 +145,89 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, session }) => {
                                         <span className="text-[8px] font-bold text-zinc-400 uppercase mt-1">{viewArticle.publish_date}</span>
                                     </div>
                                 </div>
+                                <div className="flex gap-3">
+                                    <button onClick={() => handleShare('wa')} className="p-2 bg-emerald-500 text-white rounded hover:bg-emerald-600 transition-all"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></button>
+                                    <button onClick={() => handleShare('tw')} className="p-2 bg-zinc-900 text-white rounded hover:bg-zinc-800 transition-all"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></button>
+                                    <button onClick={() => handleShare('copy')} className="p-2 bg-zinc-100 text-zinc-600 rounded hover:bg-zinc-200 transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg></button>
+                                </div>
                             </div>
                         </div>
 
                         <div className="w-full h-80 overflow-hidden rounded-sm mb-10 shadow-lg border border-zinc-100">
-                            <img 
-                                src={viewArticle.cover_image_url} 
-                                alt="" 
-                                className="w-full h-full object-cover"
-                            />
+                            <img src={viewArticle.cover_image_url} alt="" className="w-full h-full object-cover"/>
                         </div>
 
-                        <div className="prose prose-zinc max-w-none text-zinc-800 leading-loose text-base">
+                        <div className="prose prose-zinc max-w-none text-zinc-800 leading-loose text-base mb-20">
                             <div className="text-zinc-500 font-bold leading-relaxed italic border-l-3 border-red-600 pl-4 bg-zinc-50 py-4 mb-8">
                                 "{viewArticle.summary}"
                             </div>
-                            <div 
-                                className="whitespace-pre-wrap article-content-rendered"
-                                dangerouslySetInnerHTML={{ 
-                                    __html: (viewArticle.content || '')
-                                        .replace(/<div align="(.*?)">([\s\S]*?)<\/div>/g, '<div style="text-align: $1">$2</div>')
-                                        .replace(/<span style="(.*?)">([\s\S]*?)<\/span>/g, '<span style="$1">$2</span>')
-                                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                        .replace(/_(.*?)_/g, '<em>$1</em>')
-                                        .replace(/^# (.*$)/gm, '<h1 style="font-size: 2em; font-weight: 900; margin: 0.5em 0;">$1</h1>')
-                                        .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$2</h2>')
-                                        .replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500 my-4">$1</blockquote>')
-                                        .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
-                                        .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 list-decimal">$1</li>')
-                                        .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="w-full my-6 rounded shadow-lg" />')
-                                }} 
-                            />
+                            <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: viewArticle.content }} />
                         </div>
 
-                        <div className="flex flex-wrap gap-2 pt-8 border-t border-zinc-100 mb-12">
-                            {viewArticle.tags?.split(' ').map(tag => (
-                                <span key={tag} className="px-3 py-1 bg-zinc-100 text-zinc-500 font-black text-[9px] uppercase tracking-widest rounded-full hover:bg-blue-600 hover:text-white cursor-pointer transition-colors">
-                                    {tag}
-                                </span>
-                            ))}
+                        {/* COMMENTS SECTION */}
+                        <div className="border-t border-zinc-200 pt-12 mb-20">
+                            <h3 className="text-xl font-black uppercase tracking-tighter mb-8 italic">Diskusi & Komentar</h3>
+                            
+                            <div className="bg-[#f8fafc] border border-zinc-100 p-8 rounded mb-12">
+                                {session ? (
+                                    <div className="flex gap-4">
+                                        <div className="w-10 h-10 rounded bg-red-600 text-white flex items-center justify-center font-black flex-shrink-0">
+                                            {(session.user.user_metadata?.full_name || session.user.email || 'U').charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 space-y-4">
+                                            <textarea 
+                                                value={newComment}
+                                                onChange={(e) => setNewComment(e.target.value)}
+                                                placeholder="Berikan pendapatmu tentang artikel ini..."
+                                                className="w-full bg-white border border-zinc-200 p-4 rounded text-sm font-bold outline-none focus:border-red-600 transition-all resize-none"
+                                                rows={3}
+                                            />
+                                            <button 
+                                                onClick={handlePostComment}
+                                                className="px-8 py-3 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all"
+                                            >
+                                                KIRIM KOMENTAR
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-6">
+                                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">Anda harus login untuk berkomentar</p>
+                                        <button onClick={onOpenLogin} className="px-8 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all">MASUK PANEL</button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-8">
+                                {articleComments.length > 0 ? articleComments.map(c => (
+                                    <div key={c.id} className="flex gap-4 group">
+                                        <div className="w-10 h-10 rounded bg-zinc-200 text-zinc-500 flex items-center justify-center font-black flex-shrink-0 uppercase">
+                                            {c.user_name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-1">
+                                                <span className="text-[11px] font-black text-zinc-900 uppercase tracking-tight">{c.user_name}</span>
+                                                <span className="text-[8px] font-bold text-zinc-300 uppercase tracking-widest">{c.created_at}</span>
+                                            </div>
+                                            <p className="text-[13px] font-bold text-zinc-600 leading-relaxed">{c.text}</p>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="text-center py-12 text-zinc-300 italic font-black text-[10px] uppercase tracking-widest border-2 border-dashed border-zinc-50">
+                                        Belum ada diskusi untuk artikel ini.
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 ) : (
                     <div className="space-y-8 animate-in fade-in duration-700">
-                        {/* Featured Hero Area */}
                         {heroArticles.length > 0 && (
                             <div className="grid grid-cols-2 gap-px border border-zinc-200 rounded overflow-hidden shadow-sm">
                                 {heroArticles.map((art, idx) => (
-                                    <div 
-                                        key={art.id}
-                                        className={`relative h-[360px] overflow-hidden group cursor-pointer ${idx > 0 ? 'border-l border-zinc-200' : ''}`}
-                                        onClick={() => setViewArticle(art)}
-                                    >
+                                    <div key={art.id} className="relative h-[360px] overflow-hidden group cursor-pointer border-l border-zinc-200" onClick={() => setViewArticle(art)}>
                                         <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                                        {idx === 0 && <div className="absolute top-4 left-4 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 uppercase tracking-widest shadow-md">Editor's Pick</div>}
-                                        <div className="absolute top-4 right-4 flex flex-wrap gap-1 justify-end">
-                                            {(art.categories || []).map(cat => (
-                                                <span key={cat} className="bg-white/20 backdrop-blur-md text-white text-[8px] font-black px-2 py-0.5 uppercase tracking-widest border border-white/30">{cat}</span>
-                                            ))}
-                                        </div>
                                         <div className="absolute bottom-6 left-6 right-6">
                                             <div className="text-zinc-400 text-[9px] font-bold uppercase mb-1">{art.publish_date}</div>
                                             <h2 className="text-2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors">{art.title}</h2>
@@ -185,39 +236,18 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, session }) => {
                                 ))}
                             </div>
                         )}
-
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-4 border-l-3 border-red-600 pl-3">
-                                <h3 className="text-sm font-black italic uppercase tracking-tighter">Latest Technology News</h3>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-8">
-                                {latestArticles.length > 0 ? latestArticles.map(art => (
-                                    <div key={art.id} className="flex gap-4 group cursor-pointer" onClick={() => setViewArticle(art)}>
-                                        <div className="w-32 h-20 flex-shrink-0 overflow-hidden bg-zinc-100 rounded-sm relative">
-                                            <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="" />
-                                            <div className="absolute bottom-1 right-1 flex gap-0.5">
-                                                {(art.categories || []).slice(0, 1).map(cat => (
-                                                    <span key={cat} className="bg-red-600 text-white text-[6px] font-black px-1 py-0.5 uppercase">{cat}</span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="flex gap-1 mb-1">
-                                                {(art.categories || []).map(cat => (
-                                                    <span key={cat} className="text-[7px] font-black text-red-600 uppercase tracking-widest">{cat}</span>
-                                                ))}
-                                            </div>
-                                            <h4 className="text-[11px] font-black text-zinc-900 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">{art.title}</h4>
-                                            <div className="text-[8px] font-bold text-zinc-400 uppercase mt-2">{art.publish_date}</div>
-                                        </div>
+                        <div className="grid grid-cols-2 gap-8">
+                            {latestArticles.map(art => (
+                                <div key={art.id} className="flex gap-4 group cursor-pointer" onClick={() => setViewArticle(art)}>
+                                    <div className="w-32 h-20 flex-shrink-0 overflow-hidden bg-zinc-100 rounded-sm">
+                                        <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="" />
                                     </div>
-                                )) : (
-                                    <div className="col-span-2 py-20 text-center text-zinc-300 font-black uppercase text-[10px] tracking-widest italic">
-                                        Belum ada konten berita baru hari ini.
+                                    <div>
+                                        <h4 className="text-[11px] font-black text-zinc-900 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">{art.title}</h4>
+                                        <div className="text-[8px] font-bold text-zinc-400 uppercase mt-2">{art.publish_date}</div>
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}

@@ -11,6 +11,7 @@ interface HeaderProps {
     onGoToCatalog?: () => void;
     onGoToCompare?: () => void;
     onOpenLogin?: () => void;
+    onLogout?: () => void;
     session?: Session | null;
     searchQuery?: string;
     onSearchChange?: (query: string) => void;
@@ -32,6 +33,8 @@ const Header: React.FC<HeaderProps> = ({
         "Tecno", "Itel", "Iqoo", "Asus", "Redmagic", "Honor", "Motorola", "Huawei"
     ];
 
+    const isAdmin = session?.user?.email === 'admin@1aix.com';
+
     return (
         <header className="w-full max-w-[1000px] flex flex-col shadow-xl z-50">
             {/* Top Header - Black Section */}
@@ -52,11 +55,11 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
 
                 {/* Center Search Bar */}
-                <div className="flex-1 max-w-sm mx-8 hidden md:block">
+                <div className="flex-1 max-w-[300px] mx-8 hidden lg:block">
                     <div className="relative group">
                         <input 
                             type="text"
-                            placeholder="Cari Gadget dan Artikel..."
+                            placeholder="CARI GADGET..."
                             value={searchQuery}
                             onChange={(e) => onSearchChange?.(e.target.value)}
                             onFocus={() => {
@@ -70,35 +73,46 @@ const Header: React.FC<HeaderProps> = ({
                     </div>
                 </div>
 
-                {/* Navigation Links with Icons */}
-                <nav className="flex items-center gap-6">
+                {/* Navigation Links */}
+                <nav className="flex items-center gap-8">
                     <button 
                         onClick={() => onGoToCompare ? onGoToCompare() : (window.location.hash = '#/bandingkan')}
-                        className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:text-blue-500 transition-colors ${activeTab === 'Bandingkan' ? 'text-blue-500' : 'text-zinc-400'}`}
+                        className={`flex items-center gap-2 group transition-colors ${activeTab === 'Bandingkan' ? 'text-blue-500' : 'text-zinc-400 hover:text-white'}`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
-                        COMPARE
+                        <span className="text-[11px] font-black uppercase tracking-widest">COMPARE</span>
                     </button>
+
                     <button 
                         onClick={() => onGoToCatalog ? onGoToCatalog() : (window.location.hash = '#/katalog')}
-                        className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:text-blue-500 transition-colors ${activeTab === 'Katalog' ? 'text-blue-500' : 'text-zinc-400'}`}
+                        className={`flex items-center gap-2 group transition-colors ${activeTab === 'Katalog' ? 'text-blue-500' : 'text-zinc-400 hover:text-white'}`}
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-                        KATALOG
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                        <span className="text-[11px] font-black uppercase tracking-widest">KATALOG</span>
                     </button>
+
                     <button 
                         onClick={() => window.location.hash = '#/coming-soon'}
-                        className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:text-blue-500 transition-colors ${activeTab === 'Segera Rilis' ? 'text-blue-500' : 'text-zinc-400'}`}
+                        className={`flex items-center gap-2 group transition-colors ${activeTab === 'Segera Rilis' ? 'text-blue-500' : 'text-zinc-400 hover:text-white'}`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                        TKDN MONITOR
+                        <span className="text-[11px] font-black uppercase tracking-widest">TKDN MONITOR</span>
                     </button>
+
+                    {isAdmin && (
+                        <button 
+                            onClick={() => window.location.hash = '#/admin'}
+                            className={`flex items-center gap-2 group transition-colors ${activeTab === 'Admin' ? 'text-red-500' : 'text-zinc-400 hover:text-red-500'}`}
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <span className="text-[11px] font-black uppercase tracking-widest">PANEL</span>
+                        </button>
+                    )}
                 </nav>
             </div>
 
-            {/* Brand Bar - 2 Rows, No Lines, Font 9px */}
+            {/* Brand Bar */}
             <div className="w-full flex items-stretch h-14 border-b border-zinc-200">
-                {/* Left Section (Gray) */}
                 <div className="bg-[#a3a3a3] px-4 flex items-center gap-2 text-white font-black uppercase text-[10px] tracking-widest flex-shrink-0">
                     <svg className="w-3.5 h-3.5 text-[#ef4444]" viewBox="0 0 24 24" fill="currentColor">
                         <rect x="3" y="3" width="7" height="7" />
@@ -109,7 +123,6 @@ const Header: React.FC<HeaderProps> = ({
                     OFFICIAL BRAND
                 </div>
                 
-                {/* Middle Section - No internal lines, Font 9px */}
                 <div className="flex-1 bg-[#f1f5f9] grid grid-cols-8 grid-rows-2 items-center px-1">
                     {brands.map(brand => {
                         const isActive = selectedBrand === brand;
@@ -125,7 +138,6 @@ const Header: React.FC<HeaderProps> = ({
                     })}
                 </div>
 
-                {/* Right Section (Blue) */}
                 <button 
                     onClick={() => onGoToCatalog ? onGoToCatalog() : (window.location.hash = '#/katalog')}
                     className="bg-[#3b82f6] px-4 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-blue-600 transition-colors flex-shrink-0"

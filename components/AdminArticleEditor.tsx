@@ -217,6 +217,21 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
                     <input type="text" placeholder="Ketik Judul Berita Disini..." value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full text-3xl font-black uppercase tracking-tighter text-zinc-900 border-none outline-none placeholder:text-zinc-200 bg-transparent"/>
                 </div>
 
+                {/* Permalink */}
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-zinc-200">
+                    <label className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-4 block">PERMALINK / URL SLUG</label>
+                    <div className="flex items-center gap-2 bg-zinc-50 p-3 rounded-sm border border-zinc-100">
+                      <span className="text-[10px] font-black text-zinc-400">1AIX.COM</span>
+                      <input 
+                          type="text" 
+                          placeholder="/news/judul-berita" 
+                          value={formData.permalink} 
+                          onChange={(e) => setFormData({...formData, permalink: e.target.value})} 
+                          className="flex-1 bg-transparent text-[11px] font-black text-zinc-800 outline-none uppercase tracking-widest"
+                      />
+                    </div>
+                </div>
+
                 {/* Summary Field */}
                 <div className="bg-white p-8 rounded-xl shadow-sm border border-zinc-200">
                     <label className="text-[9px] font-black text-blue-600 uppercase tracking-[0.3em] mb-4 block">RINGKASAN (SUMMARY)</label>

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { BRANDS } from '../constants';
-import type { Smartphone, Brand, ReleaseStatus } from '../types';
+import type { Smartphone, Brand, ReleaseStatus, MarketCategory } from '../types';
 import { GoogleGenAI } from "@google/genai";
 
 interface AdminGadgetModProps {
@@ -12,6 +12,8 @@ const MONTHS = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
     "Juli", "Agustus", "September", "Oktober", "November", "Desember"
 ];
+
+const CATEGORIES: MarketCategory[] = ["Entry-level", "Mid-range", "Flagship"];
 
 const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
   const [smartphones, setSmartphones] = useState<Smartphone[]>([]);
@@ -28,6 +30,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
   const initialFormState: Partial<Smartphone> = {
     brand: 'Samsung',
     model_name: '',
+    market_category: 'Mid-range',
     release_status: 'Tersedia',
     release_month: 'Januari',
     release_year: new Date().getFullYear().toString(),
@@ -106,7 +109,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const prompt = `Generate technical specifications for the smartphone "${formData.brand} ${formData.model_name}" as sold in Indonesia. 
       Return the data in the following JSON format strictly.
-      Fields: release_month (e.g. "Januari"), release_year (e.g. "2024"), chipset, ram_storage, dimensions_weight, material, colors, network, wifi, display_type, os, cpu, gpu, camera_main, camera_video_main, camera_selfie, camera_video_selfie, battery_capacity, charging, sensors, usb_type, audio, features_extra, tkdn_score (number), price_srp (number), image_url.
+      Fields: market_category (Entry-level, Mid-range, or Flagship), release_month (e.g. "Januari"), release_year (e.g. "2024"), chipset, ram_storage, dimensions_weight, material, colors, network, wifi, display_type, os, cpu, gpu, camera_main, camera_video_main, camera_selfie, camera_video_selfie, battery_capacity, charging, sensors, usb_type, audio, features_extra, tkdn_score (number), price_srp (number), image_url.
       Only return the raw JSON object.`;
 
       const response = await ai.models.generateContent({
@@ -240,6 +243,16 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                       onChange={e => setFormData({...formData, model_name: e.target.value})}
                       className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase focus:border-red-600 outline-none placeholder-zinc-300"
                     />
+                  </label>
+                  <label className="block">
+                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">KATEGORI PASAR</span>
+                    <select 
+                      value={formData.market_category} 
+                      onChange={e => setFormData({...formData, market_category: e.target.value as MarketCategory})}
+                      className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase focus:border-red-600 outline-none"
+                    >
+                      {CATEGORIES.map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}
+                    </select>
                   </label>
                   <div className="grid grid-cols-2 gap-4">
                     <label className="block">
@@ -428,7 +441,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                  <th className="px-8 py-5">SMARTPHONE</th>
                  <th className="px-8 py-5">PRICE SRP</th>
                  <th className="px-8 py-5">STATUS</th>
-                 <th className="px-8 py-5">TKDN</th>
+                 <th className="px-8 py-5">CATEGORY</th>
                  <th className="px-8 py-5 text-right">AKSI</th>
                </tr>
              </thead>
@@ -461,7 +474,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                       </span>
                    </td>
                    <td className="px-8 py-5">
-                      <div className="text-[11px] font-black text-zinc-400">{phone.tkdn_score}%</div>
+                      <div className="text-[11px] font-black text-zinc-400 uppercase">{phone.market_category || '-'}</div>
                    </td>
                    <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
