@@ -20,7 +20,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onSelectBrand, onGoHome, onG
         <header className="w-full max-w-[1000px] flex flex-col shadow-xl z-50">
             {/* Top Header - Black Section - Maintained at h-16 */}
             <div className="bg-[#0b0b0b] text-white h-16 flex items-center justify-between px-6">
-                {/* Logo Image / Home Button - Enlarged from h-10 to h-13 (52px) */}
+                {/* Logo Image / Home Button */}
                 <div 
                   className="flex items-center cursor-pointer select-none transition-opacity hover:opacity-80" 
                   onClick={() => {
@@ -71,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onSelectBrand, onGoHome, onG
                 </nav>
             </div>
 
-            {/* Brand Bar - Reduced height to h-12 */}
+            {/* Brand Bar - Spacing adjusted and Font set to 10px */}
             <div className="w-full flex items-stretch h-12 border-b border-zinc-200">
                 {/* Left Section (Gray) */}
                 <div className="bg-[#a3a3a3] px-4 flex items-center gap-2 text-white font-black uppercase text-[10px] tracking-widest flex-shrink-0">
@@ -84,13 +84,13 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onSelectBrand, onGoHome, onG
                     OFFICIAL BRAND
                 </div>
                 
-                {/* Middle Section (Brand Grid 2 rows x 8 cols) */}
-                <div className="flex-1 bg-[#f1f5f9] px-2 py-0.5 grid grid-cols-8 items-center gap-x-2">
+                {/* Middle Section (Brand Grid 2 rows x 8 cols) - Spacing closer (gap-x-1) and font-size 10px */}
+                <div className="flex-1 bg-[#f1f5f9] px-2 py-0.5 grid grid-cols-8 items-center gap-x-1">
                     {brands.map(brand => (
                         <button 
                             key={brand} 
                             onClick={() => onSelectBrand && onSelectBrand(brand)}
-                            className="text-[9px] font-black text-zinc-700 hover:text-blue-600 uppercase tracking-tighter transition-colors text-center truncate"
+                            className="text-[10px] font-black text-zinc-700 hover:text-blue-600 uppercase tracking-tighter transition-colors text-center truncate"
                         >
                             {brand}
                         </button>
