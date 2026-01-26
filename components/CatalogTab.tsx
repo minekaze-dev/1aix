@@ -18,6 +18,8 @@ interface CatalogTabProps {
     onOpenLogin?: () => void;
     onLogout?: () => void;
     session?: Session | null;
+    initialProduct?: Smartphone | null;
+    onClearTarget?: () => void;
 }
 
 const SpecRow = ({ label, value }: { label: string; value?: string | number }) => {
@@ -47,7 +49,7 @@ const SpecSection = ({ icon, title, children }: { icon: React.ReactNode; title: 
 };
 
 const CatalogTab: React.FC<CatalogTabProps> = ({ 
-    items, selectedBrand, minPrice, setMinPrice, maxPrice, setMaxPrice, searchQuery, onOpenLogin, onLogout, session
+    items, selectedBrand, minPrice, setMinPrice, maxPrice, setMaxPrice, searchQuery, onOpenLogin, onLogout, session, initialProduct, onClearTarget
 }) => {
     const [selectedProduct, setSelectedProduct] = useState<Smartphone | null>(null);
     const [ratings, setRatings] = useState<Record<string, { likes: number, dislikes: number }>>({});
@@ -85,6 +87,14 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
         const localVotes = localStorage.getItem('1AIX_USER_VOTES');
         if (localVotes) setUserVotes(JSON.parse(localVotes));
     }, []);
+
+    useEffect(() => {
+        if (initialProduct) {
+            setSelectedProduct(initialProduct);
+            onClearTarget?.();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, [initialProduct, onClearTarget]);
 
     const handleRating = async (id: string, type: 'like' | 'dislike') => {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
@@ -151,7 +161,12 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
         <div className="flex gap-8">
             <aside className="w-[240px] flex-shrink-0 space-y-10">
                 <div>
-                    <div className="flex items-center gap-3 mb-6"><svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg><h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">TOP BRAND AWARD</h3></div>
+                    <div className="flex items-center gap-3 mb-1">
+                        <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900 leading-tight">TOP BRAND AWARD</h3>
+                    </div>
+                    <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-6 border-l-2 border-zinc-100 pl-2">sumber: www.topbrand-award.com</div>
+
                     <div className="space-y-1 mb-8">{TOP_BRANDS.map((brand, idx) => (<div key={brand.name} className="px-1 py-1.5 flex items-center justify-between border-b border-zinc-50 group cursor-pointer hover:bg-zinc-50 transition-colors"><div className="flex items-center gap-4"><span className="text-[10px] font-black text-zinc-300 w-4">#{idx + 1}</span><span className="text-[11px] font-black text-zinc-700 tracking-wide uppercase group-hover:text-blue-600">{brand.name}</span></div><span className="text-[10px] font-black text-blue-500/60">{brand.share}</span></div>))}</div>
                 </div>
 
@@ -208,7 +223,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                 ) : (
                     <div className="space-y-8 animate-in fade-in duration-500">
                         <div className="flex items-end justify-between border-b border-zinc-100 pb-6"><div><div className="text-[9px] font-black text-[#ef4444] uppercase tracking-[0.3em] mb-1">{selectedBrand ? 'BRAND CATALOG' : 'ALL SMARTPHONES'}</div><h2 className="text-3xl font-black text-zinc-900 uppercase tracking-tighter leading-none">KATALOG <span className="text-zinc-900">{selectedBrand || 'SEMUA BRAND'}</span></h2></div></div>
-                        <div className="grid grid-cols-3 gap-4">{filtered.map(phone => (<div key={phone.id} className="group cursor-pointer" onClick={() => setSelectedProduct(phone)}><div className="bg-[#f1f1f1] aspect-square p-4 flex items-center justify-center relative transition-all group-hover:bg-[#e8e8e8] rounded-sm shadow-sm"><img src={phone.image_url} alt={phone.model_name} className="w-full h-full object-contain mix-blend-multiply transition-transform group-hover:scale-105" /></div><h4 className="mt-2 text-[10px] font-black text-zinc-700 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors">{phone.brand} {phone.model_name}</h4></div>))}</div>
+                        <div className="grid grid-cols-4 gap-4">{filtered.map(phone => (<div key={phone.id} className="group cursor-pointer" onClick={() => setSelectedProduct(phone)}><div className="bg-[#f1f1f1] aspect-square p-4 flex items-center justify-center relative transition-all group-hover:bg-[#e8e8e8] rounded-sm shadow-sm"><img src={phone.image_url} alt={phone.model_name} className="w-full h-full object-contain mix-blend-multiply transition-transform group-hover:scale-105" /></div><h4 className="mt-2 text-[10px] font-black text-zinc-700 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors">{phone.brand} {phone.model_name}</h4></div>))}</div>
                     </div>
                 )}
             </div>

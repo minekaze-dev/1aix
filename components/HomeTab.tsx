@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { TOP_BRANDS } from '../constants';
 import type { Session } from '@supabase/supabase-js';
 import type { Article, Comment } from '../types';
@@ -9,9 +9,12 @@ interface HomeTabProps {
     onOpenLogin?: () => void;
     onLogout?: () => void;
     session?: Session | null;
+    searchQuery?: string;
+    initialArticle?: Article | null;
+    onClearTarget?: () => void;
 }
 
-const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, onLogout, session }) => {
+const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, onLogout, session, searchQuery = "", initialArticle, onClearTarget }) => {
     const [viewArticle, setViewArticle] = useState<Article | null>(null);
     const [articles, setArticles] = useState<Article[]>([]);
     const [comments, setComments] = useState<Comment[]>([]);
@@ -45,8 +48,16 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, onLogout, session }) => 
     }, []);
 
     useEffect(() => {
+        if (initialArticle) {
+            setViewArticle(initialArticle);
+            onClearTarget?.();
+        }
+    }, [initialArticle, onClearTarget]);
+
+    useEffect(() => {
         if (viewArticle) {
             fetchComments(viewArticle.id);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }, [viewArticle]);
 
@@ -82,8 +93,17 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, onLogout, session }) => 
         else { navigator.clipboard.writeText(url); alert("Link disalin!"); }
     };
 
-    const heroArticles = articles.slice(0, 2);
-    const latestArticles = articles.slice(2, 8);
+    const filteredArticles = useMemo(() => {
+        if (!searchQuery) return articles;
+        return articles.filter(a => 
+            a.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            a.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            a.tags?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [articles, searchQuery]);
+
+    const heroArticles = filteredArticles.slice(0, 2);
+    const latestArticles = filteredArticles.slice(2, 8);
     const trendingArticles = articles.slice(0, 5);
 
     return (
@@ -91,10 +111,12 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, onLogout, session }) => 
             <aside className="w-[240px] flex-shrink-0 space-y-10">
                 {/* Top Brand Award */}
                 <div>
-                    <div className="flex items-center gap-3 mb-6">
+                    <div className="flex items-center gap-3 mb-1">
                         <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">TOP BRAND AWARD</h3>
+                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900 leading-tight">TOP BRAND AWARD</h3>
                     </div>
+                    <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-6 border-l-2 border-zinc-100 pl-2">sumber: www.topbrand-award.com</div>
+                    
                     <div className="space-y-1 mb-2">
                         {TOP_BRANDS.map((brand, idx) => (
                             <div key={brand.name} className="px-1 py-1.5 flex items-center justify-between border-b border-zinc-50 group cursor-pointer hover:bg-zinc-50 transition-colors">
@@ -182,23 +204,32 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, onLogout, session }) => 
                     <div className="space-y-8 animate-in fade-in duration-700">
                         {loading ? <div className="text-center py-20 font-black text-zinc-200 animate-pulse uppercase tracking-[0.5em]">Loading News...</div> : (
                             <>
-                                {heroArticles.length > 0 && (
-                                    <div className="grid grid-cols-2 gap-px border border-zinc-200 rounded overflow-hidden shadow-sm">
-                                        {heroArticles.map((art) => (
-                                            <div key={art.id} className="relative h-[360px] overflow-hidden group cursor-pointer border-l border-zinc-200" onClick={() => setViewArticle(art)}>
-                                                <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                                                <div className="absolute bottom-6 left-6 right-6"><div className="text-zinc-400 text-[9px] font-bold uppercase mb-1">{art.publish_date}</div><h2 className="text-2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors">{art.title}</h2></div>
+                                {searchQuery && filteredArticles.length === 0 ? (
+                                    <div className="py-20 text-center border-2 border-dashed border-zinc-100 bg-zinc-50/50 rounded-sm">
+                                        <div className="text-zinc-300 font-black uppercase text-[11px] tracking-[0.5em] mb-4">NO MATCH FOUND</div>
+                                        <p className="text-zinc-400 text-[12px] font-bold uppercase tracking-widest max-w-[400px] mx-auto leading-relaxed">TIDAK ADA ARTIKEL YANG SESUAI DENGAN PENCARIAN "{searchQuery.toUpperCase()}"</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {heroArticles.length > 0 && (
+                                            <div className="grid grid-cols-2 gap-px border border-zinc-200 rounded overflow-hidden shadow-sm">
+                                                {heroArticles.map((art) => (
+                                                    <div key={art.id} className="relative h-[360px] overflow-hidden group cursor-pointer border-l border-zinc-200" onClick={() => setViewArticle(art)}>
+                                                        <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                                                        <div className="absolute bottom-6 left-6 right-6"><div className="text-zinc-400 text-[9px] font-bold uppercase mb-1">{art.publish_date}</div><h2 className="text-2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors">{art.title}</h2></div>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
+                                        )}
+                                        <div className="grid grid-cols-2 gap-8">{latestArticles.map(art => (
+                                            <div key={art.id} className="flex gap-4 group cursor-pointer" onClick={() => setViewArticle(art)}>
+                                                <div className="w-32 h-20 flex-shrink-0 overflow-hidden bg-zinc-100 rounded-sm"><img src={art.cover_image_url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="" /></div>
+                                                <div><h4 className="text-[11px] font-black text-zinc-900 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">{art.title}</h4><div className="text-[8px] font-bold text-zinc-400 uppercase mt-2">{art.publish_date}</div></div>
+                                            </div>
+                                        ))}</div>
+                                    </>
                                 )}
-                                <div className="grid grid-cols-2 gap-8">{latestArticles.map(art => (
-                                    <div key={art.id} className="flex gap-4 group cursor-pointer" onClick={() => setViewArticle(art)}>
-                                        <div className="w-32 h-20 flex-shrink-0 overflow-hidden bg-zinc-100 rounded-sm"><img src={art.cover_image_url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="" /></div>
-                                        <div><h4 className="text-[11px] font-black text-zinc-900 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">{art.title}</h4><div className="text-[8px] font-bold text-zinc-400 uppercase mt-2">{art.publish_date}</div></div>
-                                    </div>
-                                ))}</div>
                             </>
                         )}
                     </div>

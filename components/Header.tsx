@@ -1,6 +1,6 @@
 
-import React from 'react';
-import type { Brand } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import type { Brand, Smartphone, Article } from '../types';
 import type { Session } from '@supabase/supabase-js';
 
 interface HeaderProps {
@@ -15,6 +15,10 @@ interface HeaderProps {
     session?: Session | null;
     searchQuery?: string;
     onSearchChange?: (query: string) => void;
+    smartphones?: Smartphone[];
+    articles?: Article[];
+    onProductSelect?: (phone: Smartphone) => void;
+    onArticleSelect?: (article: Article) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -28,23 +32,55 @@ const Header: React.FC<HeaderProps> = ({
     onLogout,
     session,
     searchQuery = "",
-    onSearchChange
+    onSearchChange,
+    smartphones = [],
+    articles = [],
+    onProductSelect,
+    onArticleSelect
 }) => {
     const brands: Brand[] = [
         "Samsung", "Xiaomi", "Apple", "Oppo", "Vivo", "Realme", "Infinix", "Poco",
         "Tecno", "Itel", "Iqoo", "Asus", "Redmagic", "Honor", "Motorola", "Huawei"
     ];
 
-    // Fixed: Added rifki.mau@gmail.com as authorized admin
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const searchRef = useRef<HTMLDivElement>(null);
+
     const isAdmin = session?.user?.email === 'admin@1aix.com' || session?.user?.email === 'rifki.mau@gmail.com';
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+                setIsSearchFocused(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const filteredPhones = searchQuery.length > 1 
+        ? smartphones.filter(p => 
+            p.model_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            p.brand.toLowerCase().includes(searchQuery.toLowerCase())
+        ).slice(0, 5)
+        : [];
+
+    const filteredArticles = searchQuery.length > 1
+        ? articles.filter(a => 
+            a.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            a.summary.toLowerCase().includes(searchQuery.toLowerCase())
+        ).slice(0, 5)
+        : [];
+
+    const showDropdown = isSearchFocused && (filteredPhones.length > 0 || filteredArticles.length > 0);
 
     return (
         <header className="w-full max-w-[1000px] flex flex-col shadow-xl z-50">
             {/* Top Header - Black Section */}
-            <div className="bg-[#0b0b0b] text-white h-16 flex items-center justify-between px-6">
+            <div className="bg-[#0b0b0b] text-white h-16 flex items-center justify-between">
                 {/* Logo Section */}
                 <div 
-                  className="flex items-center cursor-pointer select-none transition-opacity hover:opacity-80" 
+                  className="flex items-center cursor-pointer select-none transition-opacity hover:opacity-80 px-6 h-full" 
                   onClick={() => {
                     if (onGoHome) onGoHome();
                     else window.location.hash = '#/home';
@@ -57,75 +93,141 @@ const Header: React.FC<HeaderProps> = ({
                     />
                 </div>
 
-                {/* Center Search Bar */}
-                <div className="flex-1 max-w-[200px] mx-4 hidden lg:block">
-                    <div className="relative group">
+                {/* Center Search Bar Container - Refined Centering */}
+                <div className="flex-1 max-w-[400px] mx-4 hidden lg:flex items-center h-full relative" ref={searchRef}>
+                    <div className="relative group w-full">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 z-10">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
                         <input 
                             type="text"
-                            placeholder="CARI..."
+                            placeholder="CARI GADGET ATAU ARTIKEL..."
                             value={searchQuery}
                             onChange={(e) => onSearchChange?.(e.target.value)}
-                            onFocus={() => {
-                                if (window.location.hash !== '#/katalog') {
-                                    window.location.hash = '#/katalog';
-                                }
-                            }}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded-sm py-2 pl-9 pr-4 text-[9px] font-black uppercase tracking-widest text-white outline-none focus:border-blue-500 focus:bg-black transition-all"
+                            onFocus={() => setIsSearchFocused(true)}
+                            className="w-full bg-[#1a1a1a] border border-zinc-800 rounded-sm py-2.5 pl-10 pr-4 text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-zinc-600 focus:bg-black transition-all"
                         />
-                        <svg className="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
+
+                    {/* Search Dropdown - Positioned relative to the input box */}
+                    {showDropdown && (
+                        <div className="absolute top-[calc(100%-8px)] left-0 right-0 bg-white shadow-2xl border border-zinc-200 rounded-sm overflow-hidden z-[100] animate-in fade-in slide-in-from-top-1 duration-200">
+                            {filteredPhones.length > 0 && (
+                                <div className="p-2">
+                                    <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest px-2 mb-1">GADGETS</div>
+                                    {filteredPhones.map(phone => (
+                                        <button 
+                                            key={phone.id}
+                                            onClick={() => {
+                                                onProductSelect?.(phone);
+                                                setIsSearchFocused(false);
+                                            }}
+                                            className="w-full flex items-center gap-3 p-2 hover:bg-zinc-50 transition-colors text-left group"
+                                        >
+                                            <div className="w-10 h-10 bg-zinc-100 p-1 flex items-center justify-center rounded-sm">
+                                                <img src={phone.image_url} alt="" className="max-w-full max-h-full object-contain mix-blend-multiply" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black text-zinc-900 uppercase leading-none group-hover:text-blue-600 transition-colors">{phone.model_name}</span>
+                                                <span className="text-[8px] font-bold text-red-600 uppercase tracking-widest mt-1">{phone.brand}</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {filteredArticles.length > 0 && (
+                                <div className={`p-2 ${filteredPhones.length > 0 ? 'border-t border-zinc-100' : ''}`}>
+                                    <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest px-2 mb-1">ARTIKEL</div>
+                                    {filteredArticles.map(art => (
+                                        <button 
+                                            key={art.id}
+                                            onClick={() => {
+                                                onArticleSelect?.(art);
+                                                setIsSearchFocused(false);
+                                            }}
+                                            className="w-full flex items-center gap-3 p-2 hover:bg-zinc-50 transition-colors text-left group"
+                                        >
+                                            <div className="w-5 h-5 flex items-center justify-center text-zinc-300">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z"></path></svg>
+                                            </div>
+                                            <span className="text-[10px] font-black text-zinc-700 uppercase leading-snug group-hover:text-blue-600 transition-colors line-clamp-1">{art.title}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Navigation Links */}
-                <nav className="flex items-center gap-6">
+                <nav className="flex items-center h-full">
                     <button 
                         onClick={() => onGoToCompare ? onGoToCompare() : (window.location.hash = '#/bandingkan')}
-                        className={`flex items-center gap-2 group transition-colors ${activeTab === 'Bandingkan' ? 'text-blue-500' : 'text-zinc-400 hover:text-white'}`}
+                        className={`flex items-center gap-2 px-4 h-full group transition-all relative ${activeTab === 'Bandingkan' ? 'bg-white/5 text-blue-500' : 'text-zinc-400 hover:text-white'}`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
                         <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">COMPARE</span>
+                        {activeTab === 'Bandingkan' && <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-red-600"></div>}
                     </button>
 
                     <button 
                         onClick={() => onGoToCatalog ? onGoToCatalog() : (window.location.hash = '#/katalog')}
-                        className={`flex items-center gap-2 group transition-colors ${activeTab === 'Katalog' ? 'text-blue-500' : 'text-zinc-400 hover:text-white'}`}
+                        className={`flex items-center gap-2 px-4 h-full group transition-all relative ${activeTab === 'Katalog' ? 'bg-white/5 text-white' : 'text-zinc-400 hover:text-white'}`}
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        <svg className={`w-4 h-4 ${activeTab === 'Katalog' ? 'text-red-600' : 'text-zinc-400 group-hover:text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                            <rect x="4" y="4" width="6" height="6" strokeLinecap="round" strokeLinejoin="round" />
+                            <rect x="14" y="4" width="6" height="6" strokeLinecap="round" strokeLinejoin="round" />
+                            <rect x="4" y="14" width="6" height="6" strokeLinecap="round" strokeLinejoin="round" />
+                            <rect x="14" y="14" width="6" height="6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                         <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">KATALOG</span>
+                        {activeTab === 'Katalog' && <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-red-600"></div>}
                     </button>
 
                     <button 
                         onClick={() => window.location.hash = '#/coming-soon'}
-                        className={`flex items-center gap-2 group transition-colors ${activeTab === 'Segera Rilis' ? 'text-blue-500' : 'text-zinc-400 hover:text-white'}`}
+                        className={`flex items-center gap-2 px-4 h-full group transition-all relative ${activeTab === 'Segera Rilis' ? 'bg-white/5 text-blue-500' : 'text-zinc-400 hover:text-white'}`}
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">TKDN MONITOR</span>
+                        {activeTab === 'Segera Rilis' && <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-red-600"></div>}
                     </button>
 
                     {isAdmin && (
                         <button 
                             onClick={() => window.location.hash = '#/admin'}
-                            className={`flex items-center gap-2 group transition-all px-2 py-1 rounded border ${activeTab === 'Admin' ? 'text-red-500 border-red-500/50 bg-red-500/10' : 'text-zinc-400 border-transparent hover:text-red-500 hover:border-red-500/30'}`}
+                            className={`flex items-center gap-2 px-4 h-full group transition-all relative ${activeTab === 'Admin' ? 'text-red-500' : 'text-zinc-400 hover:text-white'}`}
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                             <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">DASHBOARD</span>
                         </button>
                     )}
 
+                    {/* Divider and Profile Icon */}
+                    <div className="h-8 w-px bg-zinc-800 mx-2 self-center"></div>
+
                     {session ? (
                          <button 
                             onClick={onLogout}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white border border-red-600/20 rounded-sm transition-all group"
+                            className="flex items-center justify-center w-12 h-full hover:bg-white/5 transition-all text-red-600 group"
+                            title="LOGOUT"
                         >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 16l4-4m0 0l4-4m4 4H7"></path></svg>
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">LOGOUT</span>
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
                         </button>
                     ) : (
                         <button 
                             onClick={onOpenLogin}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-sm transition-all shadow-lg shadow-blue-600/20"
+                            className="flex items-center justify-center w-12 h-full hover:bg-white/5 transition-all text-red-600 group"
+                            title="MASUK"
                         >
-                            <span className="text-[10px] font-black uppercase tracking-widest">LOGIN</span>
+                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
                         </button>
                     )}
                 </nav>

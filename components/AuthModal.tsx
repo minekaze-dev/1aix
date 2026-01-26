@@ -71,12 +71,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="p-10">
-                    <div className="flex justify-between items-start mb-10">
-                        <div>
-                            <h3 className="text-2xl font-black text-zinc-900 uppercase tracking-tighter leading-none mb-2">
-                                {view === 'message' ? 'EMAIL TERKIRIM' : (isLogin ? 'LOGIN PANEL' : isRegister ? 'DAFTAR AKUN' : 'RESET PASSWORD')}
-                            </h3>
-                            <div className="h-1 w-8 bg-red-600"></div>
+                    <div className="flex justify-between items-start mb-8">
+                        <div className="flex flex-col gap-4">
+                            <img 
+                                src="https://i.imgur.com/8LtVd3P.jpg" 
+                                alt="1AIX Logo" 
+                                className="h-10 w-auto object-contain self-start brightness-0 grayscale opacity-90"
+                            />
+                            <div>
+                                <h3 className="text-2xl font-black text-zinc-900 uppercase tracking-tighter leading-none mb-2">
+                                    {view === 'message' ? 'EMAIL TERKIRIM' : (isLogin ? 'SELAMAT DATANG' : isRegister ? 'DAFTAR AKUN' : 'RESET PASSWORD')}
+                                </h3>
+                                <div className="h-1 w-8 bg-red-600"></div>
+                            </div>
                         </div>
                         <button onClick={onClose} className="text-zinc-300 hover:text-zinc-900 transition-colors">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -139,13 +146,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                                             className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-900 transition-colors"
                                         >
                                             {showPassword ? (
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
                                                 </svg>
                                             ) : (
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.024 10.024 0 014.13-5.326m9.416.521c.746.565 1.436 1.213 2.054 1.934m1.076 2.053A10.05 10.05 0 0121.542 12c-1.274 4.057-5.064 7-9.542 7-1.391 0-2.704-.23-3.926-.654m12.426-14L3 3m3.343 3.343a3 3 0 114.242 4.242" />
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                 </svg>
                                             )}
                                         </button>
@@ -155,7 +162,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                                 {error && <p className="text-[9px] font-black text-red-500 uppercase tracking-widest text-center">{error}</p>}
 
                                 <button type="submit" disabled={loading} className="w-full py-4 bg-zinc-900 text-white font-black uppercase text-[10px] tracking-[0.3em] hover:bg-red-600 transition-all rounded-sm shadow-xl disabled:opacity-50 active:scale-[0.98]">
-                                    {loading ? 'MEMPROSES...' : (isLogin ? 'MASUK PANEL' : isRegister ? 'BUAT AKUN' : 'KIRIM INSTRUKSI')}
+                                    {loading ? 'MEMPROSES...' : (isLogin ? 'MASUK' : isRegister ? 'BUAT AKUN' : 'KIRIM INSTRUKSI')}
                                 </button>
                                 
                                 <div className="text-center pt-2">
