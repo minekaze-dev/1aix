@@ -19,6 +19,8 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterBrand, setFilterBrand] = useState<string>("ALL");
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const initialFormState: Partial<Smartphone> = {
@@ -30,6 +32,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     release_year: new Date().getFullYear().toString(),
     launch_date_indo: new Date().toISOString().split('T')[0],
     tkdn_score: 35,
+    order_rank: 0,
     chipset: '',
     ram_storage: '',
     price_srp: 0,
@@ -56,43 +59,46 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
   const [formData, setFormData] = useState<Partial<Smartphone>>(initialFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchSmartphones = async () => {
-    setLoading(true);
+  const sortPhones = (data: Smartphone[]) => {
+    return [...data].sort((a, b) => {
+        const rA = a.order_rank ?? 0;
+        const rB = b.order_rank ?? 0;
+        if (rB !== rA) return rB - rA;
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
+  };
+
+  const fetchSmartphones = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      const { data, error } = await supabase.from('smartphones').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('smartphones')
+        .select('*');
+      
       if (error) throw error;
-      setSmartphones(data || []);
+      setSmartphones(sortPhones(data || []));
+      setIsDirty(false);
     } catch (err) {
-      console.error(err);
-      setSmartphones([]);
+      console.error("Fetch error:", err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => { fetchSmartphones(); }, []);
 
   const filteredSmartphones = useMemo(() => {
-    return smartphones.filter(p => {
+    const list = smartphones.filter(p => {
         const matchesSearch = p.model_name.toLowerCase().includes(searchQuery.toLowerCase()) || p.brand.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesBrand = filterBrand === "ALL" || p.brand === filterBrand;
         return matchesSearch && matchesBrand;
     });
+    // Jangan di-sort ulang di useMemo agar posisi swap lokal terjaga
+    return list;
   }, [smartphones, searchQuery, filterBrand]);
 
   const handleEdit = (phone: Smartphone) => { setFormData(phone); setEditingId(phone.id); setShowForm(true); };
   const handleAddNew = () => { setFormData(initialFormState); setEditingId(null); setShowForm(true); };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, image_url: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleAiAutoFill = async () => {
     if (!formData.model_name || !formData.brand) { alert("Masukkan Nama Brand dan Model terlebih dahulu!"); return; }
@@ -100,10 +106,8 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const prompt = `Generate technical specifications for "${formData.brand} ${formData.model_name}" as sold in the Indonesian market. 
-      Return a STRICT JSON object with these exact keys:
-      market_category (one of: "Entry-level", "Mid-range", "Flagship"),
-      release_month, release_year, chipset, ram_storage, dimensions_weight, material, colors, network, wifi, display_type, os, cpu, gpu, camera_main, camera_video_main, camera_selfie, camera_video_selfie, battery_capacity, charging, sensors, usb_type, audio, features_extra, tkdn_score (number), price_srp (number), image_url, official_store_link.
-      Only return raw JSON.`;
+      Return a STRICT JSON object with these keys:
+      market_category, release_month, release_year, chipset, ram_storage, dimensions_weight, material, colors, network, wifi, display_type, os, cpu, gpu, camera_main, camera_video_main, camera_selfie, camera_video_selfie, battery_capacity, charging, sensors, usb_type, audio, features_extra, tkdn_score, price_srp, image_url, official_store_link.`;
       
       const response = await ai.models.generateContent({ 
         model: 'gemini-3-flash-preview', 
@@ -113,11 +117,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
       
       const aiData = JSON.parse(response.text || '{}');
       setFormData(prev => ({ ...prev, ...aiData }));
-      alert("AI Berhasil melengkapi spesifikasi!");
-    } catch (err) { 
-        console.error(err);
-        alert("AI Auto-fill failed."); 
-    } finally { setIsAiLoading(false); }
+    } catch (err) { console.error(err); } finally { setIsAiLoading(false); }
   };
 
   const handleDelete = async (id: string) => {
@@ -125,9 +125,55 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     try {
         const { error } = await supabase.from('smartphones').delete().eq('id', id);
         if (error) throw error;
-        fetchSmartphones();
+        fetchSmartphones(true);
         if (onDataChange) onDataChange();
     } catch (err) { alert("Gagal menghapus."); }
+  };
+
+  // Hanya memindah posisi di STATE LOKAL agar tidak mental
+  const handleMove = (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= filteredSmartphones.length) return;
+
+    const newSmartphones = [...smartphones];
+    // Cari index asli di array smartphones (karena filtered bisa beda index)
+    const currentItem = filteredSmartphones[index];
+    const targetItem = filteredSmartphones[targetIndex];
+    
+    const realIdx1 = newSmartphones.findIndex(s => s.id === currentItem.id);
+    const realIdx2 = newSmartphones.findIndex(s => s.id === targetItem.id);
+
+    // Swap posisi di array
+    [newSmartphones[realIdx1], newSmartphones[realIdx2]] = [newSmartphones[realIdx2], newSmartphones[realIdx1]];
+    
+    setSmartphones(newSmartphones);
+    setIsDirty(true);
+  };
+
+  const saveOrdering = async () => {
+    if (!isDirty) return;
+    setIsSavingOrder(true);
+    try {
+      // Kita tetapkan order_rank berdasarkan urutan di layar saat ini
+      // Menggunakan urutan terbalik: item pertama dapet rank tertinggi
+      const total = smartphones.length;
+      const updates = smartphones.map((phone, idx) => {
+          return supabase
+            .from('smartphones')
+            .update({ order_rank: total - idx })
+            .eq('id', phone.id);
+      });
+
+      await Promise.all(updates);
+      alert("URUTAN BERHASIL DISIMPAN!");
+      setIsDirty(false);
+      if (onDataChange) onDataChange();
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menyimpan urutan.");
+    } finally {
+      setIsSavingOrder(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,7 +189,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
             if (error) throw error;
         }
         setShowForm(false);
-        fetchSmartphones();
+        fetchSmartphones(true);
         if (onDataChange) onDataChange();
     } catch (err) { console.error(err); alert("Gagal menyimpan."); } finally { setIsSubmitting(false); }
   };
@@ -155,7 +201,25 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
           <h1 className="text-2xl font-black text-[#1e293b] uppercase tracking-tight mb-1">GADGET MOD</h1>
           <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">MODUL MANAJEMEN DATABASE</p>
         </div>
-        {!showForm && <button onClick={handleAddNew} className="flex items-center gap-2 px-6 py-3 bg-[#ef4444] text-white text-[10px] font-black uppercase rounded-sm shadow-xl hover:bg-red-600 transition-all active:scale-95">TAMBAH HP BARU</button>}
+        {!showForm && (
+            <div className="flex gap-3">
+                {isDirty && (
+                    <button 
+                        onClick={saveOrdering} 
+                        disabled={isSavingOrder}
+                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-[10px] font-black uppercase rounded-sm shadow-xl hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                        {isSavingOrder ? 'SAVING...' : 'SIMPAN URUTAN'}
+                    </button>
+                )}
+                <button 
+                    onClick={handleAddNew} 
+                    className="flex items-center gap-2 px-6 py-3 bg-[#ef4444] text-white text-[10px] font-black uppercase rounded-sm shadow-xl hover:bg-red-600 transition-all active:scale-95"
+                >
+                    TAMBAH HP BARU
+                </button>
+            </div>
+        )}
       </header>
 
       {showForm ? (
@@ -170,7 +234,6 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
               <button type="button" onClick={handleAiAutoFill} disabled={isAiLoading || !formData.model_name} className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-indigo-700 disabled:opacity-50 transition-all">{isAiLoading ? 'GENERATING...' : 'AI ASSISTANCE AUTO-FILL'}</button>
             </div>
 
-            {/* Section 1: Identity */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <h3 className="text-[11px] font-black text-red-600 uppercase tracking-[0.3em] border-l-4 border-red-600 pl-4 mb-4">IDENTITAS PRODUK</h3>
@@ -180,115 +243,8 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                 </div>
                 <div className="space-y-6 pt-10">
                   <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">STATUS RILIS</span><select value={formData.release_status} onChange={e => setFormData({...formData, release_status: e.target.value as ReleaseStatus})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none"><option value="Tersedia">TERSEDIA</option><option value="Pre-Order">PRE-ORDER</option><option value="Segera Rilis">SEGERA RILIS</option></select></label>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">URUTAN PRIORITAS (RANKING)</span><input type="number" value={formData.order_rank || 0} onChange={e => setFormData({...formData, order_rank: Number(e.target.value)})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black outline-none"/></label>
                   <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">HARGA SRP (IDR)</span><input type="number" required value={formData.price_srp} onChange={e => setFormData({...formData, price_srp: Number(e.target.value)})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black outline-none"/></label>
-                </div>
-            </div>
-
-            {/* Section 2: Media & Image */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <h3 className="text-[11px] font-black text-purple-600 uppercase tracking-[0.3em] border-l-4 border-purple-600 pl-4 mb-4">MEDIA & COVER IMAGE</h3>
-                <label className="block">
-                  <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">LINK IMAGE URL</span>
-                  <input type="text" value={formData.image_url || ''} onChange={e => setFormData({...formData, image_url: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="https://..."/>
-                </label>
-                <div className="flex flex-col gap-3">
-                  <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">ATAU UPLOAD FILE</span>
-                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full py-4 bg-zinc-100 text-zinc-900 border border-zinc-200 border-dashed rounded-sm font-black text-[10px] uppercase tracking-widest hover:bg-zinc-200 transition-all">
-                    {formData.image_url?.startsWith('data:image') ? 'GANTI FILE' : 'PILIH FILE DARI STORAGE'}
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center justify-center bg-zinc-50 border border-zinc-100 rounded-xl p-4">
-                {formData.image_url ? (
-                  <div className="text-center">
-                    <img src={formData.image_url} alt="Preview" className="max-h-[160px] object-contain mx-auto mix-blend-multiply mb-2" />
-                    <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Preview Gambar</span>
-                  </div>
-                ) : (
-                  <div className="text-center text-zinc-300">
-                    <svg className="w-12 h-12 mx-auto mb-2 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    <span className="text-[9px] font-black uppercase tracking-widest">Belum Ada Gambar</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Section 3: Body & Material */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <h3 className="text-[11px] font-black text-blue-600 uppercase tracking-[0.3em] border-l-4 border-blue-600 pl-4 mb-4">BODY & MATERIAL</h3>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">DIMENSI / BERAT</span><input type="text" value={formData.dimensions_weight || ''} onChange={e => setFormData({...formData, dimensions_weight: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="e.g. 162.3 x 79 x 8.6 mm / 232 g"/></label>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">MATERIAL</span><input type="text" value={formData.material || ''} onChange={e => setFormData({...formData, material: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="e.g. Titanium frame, Gorilla Glass Armor"/></label>
-                </div>
-                <div className="space-y-6 pt-10">
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">WARNA</span><input type="text" value={formData.colors || ''} onChange={e => setFormData({...formData, colors: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Titanium Black, Gray, etc."/></label>
-                </div>
-            </div>
-
-            {/* Section 4: Connectivity & Display */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <h3 className="text-[11px] font-black text-indigo-600 uppercase tracking-[0.3em] border-l-4 border-indigo-600 pl-4 mb-4">CONNECTIVITY & DISPLAY</h3>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">JARINGAN</span><input type="text" value={formData.network || ''} onChange={e => setFormData({...formData, network: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="GSM / HSPA / LTE / 5G"/></label>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">WIFI</span><input type="text" value={formData.wifi || ''} onChange={e => setFormData({...formData, wifi: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Wi-Fi 7, tri-band..."/></label>
-                </div>
-                <div className="space-y-6 pt-10">
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">TIPE LAYAR</span><input type="text" value={formData.display_type || ''} onChange={e => setFormData({...formData, display_type: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="6.8' Dynamic LTPO AMOLED 2X, 120Hz..."/></label>
-                </div>
-            </div>
-
-            {/* Section 5: Platform & Memory */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <h3 className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.3em] border-l-4 border-emerald-600 pl-4 mb-4">PLATFORM & MEMORY</h3>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">SISTEM OPERASI (OS)</span><input type="text" value={formData.os || ''} onChange={e => setFormData({...formData, os: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Android 14, One UI 6.1"/></label>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">CHIPSET</span><input type="text" value={formData.chipset || ''} onChange={e => setFormData({...formData, chipset: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Snapdragon 8 Gen 3"/></label>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">CPU</span><input type="text" value={formData.cpu || ''} onChange={e => setFormData({...formData, cpu: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Octa-core (1x3.39GHz Cortex-X4...)"/></label>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">GPU</span><input type="text" value={formData.gpu || ''} onChange={e => setFormData({...formData, gpu: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Adreno 750 (1 GHz)"/></label>
-                </div>
-                <div className="space-y-6 pt-10">
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">RAM / STORAGE</span><input type="text" value={formData.ram_storage || ''} onChange={e => setFormData({...formData, ram_storage: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="12GB/256GB"/></label>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">OFFICIAL STORE LINK</span><input type="text" value={formData.official_store_link || ''} onChange={e => setFormData({...formData, official_store_link: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="https://..."/></label>
-                </div>
-            </div>
-
-            {/* Section 6: Camera Specs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <h3 className="text-[11px] font-black text-amber-600 uppercase tracking-[0.3em] border-l-4 border-amber-600 pl-4 mb-4">CAMERA</h3>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">UTAMA (BELAKANG)</span><input type="text" value={formData.camera_main || ''} onChange={e => setFormData({...formData, camera_main: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="200MP (wide) + 50MP..."/></label>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">VIDEO BELAKANG</span><input type="text" value={formData.camera_video_main || ''} onChange={e => setFormData({...formData, camera_video_main: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="8K@24/30fps, 4K@30/60/120fps"/></label>
-                </div>
-                <div className="space-y-6 pt-10">
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">SELFIE (DEPAN)</span><input type="text" value={formData.camera_selfie || ''} onChange={e => setFormData({...formData, camera_selfie: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="12MP Dual Pixel PDAF"/></label>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">VIDEO DEPAN</span><input type="text" value={formData.camera_video_selfie || ''} onChange={e => setFormData({...formData, camera_video_selfie: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="4K@30/60fps"/></label>
-                </div>
-            </div>
-
-            {/* Section 7: Battery & Power */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <h3 className="text-[11px] font-black text-purple-600 uppercase tracking-[0.3em] border-l-4 border-purple-600 pl-4 mb-4">BATTERY</h3>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">KAPASITAS</span><input type="text" value={formData.battery_capacity || ''} onChange={e => setFormData({...formData, battery_capacity: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="5000 mAh Li-Ion"/></label>
-                </div>
-                <div className="space-y-6 pt-10">
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">CHARGING</span><input type="text" value={formData.charging || ''} onChange={e => setFormData({...formData, charging: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="45W wired, 15W wireless"/></label>
-                </div>
-            </div>
-
-            {/* Section 8: Hardware & Features */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <h3 className="text-[11px] font-black text-zinc-900 uppercase tracking-[0.3em] border-l-4 border-zinc-900 pl-4 mb-4">HARDWARE & FEATURES</h3>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">SENSOR</span><input type="text" value={formData.sensors || ''} onChange={e => setFormData({...formData, sensors: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Fingerprint (under display), accelerometer..."/></label>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">TIPE USB</span><input type="text" value={formData.usb_type || ''} onChange={e => setFormData({...formData, usb_type: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="USB Type-C 3.2, OTG"/></label>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">TKDN SCORE (%)</span><input type="number" value={formData.tkdn_score || 0} onChange={e => setFormData({...formData, tkdn_score: Number(e.target.value)})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black outline-none"/></label>
-                </div>
-                <div className="space-y-6 pt-10">
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">AUDIO</span><input type="text" value={formData.audio || ''} onChange={e => setFormData({...formData, audio: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Stereo speakers, tuned by AKG"/></label>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">FITUR LAIN</span><input type="text" value={formData.features_extra || ''} onChange={e => setFormData({...formData, features_extra: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="NFC, Bluetooth 5.3, IP68"/></label>
                 </div>
             </div>
 
@@ -310,18 +266,39 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                     <option value="ALL">SEMUA BRAND</option>
                     {BRANDS.map(b => <option key={b} value={b}>{b.toUpperCase()}</option>)}
                  </select>
+                 {isDirty && <div className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-1 animate-pulse uppercase tracking-widest border border-blue-100">URUTAN TELAH BERUBAH. SILAKAN SIMPAN.</div>}
               </div>
               <div className="text-[10px] font-black text-zinc-400 uppercase">{filteredSmartphones.length} ITEMS</div>
            </div>
            <table className="w-full text-left border-collapse">
-             <thead><tr className="bg-white border-b border-zinc-100 text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]"><th className="px-8 py-5">SMARTPHONE</th><th className="px-8 py-5">PRICE SRP</th><th className="px-8 py-5">STATUS</th><th className="px-8 py-5 text-right">AKSI</th></tr></thead>
+             <thead><tr className="bg-white border-b border-zinc-100 text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]"><th className="px-8 py-5">POSISI</th><th className="px-8 py-5">SMARTPHONE</th><th className="px-8 py-5">PRICE SRP</th><th className="px-8 py-5">STATUS</th><th className="px-8 py-5 text-right">AKSI</th></tr></thead>
              <tbody className="divide-y divide-zinc-50">
-                {loading ? (<tr><td colSpan={4} className="px-8 py-20 text-center animate-pulse">Fetching DB...</td></tr>) : filteredSmartphones.map(phone => (
-                    <tr key={phone.id} className="hover:bg-zinc-50/50 group">
+                {loading ? (<tr><td colSpan={5} className="px-8 py-20 text-center animate-pulse font-black text-zinc-300 uppercase text-[10px] tracking-widest">Memuat Database...</td></tr>) : filteredSmartphones.length > 0 ? filteredSmartphones.map((phone, idx) => (
+                    <tr key={phone.id} className="hover:bg-zinc-50/50 group transition-all duration-300">
+                        <td className="px-8 py-5">
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => handleMove(idx, 'up')}
+                                    disabled={idx === 0}
+                                    className={`w-10 h-10 border rounded-sm flex items-center justify-center transition-all ${idx === 0 ? 'border-zinc-50 text-zinc-100 opacity-50 cursor-not-allowed' : 'border-zinc-200 text-zinc-400 hover:border-blue-500 hover:text-blue-500 shadow-sm bg-white active:scale-90'}`}
+                                    title="Naikkan Urutan"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"></path></svg>
+                                </button>
+                                <button 
+                                    onClick={() => handleMove(idx, 'down')}
+                                    disabled={idx === filteredSmartphones.length - 1}
+                                    className={`w-10 h-10 border rounded-sm flex items-center justify-center transition-all ${idx === filteredSmartphones.length - 1 ? 'border-zinc-50 text-zinc-100 opacity-50 cursor-not-allowed' : 'border-zinc-200 text-zinc-400 hover:border-blue-500 hover:text-blue-500 shadow-sm bg-white active:scale-90'}`}
+                                    title="Turunkan Urutan"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+                                </button>
+                            </div>
+                        </td>
                         <td className="px-8 py-5">
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-zinc-100 rounded-sm p-1 flex items-center justify-center">
-                                    <img src={phone.image_url} className="max-w-full max-h-full object-contain mix-blend-multiply" />
+                                <div className="w-10 h-10 bg-zinc-100 rounded-sm p-1 flex items-center justify-center shadow-inner">
+                                    <img src={phone.image_url} alt={phone.model_name} className="max-w-full max-h-full object-contain mix-blend-multiply" />
                                 </div>
                                 <div>
                                     <div className="text-[11px] font-black text-zinc-900 uppercase leading-none mb-1">{phone.model_name}</div>
@@ -330,15 +307,15 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                             </div>
                         </td>
                         <td className="px-8 py-5"><div className="text-[11px] font-black text-blue-600">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(phone.price_srp)}</div></td>
-                        <td className="px-8 py-5"><span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase ${phone.release_status === 'Tersedia' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>{phone.release_status}</span></td>
+                        <td className="px-8 py-5"><span className={`text-[8px] font-black px-2 py-0.5 rounded-sm uppercase ${phone.release_status === 'Tersedia' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>{phone.release_status}</span></td>
                         <td className="px-8 py-5 text-right">
                             <div className="flex justify-end gap-2">
-                                <button onClick={() => handleEdit(phone)} className="p-2 text-zinc-400 hover:text-blue-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" strokeWidth="2"></path></svg></button>
-                                <button onClick={() => handleDelete(phone.id)} className="p-2 text-zinc-400 hover:text-red-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth="2"></path></svg></button>
+                                <button onClick={() => handleEdit(phone)} className="p-2 text-zinc-400 hover:text-blue-600 transition-colors" title="Edit Data"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" strokeWidth="2"></path></svg></button>
+                                <button onClick={() => handleDelete(phone.id)} className="p-2 text-zinc-400 hover:text-red-600 transition-colors" title="Hapus Data"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>
                             </div>
                         </td>
                     </tr>
-                ))}
+                )) : (<tr><td colSpan={5} className="px-8 py-20 text-center text-zinc-300 font-black uppercase text-[10px] tracking-widest italic">Tidak ada data ditemukan.</td></tr>)}
              </tbody>
            </table>
         </div>

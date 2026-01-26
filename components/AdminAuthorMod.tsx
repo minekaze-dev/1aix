@@ -1,17 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-
-interface Author {
-  id: string;
-  name: string;
-  role: 'ADMIN' | 'AUTHOR';
-  email: string;
-  created_at: string;
-}
+import type { Author } from '../types';
 
 const AdminAuthorMod: React.FC = () => {
   const [authors, setAuthors] = useState<Author[]>([]);
-  const [showAdd, setShowAdd] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Author>>({
     name: '',
     role: 'AUTHOR',
@@ -31,16 +25,30 @@ const AdminAuthorMod: React.FC = () => {
 
   const handleSave = () => {
     if (!formData.name || !formData.email) return;
-    const newAuthor = {
-      ...formData,
-      id: `auth-${Date.now()}`,
-      created_at: new Date().toISOString()
-    } as Author;
-    const updated = [newAuthor, ...authors];
+    
+    let updated: Author[];
+    if (editingId) {
+      updated = authors.map(auth => auth.id === editingId ? { ...auth, ...formData } : auth);
+    } else {
+      const newAuthor = {
+        ...formData,
+        id: `auth-${Date.now()}`,
+        created_at: new Date().toISOString()
+      } as Author;
+      updated = [newAuthor, ...authors];
+    }
+    
     setAuthors(updated);
     localStorage.setItem('1AIX_LOCAL_AUTHORS', JSON.stringify(updated));
-    setShowAdd(false);
+    setShowForm(false);
+    setEditingId(null);
     setFormData({ name: '', role: 'AUTHOR', email: '' });
+  };
+
+  const handleEdit = (author: Author) => {
+    setFormData({ name: author.name, role: author.role, email: author.email });
+    setEditingId(author.id);
+    setShowForm(true);
   };
 
   const handleDelete = (id: string) => {
@@ -58,7 +66,7 @@ const AdminAuthorMod: React.FC = () => {
           <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">KELOLA TIM REDAKSI & HAK AKSES</p>
         </div>
         <button 
-          onClick={() => setShowAdd(true)}
+          onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: '', role: 'AUTHOR', email: '' }); }}
           className="flex items-center gap-2 px-6 py-3 bg-[#ef4444] text-white text-[10px] font-black uppercase tracking-widest rounded-sm shadow-xl hover:bg-red-600 transition-all transform active:scale-95"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4"></path></svg>
@@ -86,8 +94,9 @@ const AdminAuthorMod: React.FC = () => {
                     {author.role}
                    </span>
                 </td>
-                <td className="px-8 py-5 text-right">
-                  <button onClick={() => handleDelete(author.id)} className="p-2 text-zinc-400 hover:text-red-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>
+                <td className="px-8 py-5 text-right flex justify-end gap-2">
+                  <button onClick={() => handleEdit(author)} className="p-2 text-zinc-400 hover:text-blue-600" title="Edit Penulis"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z"></path></svg></button>
+                  <button onClick={() => handleDelete(author.id)} className="p-2 text-zinc-400 hover:text-red-600" title="Hapus Penulis"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                 </td>
               </tr>
             ))}
@@ -95,10 +104,10 @@ const AdminAuthorMod: React.FC = () => {
         </table>
       </div>
 
-      {showAdd && (
+      {showForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-6">
             <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 p-10">
-                <h3 className="text-xl font-black text-zinc-800 uppercase tracking-tighter mb-8">TAMBAH PENULIS BARU</h3>
+                <h3 className="text-xl font-black text-zinc-800 uppercase tracking-tighter mb-8">{editingId ? 'EDIT PENULIS' : 'TAMBAH PENULIS BARU'}</h3>
                 <div className="space-y-6">
                     <label className="block">
                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">NAMA LENGKAP</span>
@@ -116,8 +125,8 @@ const AdminAuthorMod: React.FC = () => {
                         </select>
                     </label>
                     <div className="flex gap-4 pt-4">
-                        <button onClick={() => setShowAdd(false)} className="flex-1 py-4 bg-zinc-100 text-zinc-500 font-black text-[10px] uppercase rounded">BATAL</button>
-                        <button onClick={handleSave} className="flex-1 py-4 bg-red-600 text-white font-black text-[10px] uppercase rounded shadow-lg shadow-red-500/20">DAFTARKAN</button>
+                        <button onClick={() => setShowForm(false)} className="flex-1 py-4 bg-zinc-100 text-zinc-500 font-black text-[10px] uppercase rounded">BATAL</button>
+                        <button onClick={handleSave} className="flex-1 py-4 bg-red-600 text-white font-black text-[10px] uppercase rounded shadow-lg shadow-red-500/20">{editingId ? 'SIMPAN PERUBAHAN' : 'DAFTARKAN'}</button>
                     </div>
                 </div>
             </div>

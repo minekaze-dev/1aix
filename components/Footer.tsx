@@ -14,7 +14,7 @@ const Footer: React.FC = () => {
                     </div>
                     <div className="flex flex-col">
                         <span className="text-[11px] font-black uppercase tracking-widest text-white leading-none mb-1">SUPPORT BY GSMARENA</span>
-                        <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest leading-none">&copy; {new Date().getFullYear()} 1AIX</span>
+                        <span className="text-[9px] font-bold text-zinc-600 tracking-widest leading-none">&copy; {new Date().getFullYear()} 1AIX | Referensi Smartphone Resmi Indonesia</span>
                     </div>
                 </div>
 

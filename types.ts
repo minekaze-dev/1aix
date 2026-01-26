@@ -23,6 +23,8 @@ export interface Smartphone {
   model_code?: string;
   prediction_quarter?: "Q1" | "Q2" | "Q3" | "Q4";
   software_update_version?: string;
+  // Fix: Added missing order_rank property for sorting and prioritization
+  order_rank?: number;
   
   dimensions_weight?: string;
   material?: string;
@@ -70,7 +72,16 @@ export interface Article {
   summary: string;
   content: string;
   categories: ArticleCategory[]; 
-  status: 'DRAFT' | 'PUBLISHED';
+  status: 'DRAFT' | 'PUBLISHED' | 'TRASH';
+  created_at: string;
+  author_name?: string;
+}
+
+export interface Author {
+  id: string;
+  name: string;
+  role: 'ADMIN' | 'AUTHOR';
+  email: string;
   created_at: string;
 }
 

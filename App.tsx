@@ -13,25 +13,59 @@ import Footer from './components/Footer';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 
-const FaqPage = () => (
-    <div className="animate-in fade-in duration-500 max-w-2xl mx-auto py-12">
-        <h1 className="text-3xl font-black uppercase tracking-tighter italic mb-8 border-l-4 border-red-600 pl-4">FREQUENTLY ASKED QUESTIONS</h1>
-        <div className="space-y-8">
-            <div>
-                <h3 className="text-[11px] font-black uppercase tracking-widest text-blue-600 mb-2">Q: APA ITU 1AIX?</h3>
-                <p className="text-sm font-bold text-zinc-600 leading-relaxed uppercase">1AIX ADALAH PORTAL INFORMASI GADGET TERINTEGRASI YANG MENYAJIKAN DATA SPESIFIKASI RESMI, HARGA SRP, DAN PEMANTAUAN TKDN KHUSUS PASAR INDONESIA.</p>
+const FaqPage = () => {
+    const faqs = [
+        {
+            q: "APA ITU SKOR TKDN DI 1AIX?",
+            a: "TKDN (Tingkat Komponen Dalam Negeri) adalah nilai persentase kandungan lokal pada perangkat telekomunikasi yang beredar resmi di Indonesia sesuai regulasi Kemenperin."
+        },
+        {
+            q: "SEBERAPA AKURAT HARGA SRP YANG DITAMPILKAN?",
+            a: "Harga SRP (Suggested Retail Price) diambil dari data resmi peluncuran brand. Harga di toko retail mungkin bervariasi tergantung promo dan wilayah."
+        },
+        {
+            q: "APAKAH DATA SPESIFIKASI SELALU TERUPDATE?",
+            a: "Ya, sistem kami melakukan sinkronisasi berkala dengan database brand global dan sertifikasi lokal untuk memastikan data teknis tetap akurat."
+        },
+        {
+            q: "BAGAIMANA CARA MEMBANDINGKAN DUA HP?",
+            a: "Masuk ke menu 'Katalog', pilih perangkat yang diinginkan, lalu tekan tombol 'Compare'. Anda bisa memilih hingga 2 perangkat secara side-by-side."
+        },
+        {
+            q: "APA MAKSUD STATUS 'SEGERA RILIS'?",
+            a: "Status ini berarti perangkat telah terdeteksi masuk database TKDN namun belum diluncurkan secara retail di pasar Indonesia."
+        },
+        {
+            q: "APAKAH ADA APLIKASI MOBILE 1AIX?",
+            a: "Saat ini layanan kami berbasis web-app yang dioptimalkan untuk performa mobile (PWA)."
+        }
+    ];
+
+    return (
+        <div className="animate-in fade-in duration-700 py-12 max-w-[900px] mx-auto">
+            <div className="mb-12 text-center">
+                <h1 className="text-4xl font-black uppercase tracking-tighter italic text-zinc-900 leading-none">FREQUENTLY ASKED QUESTIONS</h1>
+                <div className="h-1 w-20 bg-red-600 mx-auto mt-4"></div>
             </div>
-            <div>
-                <h3 className="text-[11px] font-black uppercase tracking-widest text-blue-600 mb-2">Q: DARI MANA SUMBER HARGA SRP?</h3>
-                <p className="text-sm font-bold text-zinc-600 leading-relaxed uppercase">SELURUH HARGA SRP (SUGGESTED RETAIL PRICE) DIAMBIL DARI OFFICIAL STORE BRAND TERKAIT DI MARKETPLACE DAN SITUS RESMI BRAND.</p>
-            </div>
-            <div>
-                <h3 className="text-[11px] font-black uppercase tracking-widest text-blue-600 mb-2">Q: APAKAH DATA TKDN AKURAT?</h3>
-                <p className="text-sm font-bold text-zinc-600 leading-relaxed uppercase">YA, DATA MONITOR TKDN KAMI DISINKRONKAN SECARA BERKALA DENGAN DATABASE KEMENTERIAN PERINDUSTRIAN REPUBLIK INDONESIA.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {faqs.map((faq, index) => (
+                    <div key={index} className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm hover:border-blue-200 transition-colors">
+                        <div className="flex gap-2 mb-4">
+                            <span className="text-red-600 font-black text-[12px] leading-tight">Q:</span>
+                            <h3 className="text-[12px] font-black uppercase tracking-tight text-zinc-900 leading-tight">
+                                {faq.q}
+                            </h3>
+                        </div>
+                        <p className="text-[11px] font-bold text-zinc-500 leading-relaxed pl-6 border-l border-zinc-200">
+                            {faq.a}
+                        </p>
+                    </div>
+                ))}
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const PolicyPage = () => (
     <div className="animate-in fade-in duration-500 max-w-2xl mx-auto py-12">
@@ -53,7 +87,7 @@ const TermsPage = () => (
             <p className="font-bold uppercase text-sm mb-6">DENGAN MENGGUNAKAN LAYANAN 1AIX, ANDA SETUJU UNTUK MEMATUHI SELURUH ATURAN YANG BERLAKU DI BAWAH INI.</p>
             <ul className="space-y-4">
                 <li className="text-sm font-bold uppercase leading-relaxed">1. PENGGUNA DILARANG MEMBERIKAN KOMENTAR YANG MENGANDUNG SARA, PENGHINAAN, ATAU HOAX.</li>
-                <li className="text-sm font-bold uppercase leading-relaxed">2. SELURUH DATA SPESIFIKASI DISEDIAKAN SEBAGAI REFERENSI, KAMI TIDAK BERTANGGUNG JAWAB ATAS PERUBAHAN MENDADAK DARI BRAND.</li>
+                <li className="text-sm font-bold uppercase leading-relaxed">2. SELURUH DATA SPESIFIKASI DISEDIAKAN SEYBAGAI REFERENSI, KAMI TIDAK BERTANGGUNG JAWAB ATAS PERUBAHAN MENDADAK DARI BRAND.</li>
                 <li className="text-sm font-bold uppercase leading-relaxed">3. PENYALAHGUNAAN AKUN ATAU PERCOBAAN PERETASAN AKAN MENGAKIBATKAN BLOKIR PERMANEN.</li>
             </ul>
         </div>
@@ -91,6 +125,11 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Tracking page visit
+  useEffect(() => {
+    supabase.from('site_analytics').insert([{ event_type: 'page_view', value: 1 }]).then();
+  }, []);
+
   const isAdmin = useMemo(() => {
     return session?.user?.email === 'admin@1aix.com' || session?.user?.email === 'rifki.mau@gmail.com';
   }, [session]);
@@ -104,23 +143,35 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  // Helper untuk sorting smartphone agar konsisten dengan Admin Panel
+  const sortSmartphones = (data: Smartphone[]) => {
+    return [...data].sort((a, b) => {
+        const rA = a.order_rank ?? 0;
+        const rB = b.order_rank ?? 0;
+        // Primary sort: Order Rank (Descending)
+        if (rB !== rA) return rB - rA;
+        // Secondary sort: Created At (Newest)
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
+  };
+
+  const fetchData = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [phonesRes, articlesRes] = await Promise.all([
-        supabase.from('smartphones').select('*').order('created_at', { ascending: false }),
+        supabase.from('smartphones').select('*'),
         supabase.from('articles').select('*').eq('status', 'PUBLISHED').order('publish_date', { ascending: false })
       ]);
 
       if (phonesRes.error) throw phonesRes.error;
       if (articlesRes.error) throw articlesRes.error;
 
-      setSmartphones(phonesRes.data || []);
+      setSmartphones(sortSmartphones(phonesRes.data || []));
       setArticles(articlesRes.data || []);
     } catch (err) {
       console.error("Fetch Error:", err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -200,7 +251,7 @@ export default function App() {
             <AdminDashboard 
                 session={session} 
                 onLogout={handleLogout} 
-                onDataChange={fetchData}
+                onDataChange={() => fetchData(true)}
             />
         );
     } else {

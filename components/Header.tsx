@@ -111,7 +111,7 @@ const Header: React.FC<HeaderProps> = ({
                         />
                     </div>
 
-                    {/* Search Dropdown - Positioned relative to the input box */}
+                    {/* Search Dropdown */}
                     {showDropdown && (
                         <div className="absolute top-[calc(100%-8px)] left-0 right-0 bg-white shadow-2xl border border-zinc-200 rounded-sm overflow-hidden z-[100] animate-in fade-in slide-in-from-top-1 duration-200">
                             {filteredPhones.length > 0 && (
@@ -206,7 +206,7 @@ const Header: React.FC<HeaderProps> = ({
                         </button>
                     )}
 
-                    {/* Divider and Profile Icon */}
+                    {/* Divider and Profile/Logout Icon */}
                     <div className="h-8 w-px bg-zinc-800 mx-2 self-center"></div>
 
                     {session ? (
@@ -215,8 +215,9 @@ const Header: React.FC<HeaderProps> = ({
                             className="flex items-center justify-center w-12 h-full hover:bg-white/5 transition-all text-red-600 group"
                             title="LOGOUT"
                         >
+                            {/* Ikon Logout (Panah Keluar) */}
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                         </button>
                     ) : (

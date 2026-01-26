@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import type { Article } from '../types';
+import type { Article, Author } from '../types';
 import { supabase } from '../lib/supabase';
 
 interface AdminArticleEditorProps {
@@ -18,11 +18,13 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
     summary: '',
     content: '',
     categories: [],
+    author_name: 'Redaksi 1AIX',
     status: 'DRAFT',
     ...article
   });
 
   const [dynamicCategories, setDynamicCategories] = useState<string[]>([]);
+  const [authors, setAuthors] = useState<Author[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
@@ -37,7 +39,16 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
             setDynamicCategories(["REVIEW", "NEWS", "LEAK", "GAMING", "UPDATE", "UNBOXING", "EVENT"]);
         }
     };
+    
+    const fetchAuthors = () => {
+        const localAuthors = localStorage.getItem('1AIX_LOCAL_AUTHORS');
+        if (localAuthors) {
+            setAuthors(JSON.parse(localAuthors));
+        }
+    };
+
     fetchCats();
+    fetchAuthors();
   }, []);
 
   const pushHistory = useCallback((newContent: string) => {
@@ -76,23 +87,42 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
         case 'QUOTE': newContent = `${before}\n> ${selection}${after}`; break;
         case 'UL': newContent = `${before}\n- ${selection}${after}`; break;
         case 'OL': newContent = `${before}\n1. ${selection}${after}`; break;
-        case 'H': newContent = `${before}\n## ${selection}${after}`; break;
         case 'IMAGE': newContent = `${before}![Deskripsi Gambar](URL_GAMBAR)${after}`; break;
         case 'LEFT': newContent = `${before}<div align="left">${selection}</div>${after}`; break;
         case 'CENTER': newContent = `${before}<div align="center">${selection}</div>${after}`; break;
         case 'RIGHT': newContent = `${before}<div align="right">${selection}</div>${after}`; break;
         case 'JUSTIFY': newContent = `${before}<div align="justify">${selection}</div>${after}`; break;
-        case 'SIZE': newContent = `${before}<span style="font-size: ${param}">${selection}</span>${after}`; break;
+        case 'H': newContent = `${before}\n## ${selection}${after}`; break;
         default: return;
       }
 
       setFormData(prev => ({ ...prev, content: newContent }));
       pushHistory(newContent);
-      setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start, start + newContent.length - before.length - after.length); }, 0);
+      setTimeout(() => { 
+        textarea.focus(); 
+        const newPos = start + (newContent.length - before.length - after.length);
+        textarea.setSelectionRange(newPos, newPos); 
+      }, 0);
   }, [pushHistory]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z' || e.key === 'Z') {
+            e.preventDefault();
+            handleUndo();
+        } else if (e.key === 'b' || e.key === 'B') {
+            e.preventDefault();
+            insertText('B');
+        } else if (e.key === 'i' || e.key === 'I') {
+            e.preventDefault();
+            insertText('I');
+        }
+    }
+  };
 
   useEffect(() => { if (history.length === 0) { setHistory([formData.content || '']); setHistoryIndex(0); } }, []);
 
+  // Permalink otomatis dari Judul
   useEffect(() => {
     if (formData.title && !article) {
         const slug = formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -107,7 +137,15 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
         if (w.startsWith('#')) return w.replace(/#+/g, '#');
         return '#' + w;
     }).join(' ');
-    setFormData({ ...formData, tags: formatted });
+    setFormData(prev => ({ ...prev, tags: formatted }));
+  };
+
+  const toggleCategory = (cat: string) => {
+    const current = formData.categories || [];
+    const updated = current.includes(cat as any) 
+        ? current.filter(c => c !== cat) 
+        : [...current, cat];
+    setFormData(prev => ({ ...prev, categories: updated as any }));
   };
 
   const handleSave = async (status: 'DRAFT' | 'PUBLISHED') => {
@@ -115,29 +153,18 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
     setIsSaving(true);
     
     try {
-        const payload = {
-            ...formData,
-            status: status,
-        };
-
-        let result;
+        const payload = { ...formData, status };
         if (article?.id) {
-            result = await supabase
-                .from('articles')
-                .update(payload)
-                .eq('id', article.id);
+            const { error } = await supabase.from('articles').update(payload).eq('id', article.id);
+            if (error) throw error;
         } else {
             const { id, ...newPayload } = payload;
-            result = await supabase
-                .from('articles')
-                .insert([newPayload]);
+            const { error } = await supabase.from('articles').insert([newPayload]);
+            if (error) throw error;
         }
-
-        if (result.error) throw result.error;
-        
-        alert(status === 'PUBLISHED' ? 'Artikel berhasil diterbitkan ke Database!' : 'Draft berhasil disimpan!');
+        alert(status === 'PUBLISHED' ? 'Artikel berhasil diterbitkan!' : 'Draft berhasil disimpan!');
         onClose();
-    } catch (err: any) {
+    } catch (err) {
         console.error(err);
         alert("Gagal menyimpan ke database.");
     } finally {
@@ -146,7 +173,7 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
   };
 
   const renderContent = (content: string) => {
-      if (!content) return 'Mulailah mengetik isi berita Anda...';
+      if (!content) return '<p class="text-zinc-400 italic">Pratinjau konten Anda akan muncul di sini...</p>';
       return content
           .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
           .replace(/&lt;div align="(.*?)"&gt;([\s\S]*?)&lt;\/div&gt;/g, '<div style="text-align: $1">$2</div>')
@@ -154,11 +181,11 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
           .replace(/_(.*?)_/g, '<em>$1</em>')
           .replace(/^# (.*$)/gm, '<h1 style="font-size: 2em; font-weight: 900; margin: 0.5em 0;">$1</h1>')
-          .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$1</h2>')
-          .replace(/^&gt; (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500">$1</blockquote>')
+          .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$2</h2>')
+          .replace(/^&gt; (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500 my-4">$1</blockquote>')
           .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
           .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 list-decimal">$1</li>')
-          .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="w-full my-4 rounded shadow-lg" />');
+          .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="w-full my-6 rounded shadow-lg" />');
   };
 
   return (
@@ -168,93 +195,150 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
             <button onClick={onClose} className="p-2 hover:bg-zinc-50 rounded-full transition-colors text-zinc-400 hover:text-zinc-900">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             </button>
-            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-zinc-900">TULIS ARTIKEL</h2>
+            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-zinc-900">REDAKSI ARTIKEL</h2>
         </div>
         <div className="flex items-center gap-4">
              <button onClick={() => handleSave('DRAFT')} disabled={isSaving} className="text-zinc-500 hover:text-zinc-900 px-6 py-3 rounded-sm text-[10px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-50">SIMPAN DRAFT</button>
-             <button onClick={() => handleSave('PUBLISHED')} disabled={isSaving} className="bg-[#ef4444] hover:bg-red-600 text-white px-8 py-3 rounded-sm text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 shadow-lg shadow-red-500/20 transition-all active:scale-95 disabled:opacity-50">TERBITKAN SEKARANG</button>
+             <button onClick={() => handleSave('PUBLISHED')} disabled={isSaving} className="bg-[#ef4444] hover:bg-red-600 text-white px-8 py-3 rounded-sm text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 shadow-lg transition-all active:scale-95 disabled:opacity-50">TERBITKAN SEKARANG</button>
         </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
+        {/* Editor Side */}
         <div className="w-[50%] bg-[#f4f7f9] border-r border-zinc-200 overflow-y-auto p-12 scrollbar-hide">
-             <div className="max-w-[600px] mx-auto space-y-8">
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-zinc-200">
-                    <label className="text-[9px] font-black text-red-600 uppercase tracking-[0.3em] mb-4 block">JUDUL ARTIKEL</label>
-                    <input type="text" placeholder="Ketik Judul Berita Disini..." value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full text-3xl font-black uppercase tracking-tighter text-zinc-900 border-none outline-none placeholder:text-zinc-200 bg-transparent"/>
-                </div>
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-zinc-200">
-                    <label className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-4 block">PERMALINK / URL SLUG</label>
-                    <div className="flex items-center gap-2 bg-zinc-50 p-3 rounded-sm border border-zinc-100">
-                      <span className="text-[10px] font-black text-zinc-400">1AIX.COM</span>
-                      <input type="text" placeholder="/news/judul-berita" value={formData.permalink} onChange={(e) => setFormData({...formData, permalink: e.target.value})} className="flex-1 bg-transparent text-[11px] font-black text-zinc-800 outline-none uppercase tracking-widest"/>
+             <div className="max-w-[650px] mx-auto space-y-8 pb-32">
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-zinc-200 space-y-6">
+                    <div>
+                        <label className="text-[9px] font-black text-red-600 uppercase tracking-[0.3em] mb-4 block">JUDUL ARTIKEL</label>
+                        <input type="text" placeholder="Ketik Judul Berita..." value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full text-2xl font-black uppercase tracking-tighter text-zinc-900 border-b border-zinc-100 pb-2 outline-none placeholder:text-zinc-200 bg-transparent"/>
+                    </div>
+                    <div className="grid grid-cols-2 gap-6 pt-4">
+                        <div>
+                            <label className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-2 block">COVER IMAGE URL</label>
+                            <input type="text" placeholder="https://..." value={formData.cover_image_url} onChange={(e) => setFormData({...formData, cover_image_url: e.target.value})} className="w-full bg-zinc-50 border border-zinc-100 p-3 rounded text-[11px] font-bold outline-none focus:border-blue-500"/>
+                        </div>
+                        <div>
+                            <label className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-2 block">PENULIS (AUTHOR)</label>
+                            <select value={formData.author_name} onChange={(e) => setFormData({...formData, author_name: e.target.value})} className="w-full bg-zinc-50 border border-zinc-100 p-3 rounded text-[11px] font-black uppercase outline-none focus:border-blue-500">
+                                <option value="Redaksi 1AIX">REDAKSI 1AIX</option>
+                                {authors.map(auth => (
+                                    <option key={auth.id} value={auth.name}>{auth.name.toUpperCase()}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-2 block">TANGGAL PUBLIKASI</label>
+                            <input type="date" value={formData.publish_date} onChange={(e) => setFormData({...formData, publish_date: e.target.value})} className="w-full bg-zinc-50 border border-zinc-100 p-3 rounded text-[11px] font-bold outline-none focus:border-blue-500"/>
+                        </div>
+                        <div>
+                            <label className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-2 block">HASHTAGS (TAGS)</label>
+                            <input type="text" placeholder="#SAMSUNG #GADGET" value={formData.tags} onChange={(e) => handleTagsChange(e.target.value)} className="w-full bg-zinc-50 border border-zinc-100 p-3 rounded text-[11px] font-bold outline-none focus:border-blue-500 text-blue-600"/>
+                        </div>
                     </div>
                 </div>
+
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-zinc-200">
+                    <label className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-4 block">KATEGORI ARTIKEL</label>
+                    <div className="flex flex-wrap gap-2">
+                        {dynamicCategories.map(cat => (
+                            <button key={cat} onClick={() => toggleCategory(cat)} className={`px-4 py-2 text-[10px] font-black rounded-sm border transition-all ${formData.categories?.includes(cat as any) ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-zinc-100 text-zinc-400 hover:border-zinc-300'}`}>
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 <div className="bg-white p-8 rounded-xl shadow-sm border border-zinc-200">
                     <label className="text-[9px] font-black text-blue-600 uppercase tracking-[0.3em] mb-4 block">RINGKASAN (SUMMARY)</label>
                     <textarea rows={3} placeholder="Ketik ringkasan singkat berita..." value={formData.summary} onChange={(e) => setFormData({...formData, summary: e.target.value})} className="w-full text-sm font-bold text-zinc-600 border-none outline-none placeholder:text-zinc-200 bg-transparent resize-none leading-relaxed"/>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm">
-                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block mb-4">COVER IMAGE URL</span>
-                        <input type="url" placeholder="https://..." value={formData.cover_image_url} onChange={(e) => setFormData({...formData, cover_image_url: e.target.value})} className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded text-[11px] font-bold text-zinc-700 outline-none focus:border-blue-500 transition-colors"/>
-                    </div>
-                    <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm">
-                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block mb-4">HASHTAG TAGS</span>
-                        <input type="text" placeholder="#gadget #review" value={formData.tags} onChange={(e) => handleTagsChange(e.target.value)} className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded text-[11px] font-bold text-zinc-700 outline-none focus:border-blue-500 transition-colors"/>
-                    </div>
-                    <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm">
-                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block mb-4">TANGGAL TAYANG</span>
-                        <input type="date" value={formData.publish_date} onChange={(e) => setFormData({...formData, publish_date: e.target.value})} className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded text-[11px] font-bold text-zinc-700 outline-none focus:border-blue-500 transition-colors"/>
-                    </div>
-                </div>
-                <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm">
-                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block mb-4">PILIH KATEGORI (BISA MULTI)</span>
-                    <div className="flex flex-wrap gap-2">
-                        {dynamicCategories.map(cat => {
-                            const isActive = (formData.categories || []).includes(cat as any);
-                            return (
-                                <button key={cat} onClick={() => { const current = formData.categories || []; setFormData({ ...formData, categories: current.includes(cat as any) ? current.filter(c => c !== cat) : [...current, cat as any] }); }} className={`px-4 py-2 border rounded-sm text-[9px] font-black uppercase tracking-widest transition-all ${isActive ? 'bg-red-600 border-red-600 text-white shadow-md' : 'bg-white border-zinc-200 text-zinc-400 hover:border-zinc-900 hover:text-zinc-900'}`}>{cat}</button>
-                            );
-                        })}
-                    </div>
-                </div>
+
                 <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-md flex flex-col">
                     <div className="bg-zinc-50 border-b border-zinc-200 p-2 flex flex-wrap gap-1 sticky top-0 z-10">
-                        <button onClick={() => insertText('B')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600 font-bold">B</button>
-                        <button onClick={() => insertText('I')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600 italic font-serif">I</button>
+                        <button onClick={() => insertText('B')} title="Bold (CTRL+B)" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600 font-bold">B</button>
+                        <button onClick={() => insertText('I')} title="Italic (CTRL+I)" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600 italic font-serif">I</button>
                         <div className="h-5 w-px bg-zinc-200 self-center mx-1"></div>
-                        <button onClick={() => insertText('LEFT')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16"></path></svg></button>
-                        <button onClick={() => insertText('CENTER')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M4 18h16"></path></svg></button>
-                        <button onClick={() => insertText('RIGHT')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M10 12h10M4 18h16"></path></svg></button>
+                        <button onClick={() => insertText('UL')} title="Bullet List" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2.5" strokeLinecap="round"></path><circle cx="2" cy="6" r="1" fill="currentColor"/><circle cx="2" cy="12" r="1" fill="currentColor"/><circle cx="2" cy="18" r="1" fill="currentColor"/></svg></button>
+                        <button onClick={() => insertText('OL')} title="Numbered List" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 6h13M7 12h13M7 18h13" strokeWidth="2.5" strokeLinecap="round"></path><text x="0" y="7" fontSize="8" fontWeight="black">1</text><text x="0" y="13" fontSize="8" fontWeight="black">2</text></svg></button>
                         <div className="h-5 w-px bg-zinc-200 self-center mx-1"></div>
-                        <button onClick={() => insertText('QUOTE')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600 font-serif font-black text-xl">"</button>
-                        <button onClick={() => insertText('UL')} className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M5 6v.01M5 12v.01M5 18v.01"></path></svg></button>
-                        <select onChange={(e) => insertText('SIZE', e.target.value)} className="h-9 px-2 bg-transparent text-[10px] font-black uppercase outline-none text-zinc-500 cursor-pointer hover:text-zinc-900"><option value="">SIZE</option><option value="12px">12PX</option><option value="16px">16PX</option><option value="20px">20PX</option><option value="24px">24PX</option><option value="32px">32PX</option></select>
-                        <button onClick={handleUndo} className="ml-auto w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-400 hover:text-zinc-900"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5"></path></svg></button>
+                        <button onClick={() => insertText('LEFT')} title="Rata Kiri" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16" strokeWidth="2.5" strokeLinecap="round"></path></svg></button>
+                        <button onClick={() => insertText('CENTER')} title="Rata Tengah" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M4 18h16" strokeWidth="2.5" strokeLinecap="round"></path></svg></button>
+                        <button onClick={() => insertText('RIGHT')} title="Rata Kanan" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M10 12h10M4 18h16" strokeWidth="2.5" strokeLinecap="round"></path></svg></button>
+                        <div className="h-5 w-px bg-zinc-200 self-center mx-1"></div>
+                        <button onClick={() => insertText('IMAGE')} title="Tambah Gambar" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>
+                        <button onClick={handleUndo} title="Undo (CTRL+Z)" className="ml-auto w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-400 hover:text-zinc-900"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>
                     </div>
-                    <textarea ref={textareaRef} rows={20} placeholder="Tulis narasi berita Anda disini..." value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} onKeyUp={(e) => { if (e.key === ' ' || e.key === 'Enter') pushHistory(formData.content || ''); }} className="w-full p-10 outline-none text-zinc-800 text-sm leading-relaxed scrollbar-hide bg-white min-h-[500px]"/>
+                    <textarea 
+                        ref={textareaRef} 
+                        rows={20} 
+                        placeholder="Tulis konten berita Anda di sini..." 
+                        value={formData.content} 
+                        onChange={(e) => setFormData({...formData, content: e.target.value})} 
+                        onKeyDown={handleKeyDown}
+                        className="w-full p-10 outline-none text-zinc-800 text-sm leading-relaxed scrollbar-hide bg-white min-h-[500px]"
+                    />
                 </div>
              </div>
         </div>
-        <div className="flex-1 bg-[#ffffff] overflow-y-auto p-12 scrollbar-hide flex items-start justify-center shadow-inner">
-            <div className="w-full max-w-[700px] bg-white">
-                <div className="pb-12 border-b border-zinc-100">
-                    <div className="flex gap-1 mb-6">{(formData.categories || []).map(cat => <span key={cat} className="text-[9px] font-black text-red-600 border border-red-600 px-2 py-0.5 rounded-sm uppercase tracking-widest">{cat}</span>)}</div>
-                    <h1 className="text-5xl font-black text-zinc-900 uppercase tracking-tighter leading-none mb-6 italic break-words">{formData.title || 'JUDUL BERITA'}</h1>
-                    <div className="flex flex-wrap gap-2 mb-10">{formData.tags?.split(' ').map(tag => tag.trim() && <span key={tag} className="text-[10px] font-black text-blue-600">{tag}</span>)}</div>
-                    <div className="space-y-8">
-                        {formData.cover_image_url && <div className="aspect-video overflow-hidden rounded shadow-2xl"><img src={formData.cover_image_url} className="w-full h-full object-cover" /></div>}
-                        <div className="prose prose-zinc max-w-none">
-                            <div className="text-zinc-400 font-bold leading-relaxed italic border-l-4 border-red-600 pl-6 py-2 bg-zinc-50 rounded-r mb-8">{formData.summary || 'Summary akan muncul di sini...'}</div>
-                            <div className="text-zinc-800 text-base leading-loose whitespace-pre-wrap article-preview-body" dangerouslySetInnerHTML={{ __html: renderContent(formData.content || '') }} />
+
+        {/* Live Preview Side */}
+        <div className="flex-1 bg-white overflow-y-auto p-12 scrollbar-hide flex items-start justify-center shadow-inner">
+            <div className="w-full max-w-[700px] pb-40">
+                <div className="pb-12">
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {(formData.categories || []).map(c => (
+                            <span key={c} className="text-[10px] font-black text-red-600 border border-red-600 px-2 py-0.5 uppercase tracking-[0.4em]">{c}</span>
+                        ))}
+                    </div>
+                    <h1 className="text-4xl font-black text-zinc-900 uppercase tracking-tighter leading-none mb-6 italic break-words">
+                        {formData.title || 'JUDUL BERITA'}
+                    </h1>
+                    <div className="flex items-center justify-between border-y border-zinc-100 py-3 mb-8">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center font-black text-[10px]">{(formData.author_name || '1').charAt(0)}</div>
+                            <div>
+                                <div className="text-[10px] font-black uppercase text-zinc-900 leading-none mb-0.5">{formData.author_name || 'Redaksi 1AIX'}</div>
+                                <div className="text-[8px] font-bold text-zinc-400 uppercase leading-none">{formData.publish_date}</div>
+                            </div>
                         </div>
                     </div>
+
+                    {formData.summary && (
+                         <div className="text-zinc-500 font-bold leading-relaxed italic border-l-4 border-red-600 pl-4 bg-zinc-50 py-4 mb-8">
+                            "{formData.summary}"
+                        </div>
+                    )}
+
+                    {formData.cover_image_url && (
+                        <div className="w-full aspect-video rounded-sm overflow-hidden mb-10 shadow-lg bg-zinc-50 border border-zinc-100">
+                            <img src={formData.cover_image_url} alt="Cover Preview" className="w-full h-full object-cover"/>
+                        </div>
+                    )}
+                    
+                    <div className="prose prose-zinc max-w-none">
+                        <div 
+                            className="text-zinc-800 text-base leading-loose whitespace-pre-wrap article-preview-body" 
+                            dangerouslySetInnerHTML={{ __html: renderContent(formData.content || '') }} 
+                        />
+                    </div>
+
+                    {formData.tags && (
+                        <div className="mt-12 pt-6 border-t border-zinc-50 text-[10px] font-black text-blue-600 uppercase tracking-widest italic">
+                            {formData.tags}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
       </div>
-      <style>{`.article-preview-body strong { font-weight: 800; color: #000; } .article-preview-body em { font-style: italic; } .article-preview-body div[style] { margin: 0.25em 0; } .article-preview-body span[style] { display: inline-block; } .article-preview-body blockquote { margin: 0.25rem 0; padding-top: 0.125rem; padding-bottom: 0.125rem; }`}</style>
+      <style>{`
+        .article-preview-body strong { font-weight: 900; color: #111; }
+        .article-preview-body em { font-style: italic; color: #444; }
+        .article-preview-body h1, .article-preview-body h2 { font-family: inherit; margin-top: 1.5rem; margin-bottom: 1rem; line-height: 1.2; }
+        .article-preview-body blockquote { font-size: 1.1em; color: #666; background: #f9fafb; margin: 1.5rem 0; }
+        .article-preview-body li { margin-bottom: 0.5rem; }
+        .article-preview-body img { margin: 2rem 0; display: block; width: 100%; border-radius: 4px; }
+      `}</style>
     </div>
   );
 };
