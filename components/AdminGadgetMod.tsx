@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BRANDS } from '../constants';
 import type { Smartphone, Brand, ReleaseStatus, MarketCategory } from '../types';
 import { GoogleGenAI } from "@google/genai";
@@ -19,6 +19,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterBrand, setFilterBrand] = useState<string>("ALL");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const initialFormState: Partial<Smartphone> = {
     brand: 'Samsung',
@@ -81,6 +82,17 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
 
   const handleEdit = (phone: Smartphone) => { setFormData(phone); setEditingId(phone.id); setShowForm(true); };
   const handleAddNew = () => { setFormData(initialFormState); setEditingId(null); setShowForm(true); };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, image_url: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleAiAutoFill = async () => {
     if (!formData.model_name || !formData.brand) { alert("Masukkan Nama Brand dan Model terlebih dahulu!"); return; }
@@ -172,7 +184,38 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                 </div>
             </div>
 
-            {/* Section 2: Body & Material */}
+            {/* Section 2: Media & Image */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <h3 className="text-[11px] font-black text-purple-600 uppercase tracking-[0.3em] border-l-4 border-purple-600 pl-4 mb-4">MEDIA & COVER IMAGE</h3>
+                <label className="block">
+                  <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">LINK IMAGE URL</span>
+                  <input type="text" value={formData.image_url || ''} onChange={e => setFormData({...formData, image_url: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="https://..."/>
+                </label>
+                <div className="flex flex-col gap-3">
+                  <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">ATAU UPLOAD FILE</span>
+                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full py-4 bg-zinc-100 text-zinc-900 border border-zinc-200 border-dashed rounded-sm font-black text-[10px] uppercase tracking-widest hover:bg-zinc-200 transition-all">
+                    {formData.image_url?.startsWith('data:image') ? 'GANTI FILE' : 'PILIH FILE DARI STORAGE'}
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center justify-center bg-zinc-50 border border-zinc-100 rounded-xl p-4">
+                {formData.image_url ? (
+                  <div className="text-center">
+                    <img src={formData.image_url} alt="Preview" className="max-h-[160px] object-contain mx-auto mix-blend-multiply mb-2" />
+                    <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Preview Gambar</span>
+                  </div>
+                ) : (
+                  <div className="text-center text-zinc-300">
+                    <svg className="w-12 h-12 mx-auto mb-2 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <span className="text-[9px] font-black uppercase tracking-widest">Belum Ada Gambar</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Section 3: Body & Material */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <h3 className="text-[11px] font-black text-blue-600 uppercase tracking-[0.3em] border-l-4 border-blue-600 pl-4 mb-4">BODY & MATERIAL</h3>
@@ -181,11 +224,10 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                 </div>
                 <div className="space-y-6 pt-10">
                   <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">WARNA</span><input type="text" value={formData.colors || ''} onChange={e => setFormData({...formData, colors: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Titanium Black, Gray, etc."/></label>
-                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">IMAGE URL</span><input type="text" value={formData.image_url || ''} onChange={e => setFormData({...formData, image_url: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="https://..."/></label>
                 </div>
             </div>
 
-            {/* Section 3: Connectivity & Display */}
+            {/* Section 4: Connectivity & Display */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <h3 className="text-[11px] font-black text-indigo-600 uppercase tracking-[0.3em] border-l-4 border-indigo-600 pl-4 mb-4">CONNECTIVITY & DISPLAY</h3>
@@ -197,7 +239,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                 </div>
             </div>
 
-            {/* Section 4: Platform & Memory */}
+            {/* Section 5: Platform & Memory */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <h3 className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.3em] border-l-4 border-emerald-600 pl-4 mb-4">PLATFORM & MEMORY</h3>
@@ -212,7 +254,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                 </div>
             </div>
 
-            {/* Section 5: Camera Specs */}
+            {/* Section 6: Camera Specs */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <h3 className="text-[11px] font-black text-amber-600 uppercase tracking-[0.3em] border-l-4 border-amber-600 pl-4 mb-4">CAMERA</h3>
@@ -225,7 +267,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                 </div>
             </div>
 
-            {/* Section 6: Battery & Power */}
+            {/* Section 7: Battery & Power */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <h3 className="text-[11px] font-black text-purple-600 uppercase tracking-[0.3em] border-l-4 border-purple-600 pl-4 mb-4">BATTERY</h3>
@@ -236,7 +278,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                 </div>
             </div>
 
-            {/* Section 7: Hardware & Features */}
+            {/* Section 8: Hardware & Features */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <h3 className="text-[11px] font-black text-zinc-900 uppercase tracking-[0.3em] border-l-4 border-zinc-900 pl-4 mb-4">HARDWARE & FEATURES</h3>
