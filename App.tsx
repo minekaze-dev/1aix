@@ -40,7 +40,8 @@ export default function App() {
   }, []);
 
   const isAdmin = useMemo(() => {
-    return session?.user?.email === 'admin@1aix.com';
+    // Update: Added rifki.mau@gmail.com as admin
+    return session?.user?.email === 'admin@1aix.com' || session?.user?.email === 'rifki.mau@gmail.com';
   }, [session]);
 
   useEffect(() => {

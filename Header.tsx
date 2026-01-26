@@ -35,7 +35,8 @@ const Header: React.FC<HeaderProps> = ({
         "Tecno", "Itel", "Iqoo", "Asus", "Redmagic", "Honor", "Motorola", "Huawei"
     ];
 
-    const isAdmin = session?.user?.email === 'admin@1aix.com';
+    // Update: Added rifki.mau@gmail.com as admin
+    const isAdmin = session?.user?.email === 'admin@1aix.com' || session?.user?.email === 'rifki.mau@gmail.com';
 
     return (
         <header className="w-full max-w-[1000px] flex flex-col shadow-xl z-50">
