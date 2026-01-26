@@ -1,5 +1,5 @@
 
-// Fix: Added missing brand names "Tecno", "Redmagic", "Honor", "Motorola", "Huawei", "Iqoo" to the Brand union type.
+// Fix: Added missing brand names
 export type Brand = "Samsung" | "Xiaomi" | "Apple" | "Oppo" | "Vivo" | "Realme" | "Infinix" | "Asus" | "Poco" | "Itel" | "Tecno" | "Redmagic" | "Honor" | "Motorola" | "Huawei" | "Iqoo";
 export type ReleaseStatus = "Tersedia" | "Pre-Order" | "Segera Rilis";
 
@@ -8,6 +8,8 @@ export interface Smartphone {
   brand: Brand;
   model_name: string;
   release_status: ReleaseStatus;
+  release_month?: string;
+  release_year?: string;
   launch_date_indo: string;
   tkdn_score: number;
   chipset: string;
@@ -20,7 +22,6 @@ export interface Smartphone {
   prediction_quarter?: "Q1" | "Q2" | "Q3" | "Q4";
   software_update_version?: string;
   
-  // Detailed Specs from Image
   dimensions_weight?: string;
   material?: string;
   colors?: string;
@@ -40,6 +41,23 @@ export interface Smartphone {
   usb_type?: string;
   audio?: string;
   features_extra?: string;
+  created_at?: string;
+}
+
+export type ArticleCategory = "REVIEW" | "NEWS" | "LEAK" | "GAMING" | "UPDATE" | "UNBOXING" | "EVENT";
+
+export interface Article {
+  id: string;
+  title: string;
+  cover_image_url: string;
+  tags: string;
+  permalink: string;
+  publish_date: string;
+  summary: string;
+  content: string;
+  categories: ArticleCategory[]; // Updated to array
+  status: 'DRAFT' | 'PUBLISHED';
+  created_at: string;
 }
 
 export interface Profile {
@@ -48,7 +66,6 @@ export interface Profile {
   is_blocked?: boolean;
 }
 
-// Added missing types to fix compilation errors in legacy components
 export type City = "Jakarta" | "Bogor" | "Depok" | "Tangerang" | "Bekasi";
 export type Category = "Transport" | "Wisata" | "Belanja" | "Kuliner" | "Umum";
 
@@ -67,24 +84,27 @@ export interface Guide {
   status?: 'pending' | 'approved';
 }
 
-export type ThreadStatus = 'trusted' | 'questionable' | 'danger';
 export type ThreadCategory = "Umum" | "Kuliner" | "Transportasi" | "Lowongan Kerja" | "Hiburan";
+
+export type ThreadStatus = 'trusted' | 'questionable' | 'danger';
 
 export interface Post {
   id: string;
-  author: Profile;
   text: string;
+  author: Profile;
   reports?: string[];
+  created_at?: string;
 }
 
 export interface Thread {
   id: string;
   title: string;
   category: ThreadCategory;
+  posts: Post[];
   greenVotes?: string[];
   yellowVotes?: string[];
   redVotes?: string[];
   reports?: string[];
   views?: number;
-  posts: Post[];
+  created_at?: string;
 }

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Smartphone, Brand } from '../types';
 import { TOP_BRANDS } from '../constants';
+import type { Session } from '@supabase/supabase-js';
 
 interface CatalogTabProps {
     items: Smartphone[];
@@ -13,10 +14,12 @@ interface CatalogTabProps {
     setMaxPrice: (val: number) => void;
     searchQuery: string;
     setSearchQuery: (q: string) => void;
+    onOpenLogin?: () => void;
+    session?: Session | null;
 }
 
-const SpecRow = ({ label, value }: { label: string; value?: string }) => {
-    if (!value) return null;
+const SpecRow = ({ label, value }: { label: string; value?: string | number }) => {
+    if (value === undefined || value === null || value === '') return null;
     return (
         <div className="flex border-b border-zinc-100 last:border-0 min-h-[40px]">
             <div className="w-1/3 bg-[#f8fafc] px-4 py-2.5 flex items-center">
@@ -41,7 +44,6 @@ const SpecSection = ({ icon, title, children }: { icon: React.ReactNode; title: 
         <div className="flex flex-col md:flex-row border border-zinc-200 mb-6 bg-white overflow-hidden rounded-sm shadow-sm">
             <div className="w-full md:w-[160px] bg-white p-4 flex flex-col items-center justify-center md:border-r border-zinc-200 border-b md:border-b-0">
                 <div className="text-zinc-400 mb-3 scale-110">{icon}</div>
-                {/* Judul diubah menjadi MERAH sesuai permintaan */}
                 <h3 className="text-[10px] font-black text-red-600 uppercase tracking-widest text-center">
                     {title}
                 </h3>
@@ -54,7 +56,7 @@ const SpecSection = ({ icon, title, children }: { icon: React.ReactNode; title: 
 };
 
 const CatalogTab: React.FC<CatalogTabProps> = ({ 
-    items, selectedBrand, minPrice, setMinPrice, maxPrice, setMaxPrice, searchQuery
+    items, selectedBrand, minPrice, setMinPrice, maxPrice, setMaxPrice, searchQuery, onOpenLogin, session
 }) => {
     const [selectedProduct, setSelectedProduct] = useState<Smartphone | null>(null);
 
@@ -77,7 +79,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
             <aside className="w-[240px] flex-shrink-0 space-y-8">
                 <div>
                     <div className="flex items-center gap-3 mb-6">
-                        <svg className="w-5 h-5 text-[#ef4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                        <svg className="w-5 h-5 text-[#ef4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z"></path></svg>
                         <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">TOP BRAND AWARD</h3>
                     </div>
                     <div className="space-y-1 mb-2">
@@ -99,10 +101,17 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                             Source: topbrand-award.com
                         </a>
                     </div>
-                    <button className="w-full flex items-center justify-between p-4 bg-zinc-900 text-white hover:bg-blue-600 transition-colors group rounded-sm shadow-lg">
+                    
+                    {/* Consistent Login Button in Sidebar */}
+                    <button 
+                        onClick={() => session ? (window.location.hash = '#/admin') : onOpenLogin?.()}
+                        className="w-full flex items-center justify-between p-4 bg-zinc-900 text-white hover:bg-blue-600 transition-colors group rounded-sm shadow-lg mb-8"
+                    >
                         <div className="flex items-center gap-3">
                             <svg className="w-5 h-5 text-blue-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                            <span className="text-[11px] font-black uppercase tracking-[0.2em]">LOGIN / MASUK</span>
+                            <span className="text-[11px] font-black uppercase tracking-[0.2em]">
+                                {session ? 'MENU ADMIN' : 'LOGIN / MASUK'}
+                            </span>
                         </div>
                         <svg className="w-3 h-3 text-zinc-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"></path></svg>
                     </button>
@@ -137,26 +146,29 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                                 KEMBALI KE {selectedBrand || 'KATALOG'}
                             </button>
-                            <div className="flex flex-col md:flex-row gap-8">
-                                <div className="md:w-1/2">
-                                    <div className="bg-[#f8f9fa] border border-zinc-100 p-8 flex items-center justify-center rounded-sm">
-                                        <img src={selectedProduct.image_url} alt={selectedProduct.model_name} className="w-full h-auto object-contain mix-blend-multiply drop-shadow-xl" />
+                            <div className="flex flex-col md:flex-row gap-8 items-end">
+                                <div className="md:w-[220px] flex-shrink-0">
+                                    <div className="bg-[#f8f9fa] border border-zinc-100 p-4 flex items-center justify-center rounded-sm">
+                                        <img src={selectedProduct.image_url} alt={selectedProduct.model_name} className="w-full h-auto max-h-[240px] object-contain mix-blend-multiply drop-shadow-md" />
                                     </div>
                                 </div>
-                                <div className="md:w-1/2 flex flex-col justify-end">
+                                <div className="flex-1 flex flex-col justify-end">
                                     <div className="mb-6">
                                         <div className="flex items-center gap-3 mb-2">
                                             <div className="text-[10px] font-black text-red-600 uppercase tracking-[0.2em]">{selectedProduct.brand} Official</div>
                                             <div className="bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter">{selectedProduct.release_status}</div>
                                         </div>
-                                        <h1 className="text-3xl font-black text-zinc-900 uppercase tracking-tighter leading-none mb-3">{selectedProduct.model_name}</h1>
-                                        <div className="flex items-center gap-4">
-                                            <div className="text-xl font-black text-blue-600">
+                                        <h1 className="text-4xl font-black text-zinc-900 uppercase tracking-tighter leading-none mb-3">{selectedProduct.model_name}</h1>
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="text-2xl font-black text-blue-600">
                                                 {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(selectedProduct.price_srp)}
                                             </div>
-                                            <div className="bg-zinc-50 border border-zinc-200 px-3 py-1 rounded-sm flex flex-col">
-                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">TKDN Score</span>
-                                                <span className="text-[10px] font-black text-zinc-900">{selectedProduct.tkdn_score}%</span>
+                                            <div className="h-6 w-px bg-zinc-200"></div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1">Rilis Resmi</span>
+                                                <span className="text-[11px] font-black text-zinc-900 uppercase tracking-tighter">
+                                                    {selectedProduct.release_month || 'Januari'} {selectedProduct.release_year || '2024'}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -175,6 +187,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                             <SpecSection title="CAMERA" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>}><SpecRow label="UTAMA (BELAKANG)" value={selectedProduct.camera_main} /><SpecRow label="VIDEO BELAKANG" value={selectedProduct.camera_video_main} /><SpecRow label="SELFIE (DEPAN)" value={selectedProduct.camera_selfie} /><SpecRow label="VIDEO DEPAN" value={selectedProduct.camera_video_selfie} /></SpecSection>
                             <SpecSection title="BATTERY" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>}><SpecRow label="KAPASITAS" value={selectedProduct.battery_capacity} /><SpecRow label="CHARGING" value={selectedProduct.charging} /></SpecSection>
                             <SpecSection title="HARDWARE" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>}><SpecRow label="SENSOR" value={selectedProduct.sensors} /><SpecRow label="TIPE USB" value={selectedProduct.usb_type} /><SpecRow label="AUDIO" value={selectedProduct.audio} /><SpecRow label="FITUR LAIN" value={selectedProduct.features_extra} /></SpecSection>
+                            <SpecSection title="OFFICIAL DATA" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z"></path></svg>}><SpecRow label="TKDN SCORE" value={selectedProduct.tkdn_score + '%'} /><SpecRow label="MODEL CODE" value={selectedProduct.model_code} /><SpecRow label="CERTIFICATE" value={selectedProduct.postel_cert} /></SpecSection>
                         </div>
                     </div>
                 ) : (
