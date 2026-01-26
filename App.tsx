@@ -42,7 +42,6 @@ export default function App() {
 
   const effectiveSession = useMemo(() => {
     if (session) return session;
-    // Fix: Use unknown cast to satisfy TypeScript when mocking a partial Session object for administrative testing
     if (isMockAdmin) return { user: { email: 'admin@1aix.com', user_metadata: { full_name: 'Super Admin' } } } as unknown as Session;
     return null;
   }, [session, isMockAdmin]);
@@ -62,12 +61,30 @@ export default function App() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const localSaved = localStorage.getItem('1AIX_LOCAL_PHONES');
-    const localData: Smartphone[] = localSaved ? JSON.parse(localSaved) : [];
-    const combined = [...localData, ...DUMMY_SMARTPHONES];
-    const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
-    setSmartphones(unique);
-    setLoading(false);
+    try {
+      // Fetch from Supabase
+      const { data, error } = await supabase
+        .from('smartphones')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const dbData = data || [];
+      const combined = [...dbData, ...DUMMY_SMARTPHONES];
+      const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+      setSmartphones(unique);
+    } catch (err) {
+      console.error("Fetch Error:", err);
+      // Fallback to local if error
+      const localSaved = localStorage.getItem('1AIX_LOCAL_PHONES');
+      const localData = localSaved ? JSON.parse(localSaved) : [];
+      const combined = [...localData, ...DUMMY_SMARTPHONES];
+      const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+      setSmartphones(unique);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -114,13 +131,12 @@ export default function App() {
       <div className="flex items-center justify-center min-h-screen bg-[#0b0b0b] text-blue-500">
         <div className="text-center flex flex-col items-center">
             <img src="https://i.imgur.com/8LtVd3P.jpg" alt="1AIX Logo" className="h-20 w-auto object-contain mb-4 brightness-110 animate-pulse"/>
-            <p className="text-zinc-600 text-xs uppercase tracking-[0.5em] animate-pulse">Initializing 1AIX</p>
+            <p className="text-zinc-600 text-xs uppercase tracking-[0.5em] animate-pulse">Initializing 1AIX DB</p>
         </div>
       </div>
     );
   }
 
-  // Admin Gating: Only admins can see the dashboard
   if (activeTab === 'Admin') {
     if (isAdmin) {
         return (
