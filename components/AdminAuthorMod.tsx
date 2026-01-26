@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import type { Author } from '../types';
+import { supabase } from '../lib/supabase';
 
 const AdminAuthorMod: React.FC = () => {
   const [authors, setAuthors] = useState<Author[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Author>>({
@@ -12,37 +14,65 @@ const AdminAuthorMod: React.FC = () => {
     email: ''
   });
 
-  useEffect(() => {
-    const local = localStorage.getItem('1AIX_LOCAL_AUTHORS');
-    if (local) {
-      setAuthors(JSON.parse(local));
-    } else {
-        const initial = [{ id: '1', name: 'Redaksi 1AIX', role: 'ADMIN' as const, email: 'redaksi@1aix.com', created_at: new Date().toISOString() }];
-        setAuthors(initial);
-        localStorage.setItem('1AIX_LOCAL_AUTHORS', JSON.stringify(initial));
+  const fetchAuthors = async () => {
+    setLoading(true);
+    try {
+        const { data, error } = await supabase
+            .from('authors')
+            .select('*')
+            .order('name', { ascending: true });
+        
+        if (error) throw error;
+        setAuthors(data || []);
+    } catch (err) {
+        console.error("Error fetching authors:", err);
+    } finally {
+        setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchAuthors();
   }, []);
 
-  const handleSave = () => {
-    if (!formData.name || !formData.email) return;
-    
-    let updated: Author[];
-    if (editingId) {
-      updated = authors.map(auth => auth.id === editingId ? { ...auth, ...formData } : auth);
-    } else {
-      const newAuthor = {
-        ...formData,
-        id: `auth-${Date.now()}`,
-        created_at: new Date().toISOString()
-      } as Author;
-      updated = [newAuthor, ...authors];
+  const handleSave = async () => {
+    if (!formData.name || !formData.email) {
+        alert("Nama dan Email wajib diisi!");
+        return;
     }
     
-    setAuthors(updated);
-    localStorage.setItem('1AIX_LOCAL_AUTHORS', JSON.stringify(updated));
-    setShowForm(false);
-    setEditingId(null);
-    setFormData({ name: '', role: 'AUTHOR', email: '' });
+    try {
+        if (editingId) {
+            const { error } = await supabase
+                .from('authors')
+                .update({ 
+                    name: formData.name, 
+                    role: formData.role, 
+                    email: formData.email 
+                })
+                .eq('id', editingId);
+            if (error) throw error;
+            alert("Data penulis berhasil diperbarui.");
+        } else {
+            const { error } = await supabase
+                .from('authors')
+                .insert([{ 
+                    name: formData.name, 
+                    role: formData.role, 
+                    email: formData.email 
+                }]);
+            if (error) throw error;
+            alert("Penulis baru berhasil didaftarkan.");
+        }
+        
+        fetchAuthors();
+        setShowForm(false);
+        setEditingId(null);
+        setFormData({ name: '', role: 'AUTHOR', email: '' });
+    } catch (err: any) {
+        console.error("Save error:", err);
+        alert("Gagal menyimpan data: " + (err.message || "Email mungkin sudah terdaftar."));
+    }
   };
 
   const handleEdit = (author: Author) => {
@@ -51,11 +81,17 @@ const AdminAuthorMod: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (!window.confirm('Hapus penulis ini?')) return;
-    const updated = authors.filter(a => a.id !== id);
-    setAuthors(updated);
-    localStorage.setItem('1AIX_LOCAL_AUTHORS', JSON.stringify(updated));
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Hapus penulis ini secara permanen dari database?')) return;
+    try {
+        const { error } = await supabase.from('authors').delete().eq('id', id);
+        if (error) throw error;
+        setAuthors(authors.filter(a => a.id !== id));
+        alert("Penulis telah dihapus.");
+    } catch (err) {
+        console.error("Delete error:", err);
+        alert("Gagal menghapus penulis.");
+    }
   };
 
   return (
@@ -63,7 +99,7 @@ const AdminAuthorMod: React.FC = () => {
       <header className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-black text-[#1e293b] uppercase tracking-tight mb-1">MANAJEMEN PENULIS</h1>
-          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">KELOLA TIM REDAKSI & HAK AKSES</p>
+          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">KELOLA TIM REDAKSI & HAK AKSES (DATABASE LIVE)</p>
         </div>
         <button 
           onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: '', role: 'AUTHOR', email: '' }); }}
@@ -85,7 +121,13 @@ const AdminAuthorMod: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-50">
-            {authors.map(author => (
+            {loading ? (
+                <tr>
+                    <td colSpan={4} className="px-8 py-20 text-center animate-pulse">
+                        <span className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">Memuat Data Penulis...</span>
+                    </td>
+                </tr>
+            ) : authors.length > 0 ? authors.map(author => (
               <tr key={author.id} className="hover:bg-zinc-50 transition-colors">
                 <td className="px-8 py-5 text-[11px] font-black text-zinc-900 uppercase">{author.name}</td>
                 <td className="px-8 py-5 text-[11px] font-black text-zinc-400">{author.email}</td>
@@ -94,12 +136,20 @@ const AdminAuthorMod: React.FC = () => {
                     {author.role}
                    </span>
                 </td>
-                <td className="px-8 py-5 text-right flex justify-end gap-2">
-                  <button onClick={() => handleEdit(author)} className="p-2 text-zinc-400 hover:text-blue-600" title="Edit Penulis"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z"></path></svg></button>
-                  <button onClick={() => handleDelete(author.id)} className="p-2 text-zinc-400 hover:text-red-600" title="Hapus Penulis"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                <td className="px-8 py-5 text-right">
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => handleEdit(author)} className="p-2 text-zinc-400 hover:text-blue-600 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z"></path></svg></button>
+                    <button onClick={() => handleDelete(author.id)} className="p-2 text-zinc-400 hover:text-red-600 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                  </div>
                 </td>
               </tr>
-            ))}
+            )) : (
+                <tr>
+                    <td colSpan={4} className="px-8 py-20 text-center">
+                        <span className="text-[10px] font-black text-zinc-300 uppercase tracking-widest italic">Belum ada penulis terdaftar.</span>
+                    </td>
+                </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -111,22 +161,22 @@ const AdminAuthorMod: React.FC = () => {
                 <div className="space-y-6">
                     <label className="block">
                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">NAMA LENGKAP</span>
-                        <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-zinc-50 border border-zinc-100 p-4 rounded text-sm font-black uppercase outline-none focus:border-red-500" />
+                        <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-zinc-50 border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none focus:border-red-500" />
                     </label>
                     <label className="block">
                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">EMAIL AKTIF</span>
-                        <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-zinc-50 border border-zinc-100 p-4 rounded text-sm font-black outline-none focus:border-red-500" />
+                        <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-zinc-50 border border-zinc-100 p-4 rounded-sm text-sm font-black outline-none focus:border-red-500" />
                     </label>
                     <label className="block">
                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">HAK AKSES (ROLE)</span>
-                        <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value as 'ADMIN' | 'AUTHOR'})} className="w-full bg-zinc-50 border border-zinc-100 p-4 rounded text-sm font-black uppercase outline-none focus:border-red-500">
+                        <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value as 'ADMIN' | 'AUTHOR'})} className="w-full bg-zinc-50 border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none focus:border-red-500">
                             <option value="AUTHOR">AUTHOR</option>
                             <option value="ADMIN">ADMIN</option>
                         </select>
                     </label>
                     <div className="flex gap-4 pt-4">
-                        <button onClick={() => setShowForm(false)} className="flex-1 py-4 bg-zinc-100 text-zinc-500 font-black text-[10px] uppercase rounded">BATAL</button>
-                        <button onClick={handleSave} className="flex-1 py-4 bg-red-600 text-white font-black text-[10px] uppercase rounded shadow-lg shadow-red-500/20">{editingId ? 'SIMPAN PERUBAHAN' : 'DAFTARKAN'}</button>
+                        <button onClick={() => setShowForm(false)} className="flex-1 py-4 bg-zinc-100 text-zinc-500 font-black text-[10px] uppercase rounded-sm">BATAL</button>
+                        <button onClick={handleSave} className="flex-1 py-4 bg-red-600 text-white font-black text-[10px] uppercase rounded-sm shadow-lg shadow-red-500/20">{editingId ? 'SIMPAN PERUBAHAN' : 'DAFTARKAN'}</button>
                     </div>
                 </div>
             </div>

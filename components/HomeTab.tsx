@@ -234,7 +234,15 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, onLogout, session, searc
                                             <div key={art.id} className="relative h-[360px] overflow-hidden group cursor-pointer border-l border-zinc-200" onClick={() => setViewArticle(art)}>
                                                 <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                                                <div className="absolute bottom-6 left-6 right-6"><div className="text-zinc-400 text-[9px] font-bold uppercase mb-1">{art.publish_date}</div><h2 className="text-2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors">{art.title}</h2></div>
+                                                <div className="absolute bottom-6 left-6 right-6">
+                                                    <div className="flex gap-2 mb-2">
+                                                        {(art.categories || []).map(cat => (
+                                                            <span key={cat} className="text-[8px] font-black bg-red-600 text-white px-1.5 py-0.5 uppercase tracking-widest rounded-sm">{cat}</span>
+                                                        ))}
+                                                    </div>
+                                                    <div className="text-zinc-400 text-[9px] font-bold uppercase mb-1">{art.publish_date}</div>
+                                                    <h2 className="text-2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors">{art.title}</h2>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -242,7 +250,15 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, onLogout, session, searc
                                 <div className="grid grid-cols-2 gap-8">{latestArticles.map(art => (
                                     <div key={art.id} className="flex gap-4 group cursor-pointer" onClick={() => setViewArticle(art)}>
                                         <div className="w-32 h-20 flex-shrink-0 overflow-hidden bg-zinc-100 rounded-sm"><img src={art.cover_image_url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="" /></div>
-                                        <div><h4 className="text-[11px] font-black text-zinc-900 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">{art.title}</h4><div className="text-[8px] font-bold text-zinc-400 uppercase mt-2">{art.publish_date}</div></div>
+                                        <div>
+                                            <div className="flex gap-1 mb-1">
+                                                {(art.categories || []).map(cat => (
+                                                    <span key={cat} className="text-[7px] font-black text-red-600 border border-red-600/30 px-1 py-0.5 uppercase tracking-tighter rounded-sm">{cat}</span>
+                                                ))}
+                                            </div>
+                                            <h4 className="text-[11px] font-black text-zinc-900 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">{art.title}</h4>
+                                            <div className="text-[8px] font-bold text-zinc-400 uppercase mt-2">{art.publish_date}</div>
+                                        </div>
                                     </div>
                                 ))}</div>
                             </>
