@@ -14,6 +14,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [displayName, setDisplayName] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
@@ -98,25 +99,57 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                                 {isRegister && (
                                     <div className="relative">
                                         <UserCircleIcon className="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
-                                        <input type="text" placeholder="NAMA LENGKAP" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required className="w-full pl-11 pr-4 py-4 bg-[#f8fafc] border border-zinc-100 rounded-sm text-[10px] font-black uppercase tracking-widest outline-none focus:border-red-600 focus:bg-white transition-all" />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Nama Lengkap" 
+                                            value={displayName} 
+                                            onChange={(e) => setDisplayName(e.target.value)} 
+                                            required 
+                                            className="w-full pl-11 pr-4 py-4 bg-[#f8fafc] border border-zinc-100 rounded-sm text-[13px] font-semibold outline-none focus:border-red-600 focus:bg-white transition-all text-zinc-800 placeholder:uppercase placeholder:text-[10px] placeholder:tracking-widest" 
+                                        />
                                     </div>
                                 )}
                                 
                                 <div className="relative">
                                     <EnvelopeIcon className="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
-                                     <input type="email" placeholder="EMAIL ADDRESS" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full pl-11 pr-4 py-4 bg-[#f8fafc] border border-zinc-100 rounded-sm text-[10px] font-black uppercase tracking-widest outline-none focus:border-red-600 focus:bg-white transition-all" />
+                                     <input 
+                                        type="email" 
+                                        placeholder="Email Address" 
+                                        value={email} 
+                                        onChange={(e) => setEmail(e.target.value)} 
+                                        required 
+                                        className="w-full pl-11 pr-4 py-4 bg-[#f8fafc] border border-zinc-100 rounded-sm text-[13px] font-semibold outline-none focus:border-red-600 focus:bg-white transition-all text-zinc-800 placeholder:uppercase placeholder:text-[10px] placeholder:tracking-widest" 
+                                    />
                                 </div>
                                 
                                 {!isForgotPassword && (
                                     <div className="relative">
                                          <LockClosedIcon className="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
-                                        <input type="password" placeholder="PASSWORD" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full pl-11 pr-4 py-4 bg-[#f8fafc] border border-zinc-100 rounded-sm text-[10px] font-black uppercase tracking-widest outline-none focus:border-red-600 focus:bg-white transition-all" />
+                                        <input 
+                                            type={showPassword ? "text" : "password"} 
+                                            placeholder="Password" 
+                                            value={password} 
+                                            onChange={(e) => setPassword(e.target.value)} 
+                                            required 
+                                            className="w-full pl-11 pr-12 py-4 bg-[#f8fafc] border border-zinc-100 rounded-sm text-[13px] font-semibold outline-none focus:border-red-600 focus:bg-white transition-all text-zinc-800 placeholder:uppercase placeholder:text-[10px] placeholder:tracking-widest" 
+                                        />
+                                        <button 
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-900 transition-colors"
+                                        >
+                                            {showPassword ? (
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            ) : (
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.024 10.024 0 014.13-5.326m9.416.521c.746.565 1.436 1.213 2.054 1.934m1.076 2.053A10.05 10.05 0 0121.542 12c-1.274 4.057-5.064 7-9.542 7-1.391 0-2.704-.23-3.926-.654m12.426-14L3 3m3.343 3.343a3 3 0 114.242 4.242"/></svg>
+                                            )}
+                                        </button>
                                     </div>
                                 )}
 
                                 {error && <p className="text-[9px] font-black text-red-500 uppercase tracking-widest text-center">{error}</p>}
 
-                                <button type="submit" disabled={loading} className="w-full py-4 bg-zinc-900 text-white font-black uppercase text-[10px] tracking-[0.3em] hover:bg-red-600 transition-colors rounded-sm shadow-xl disabled:opacity-50">
+                                <button type="submit" disabled={loading} className="w-full py-4 bg-zinc-900 text-white font-black uppercase text-[10px] tracking-[0.3em] hover:bg-red-600 transition-all rounded-sm shadow-xl disabled:opacity-50 active:scale-[0.98]">
                                     {loading ? 'MEMPROSES...' : (isLogin ? 'MASUK PANEL' : isRegister ? 'BUAT AKUN' : 'KIRIM INSTRUKSI')}
                                 </button>
                                 
