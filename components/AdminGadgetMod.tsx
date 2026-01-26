@@ -9,7 +9,6 @@ interface AdminGadgetModProps {
   onDataChange?: () => void;
 }
 
-const MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 const CATEGORIES: MarketCategory[] = ["Entry-level", "Mid-range", "Flagship"];
 
 const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
@@ -35,7 +34,22 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     price_srp: 0,
     image_url: '',
     official_store_link: '',
-    network: 'GSM / HSPA / LTE / 5G'
+    network: 'GSM / HSPA / LTE / 5G',
+    wifi: 'Wi-Fi 802.11 a/b/g/n/ac/6e/7, tri-band, Wi-Fi Direct',
+    display_type: '',
+    os: '',
+    cpu: '',
+    gpu: '',
+    camera_main: '',
+    camera_video_main: '',
+    camera_selfie: '',
+    camera_video_selfie: '',
+    battery_capacity: '',
+    charging: '',
+    sensors: 'Fingerprint (under display), accelerometer, gyro, proximity, compass, barometer',
+    usb_type: 'USB Type-C, OTG',
+    audio: 'Stereo speakers',
+    features_extra: 'NFC, Bluetooth, IP68'
   };
 
   const [formData, setFormData] = useState<Partial<Smartphone>>(initialFormState);
@@ -73,23 +87,35 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     setIsAiLoading(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `Generate technical specifications for "${formData.brand} ${formData.model_name}" as sold in Indonesia. Strictly JSON. market_category, release_month, release_year, chipset, ram_storage, dimensions_weight, material, colors, network, wifi, display_type, os, cpu, gpu, camera_main, camera_video_main, camera_selfie, camera_video_selfie, battery_capacity, charging, sensors, usb_type, audio, features_extra, tkdn_score, price_srp, image_url.`;
-      const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt, config: { responseMimeType: "application/json" } });
+      const prompt = `Generate technical specifications for "${formData.brand} ${formData.model_name}" as sold in the Indonesian market. 
+      Return a STRICT JSON object with these exact keys:
+      market_category (one of: "Entry-level", "Mid-range", "Flagship"),
+      release_month, release_year, chipset, ram_storage, dimensions_weight, material, colors, network, wifi, display_type, os, cpu, gpu, camera_main, camera_video_main, camera_selfie, camera_video_selfie, battery_capacity, charging, sensors, usb_type, audio, features_extra, tkdn_score (number), price_srp (number), image_url, official_store_link.
+      Only return raw JSON.`;
+      
+      const response = await ai.models.generateContent({ 
+        model: 'gemini-3-flash-preview', 
+        contents: prompt, 
+        config: { responseMimeType: "application/json" } 
+      });
+      
       const aiData = JSON.parse(response.text || '{}');
-      setFormData(prev => ({ ...prev, ...aiData, brand: prev.brand, model_name: prev.model_name }));
-    } catch (err) { alert("AI Auto-fill failed."); } finally { setIsAiLoading(false); }
+      setFormData(prev => ({ ...prev, ...aiData }));
+      alert("AI Berhasil melengkapi spesifikasi!");
+    } catch (err) { 
+        console.error(err);
+        alert("AI Auto-fill failed."); 
+    } finally { setIsAiLoading(false); }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Hapus smartphone ini dari database permanen?')) return;
+    if (!window.confirm('Hapus smartphone ini secara permanen?')) return;
     try {
         const { error } = await supabase.from('smartphones').delete().eq('id', id);
         if (error) throw error;
         fetchSmartphones();
         if (onDataChange) onDataChange();
-    } catch (err) {
-        alert("Gagal menghapus dari database.");
-    }
+    } catch (err) { alert("Gagal menghapus."); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,11 +133,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
         setShowForm(false);
         fetchSmartphones();
         if (onDataChange) onDataChange();
-        alert('Data berhasil diperbarui di Database!');
-    } catch (err) {
-        console.error(err);
-        alert("Gagal menyimpan ke database.");
-    } finally { setIsSubmitting(false); }
+    } catch (err) { console.error(err); alert("Gagal menyimpan."); } finally { setIsSubmitting(false); }
   };
 
   return (
@@ -119,41 +141,163 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
       <header className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-black text-[#1e293b] uppercase tracking-tight mb-1">GADGET MOD</h1>
-          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">MODUL MANAJEMEN DATABASE (LIVE SYNC)</p>
+          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">MODUL MANAJEMEN DATABASE</p>
         </div>
-        {!showForm && <button onClick={handleAddNew} className="flex items-center gap-2 px-6 py-3 bg-[#ef4444] text-white text-[10px] font-black uppercase tracking-widest rounded-sm shadow-xl hover:bg-red-600 transition-all transform active:scale-95"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4"></path></svg>TAMBAH HP BARU</button>}
+        {!showForm && <button onClick={handleAddNew} className="flex items-center gap-2 px-6 py-3 bg-[#ef4444] text-white text-[10px] font-black uppercase rounded-sm shadow-xl hover:bg-red-600 transition-all active:scale-95">TAMBAH HP BARU</button>}
       </header>
 
       {showForm ? (
-        <div className="bg-white border border-zinc-100 rounded-2xl shadow-sm p-10">
-          <div className="flex items-center justify-between mb-10 border-b border-zinc-50 pb-6"><h2 className="text-xl font-black text-zinc-800 uppercase tracking-tighter">{editingId ? 'EDIT HP (DB)' : 'INPUT HP BARU (DB)'}</h2><button onClick={() => setShowForm(false)} className="text-zinc-400 hover:text-zinc-900 transition-colors"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>
+        <div className="bg-white border border-zinc-100 rounded-2xl shadow-sm p-8 max-w-5xl mx-auto mb-20">
+          <div className="flex items-center justify-between mb-10 border-b border-zinc-50 pb-6">
+            <h2 className="text-xl font-black text-zinc-800 uppercase tracking-tighter">{editingId ? 'EDIT HP' : 'INPUT HP BARU'}</h2>
+            <button onClick={() => setShowForm(false)} className="text-zinc-400 hover:text-zinc-900"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+          </div>
+          
           <form onSubmit={handleSubmit} className="space-y-12">
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                 <h3 className="text-[11px] font-black text-red-600 uppercase tracking-[0.3em] border-l-4 border-red-600 pl-4">IDENTITAS PRODUK</h3>
-                 <button type="button" onClick={handleAiAutoFill} disabled={isAiLoading || !formData.model_name} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-indigo-700 disabled:opacity-50">{isAiLoading ? 'GENERATING...' : 'AI ASSISTANCE'}</button>
-              </div>
-              <div className="grid grid-cols-2 gap-8">
-                <div className="space-y-4">
+            <div className="flex justify-end">
+              <button type="button" onClick={handleAiAutoFill} disabled={isAiLoading || !formData.model_name} className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-indigo-700 disabled:opacity-50 transition-all">{isAiLoading ? 'GENERATING...' : 'AI ASSISTANCE AUTO-FILL'}</button>
+            </div>
+
+            {/* Section 1: Identity */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <h3 className="text-[11px] font-black text-red-600 uppercase tracking-[0.3em] border-l-4 border-red-600 pl-4 mb-4">IDENTITAS PRODUK</h3>
                   <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">OFFICIAL BRAND</span><select value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value as Brand})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none">{BRANDS.map(b => <option key={b} value={b}>{b}</option>)}</select></label>
                   <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">NAMA MODEL</span><input type="text" required value={formData.model_name} onChange={e => setFormData({...formData, model_name: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none"/></label>
                   <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">KATEGORI PASAR</span><select value={formData.market_category} onChange={e => setFormData({...formData, market_category: e.target.value as MarketCategory})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none">{CATEGORIES.map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}</select></label>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-6 pt-10">
                   <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">STATUS RILIS</span><select value={formData.release_status} onChange={e => setFormData({...formData, release_status: e.target.value as ReleaseStatus})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none"><option value="Tersedia">TERSEDIA</option><option value="Pre-Order">PRE-ORDER</option><option value="Segera Rilis">SEGERA RILIS</option></select></label>
                   <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">HARGA SRP (IDR)</span><input type="number" required value={formData.price_srp} onChange={e => setFormData({...formData, price_srp: Number(e.target.value)})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black outline-none"/></label>
                 </div>
-              </div>
             </div>
-            <div className="flex justify-end gap-4 pt-8 border-t border-zinc-100"><button type="button" onClick={() => setShowForm(false)} className="px-8 py-4 bg-zinc-100 text-zinc-500 font-black text-[10px] uppercase rounded">BATAL</button><button type="submit" disabled={isSubmitting} className="px-12 py-4 bg-[#ef4444] text-white font-black text-[10px] uppercase tracking-[0.3em] rounded shadow-xl disabled:opacity-50">{isSubmitting ? 'SAVING...' : 'SYNC TO DB'}</button></div>
+
+            {/* Section 2: Body & Material */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <h3 className="text-[11px] font-black text-blue-600 uppercase tracking-[0.3em] border-l-4 border-blue-600 pl-4 mb-4">BODY & MATERIAL</h3>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">DIMENSI / BERAT</span><input type="text" value={formData.dimensions_weight || ''} onChange={e => setFormData({...formData, dimensions_weight: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="e.g. 162.3 x 79 x 8.6 mm / 232 g"/></label>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">MATERIAL</span><input type="text" value={formData.material || ''} onChange={e => setFormData({...formData, material: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="e.g. Titanium frame, Gorilla Glass Armor"/></label>
+                </div>
+                <div className="space-y-6 pt-10">
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">WARNA</span><input type="text" value={formData.colors || ''} onChange={e => setFormData({...formData, colors: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Titanium Black, Gray, etc."/></label>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">IMAGE URL</span><input type="text" value={formData.image_url || ''} onChange={e => setFormData({...formData, image_url: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="https://..."/></label>
+                </div>
+            </div>
+
+            {/* Section 3: Connectivity & Display */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <h3 className="text-[11px] font-black text-indigo-600 uppercase tracking-[0.3em] border-l-4 border-indigo-600 pl-4 mb-4">CONNECTIVITY & DISPLAY</h3>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">JARINGAN</span><input type="text" value={formData.network || ''} onChange={e => setFormData({...formData, network: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="GSM / HSPA / LTE / 5G"/></label>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">WIFI</span><input type="text" value={formData.wifi || ''} onChange={e => setFormData({...formData, wifi: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Wi-Fi 7, tri-band..."/></label>
+                </div>
+                <div className="space-y-6 pt-10">
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">TIPE LAYAR</span><input type="text" value={formData.display_type || ''} onChange={e => setFormData({...formData, display_type: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="6.8' Dynamic LTPO AMOLED 2X, 120Hz..."/></label>
+                </div>
+            </div>
+
+            {/* Section 4: Platform & Memory */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <h3 className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.3em] border-l-4 border-emerald-600 pl-4 mb-4">PLATFORM & MEMORY</h3>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">SISTEM OPERASI (OS)</span><input type="text" value={formData.os || ''} onChange={e => setFormData({...formData, os: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Android 14, One UI 6.1"/></label>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">CHIPSET</span><input type="text" value={formData.chipset || ''} onChange={e => setFormData({...formData, chipset: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Snapdragon 8 Gen 3"/></label>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">CPU</span><input type="text" value={formData.cpu || ''} onChange={e => setFormData({...formData, cpu: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Octa-core (1x3.39GHz Cortex-X4...)"/></label>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">GPU</span><input type="text" value={formData.gpu || ''} onChange={e => setFormData({...formData, gpu: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Adreno 750 (1 GHz)"/></label>
+                </div>
+                <div className="space-y-6 pt-10">
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">RAM / STORAGE</span><input type="text" value={formData.ram_storage || ''} onChange={e => setFormData({...formData, ram_storage: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="12GB/256GB"/></label>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">OFFICIAL STORE LINK</span><input type="text" value={formData.official_store_link || ''} onChange={e => setFormData({...formData, official_store_link: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="https://..."/></label>
+                </div>
+            </div>
+
+            {/* Section 5: Camera Specs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <h3 className="text-[11px] font-black text-amber-600 uppercase tracking-[0.3em] border-l-4 border-amber-600 pl-4 mb-4">CAMERA</h3>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">UTAMA (BELAKANG)</span><input type="text" value={formData.camera_main || ''} onChange={e => setFormData({...formData, camera_main: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="200MP (wide) + 50MP..."/></label>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">VIDEO BELAKANG</span><input type="text" value={formData.camera_video_main || ''} onChange={e => setFormData({...formData, camera_video_main: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="8K@24/30fps, 4K@30/60/120fps"/></label>
+                </div>
+                <div className="space-y-6 pt-10">
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">SELFIE (DEPAN)</span><input type="text" value={formData.camera_selfie || ''} onChange={e => setFormData({...formData, camera_selfie: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="12MP Dual Pixel PDAF"/></label>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">VIDEO DEPAN</span><input type="text" value={formData.camera_video_selfie || ''} onChange={e => setFormData({...formData, camera_video_selfie: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="4K@30/60fps"/></label>
+                </div>
+            </div>
+
+            {/* Section 6: Battery & Power */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <h3 className="text-[11px] font-black text-purple-600 uppercase tracking-[0.3em] border-l-4 border-purple-600 pl-4 mb-4">BATTERY</h3>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">KAPASITAS</span><input type="text" value={formData.battery_capacity || ''} onChange={e => setFormData({...formData, battery_capacity: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="5000 mAh Li-Ion"/></label>
+                </div>
+                <div className="space-y-6 pt-10">
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">CHARGING</span><input type="text" value={formData.charging || ''} onChange={e => setFormData({...formData, charging: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="45W wired, 15W wireless"/></label>
+                </div>
+            </div>
+
+            {/* Section 7: Hardware & Features */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <h3 className="text-[11px] font-black text-zinc-900 uppercase tracking-[0.3em] border-l-4 border-zinc-900 pl-4 mb-4">HARDWARE & FEATURES</h3>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">SENSOR</span><input type="text" value={formData.sensors || ''} onChange={e => setFormData({...formData, sensors: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Fingerprint (under display), accelerometer..."/></label>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">TIPE USB</span><input type="text" value={formData.usb_type || ''} onChange={e => setFormData({...formData, usb_type: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="USB Type-C 3.2, OTG"/></label>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">TKDN SCORE (%)</span><input type="number" value={formData.tkdn_score || 0} onChange={e => setFormData({...formData, tkdn_score: Number(e.target.value)})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black outline-none"/></label>
+                </div>
+                <div className="space-y-6 pt-10">
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">AUDIO</span><input type="text" value={formData.audio || ''} onChange={e => setFormData({...formData, audio: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="Stereo speakers, tuned by AKG"/></label>
+                  <label className="block"><span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">FITUR LAIN</span><input type="text" value={formData.features_extra || ''} onChange={e => setFormData({...formData, features_extra: e.target.value})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-xs font-bold outline-none" placeholder="NFC, Bluetooth 5.3, IP68"/></label>
+                </div>
+            </div>
+
+            <div className="flex justify-end gap-4 pt-8 border-t border-zinc-100">
+                <button type="button" onClick={() => setShowForm(false)} className="px-10 py-4 bg-zinc-100 text-zinc-500 font-black text-[10px] uppercase rounded-sm">BATAL</button>
+                <button type="submit" disabled={isSubmitting} className="px-16 py-4 bg-[#ef4444] text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-sm shadow-xl disabled:opacity-50">{isSubmitting ? 'SAVING...' : 'SYNC TO DB'}</button>
+            </div>
           </form>
         </div>
       ) : (
         <div className="bg-white border border-zinc-100 rounded-2xl shadow-sm overflow-hidden">
-           <div className="p-6 bg-zinc-50 border-b border-zinc-100 flex items-center justify-between"><div className="flex gap-4 items-center flex-1"><div className="relative flex-1 max-w-sm"><input type="text" placeholder="Cari model..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-white border border-zinc-200 rounded text-[10px] font-black uppercase outline-none focus:border-blue-500"/><svg className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeWidth="2"></path></svg></div><select value={filterBrand} onChange={(e) => setFilterBrand(e.target.value)} className="bg-white border border-zinc-200 py-2.5 px-4 rounded text-[10px] font-black uppercase outline-none"><option value="ALL">SEMUA BRAND</option>{BRANDS.map(b => <option key={b} value={b}>{b.toUpperCase()}</option>)}</select></div><div className="text-[10px] font-black text-zinc-400 uppercase">{filteredSmartphones.length} DB ITEMS</div></div>
+           <div className="p-6 bg-zinc-50 border-b border-zinc-100 flex items-center justify-between">
+              <div className="flex gap-4 items-center flex-1">
+                 <div className="relative flex-1 max-w-sm">
+                    <input type="text" placeholder="Cari model..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-white border border-zinc-200 rounded text-[10px] font-black uppercase outline-none focus:border-blue-500"/>
+                    <svg className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeWidth="2"></path></svg>
+                 </div>
+                 <select value={filterBrand} onChange={(e) => setFilterBrand(e.target.value)} className="bg-white border border-zinc-200 py-2.5 px-4 rounded text-[10px] font-black uppercase outline-none">
+                    <option value="ALL">SEMUA BRAND</option>
+                    {BRANDS.map(b => <option key={b} value={b}>{b.toUpperCase()}</option>)}
+                 </select>
+              </div>
+              <div className="text-[10px] font-black text-zinc-400 uppercase">{filteredSmartphones.length} ITEMS</div>
+           </div>
            <table className="w-full text-left border-collapse">
              <thead><tr className="bg-white border-b border-zinc-100 text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]"><th className="px-8 py-5">SMARTPHONE</th><th className="px-8 py-5">PRICE SRP</th><th className="px-8 py-5">STATUS</th><th className="px-8 py-5 text-right">AKSI</th></tr></thead>
-             <tbody className="divide-y divide-zinc-50">{loading ? (<tr><td colSpan={4} className="px-8 py-20 text-center animate-pulse">Fetching DB...</td></tr>) : filteredSmartphones.length > 0 ? filteredSmartphones.map(phone => (<tr key={phone.id} className="hover:bg-zinc-50/50 group"><td className="px-8 py-5"><div className="flex items-center gap-4"><div className="w-10 h-10 bg-zinc-100 rounded-sm p-1 flex items-center justify-center"><img src={phone.image_url} className="max-w-full max-h-full object-contain mix-blend-multiply" /></div><div><div className="text-[11px] font-black text-zinc-900 uppercase leading-none mb-1">{phone.model_name}</div><div className="text-[9px] font-black text-red-600 uppercase tracking-widest">{phone.brand}</div></div></div></td><td className="px-8 py-5"><div className="text-[11px] font-black text-blue-600">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(phone.price_srp)}</div></td><td className="px-8 py-5"><span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase ${phone.release_status === 'Tersedia' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>{phone.release_status}</span></td><td className="px-8 py-5 text-right"><div className="flex justify-end gap-2"><button onClick={() => handleEdit(phone)} className="p-2 text-zinc-400 hover:text-blue-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" strokeWidth="2"></path></svg></button><button onClick={() => handleDelete(phone.id)} className="p-2 text-zinc-400 hover:text-red-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth="2"></path></svg></button></div></td></tr>)) : (<tr><td colSpan={4} className="px-8 py-20 text-center">DB Empty.</td></tr>)}</tbody>
+             <tbody className="divide-y divide-zinc-50">
+                {loading ? (<tr><td colSpan={4} className="px-8 py-20 text-center animate-pulse">Fetching DB...</td></tr>) : filteredSmartphones.map(phone => (
+                    <tr key={phone.id} className="hover:bg-zinc-50/50 group">
+                        <td className="px-8 py-5">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-zinc-100 rounded-sm p-1 flex items-center justify-center">
+                                    <img src={phone.image_url} className="max-w-full max-h-full object-contain mix-blend-multiply" />
+                                </div>
+                                <div>
+                                    <div className="text-[11px] font-black text-zinc-900 uppercase leading-none mb-1">{phone.model_name}</div>
+                                    <div className="text-[9px] font-black text-red-600 uppercase tracking-widest">{phone.brand}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td className="px-8 py-5"><div className="text-[11px] font-black text-blue-600">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(phone.price_srp)}</div></td>
+                        <td className="px-8 py-5"><span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase ${phone.release_status === 'Tersedia' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>{phone.release_status}</span></td>
+                        <td className="px-8 py-5 text-right">
+                            <div className="flex justify-end gap-2">
+                                <button onClick={() => handleEdit(phone)} className="p-2 text-zinc-400 hover:text-blue-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" strokeWidth="2"></path></svg></button>
+                                <button onClick={() => handleDelete(phone.id)} className="p-2 text-zinc-400 hover:text-red-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth="2"></path></svg></button>
+                            </div>
+                        </td>
+                    </tr>
+                ))}
+             </tbody>
            </table>
         </div>
       )}
