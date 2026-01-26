@@ -7,10 +7,11 @@ import { supabase } from '../lib/supabase';
 
 interface HomeTabProps {
     onOpenLogin?: () => void;
+    onLogout?: () => void;
     session?: Session | null;
 }
 
-const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, session }) => {
+const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, onLogout, session }) => {
     const [viewArticle, setViewArticle] = useState<Article | null>(null);
     const [articles, setArticles] = useState<Article[]>([]);
     const [comments, setComments] = useState<Comment[]>([]);
@@ -101,12 +102,38 @@ const HomeTab: React.FC<HomeTabProps> = ({ onOpenLogin, session }) => {
                             </div>
                         ))}
                     </div>
-                    <button onClick={() => session ? (isAdmin ? window.location.hash = '#/admin' : null) : onOpenLogin?.()} className={`w-full mt-8 flex items-center gap-4 p-4 transition-all group rounded-sm shadow-xl ${session ? 'bg-blue-600 text-white' : 'bg-zinc-900 text-white hover:bg-blue-600'}`}>
-                        <div className="w-10 h-10 rounded-sm bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/20">
-                            {session ? <span className="text-sm font-black uppercase">{(session.user.user_metadata?.full_name || session.user.email || 'A').charAt(0)}</span> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>}
+                    
+                    {session ? (
+                        <div className="w-full mt-8 bg-blue-600 rounded-sm shadow-xl overflow-hidden group">
+                             <div className="p-4 flex items-center gap-4 border-b border-white/10 cursor-pointer" onClick={() => isAdmin && (window.location.hash = '#/admin')}>
+                                <div className="w-10 h-10 rounded-sm bg-white/20 flex items-center justify-center flex-shrink-0 border border-white/20">
+                                    <span className="text-sm font-black uppercase text-white">{(session.user.user_metadata?.full_name || session.user.email || 'A').charAt(0)}</span>
+                                </div>
+                                <div className="flex flex-col items-start overflow-hidden text-white">
+                                    <span className="text-[11px] font-black uppercase tracking-[0.15em] truncate w-full">
+                                        {session.user.user_metadata?.full_name || session.user.email?.split('@')[0]}
+                                    </span>
+                                    <span className="text-[8px] font-bold opacity-70 uppercase tracking-widest leading-none mt-1">
+                                        {isAdmin ? 'ADMIN REDAKSI' : 'COMMUNITY MEMBER'}
+                                    </span>
+                                </div>
+                             </div>
+                             <button 
+                                onClick={onLogout}
+                                className="w-full py-3 bg-black/20 hover:bg-black/40 text-white text-[9px] font-black uppercase tracking-[0.3em] transition-colors flex items-center justify-center gap-2"
+                             >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 16l4-4m0 0l4-4m4 4H7"></path></svg>
+                                LOGOUT AKUN
+                             </button>
                         </div>
-                        <div className="flex flex-col items-start overflow-hidden"><span className="text-[11px] font-black uppercase tracking-[0.15em] truncate w-full">{session ? (session.user.user_metadata?.full_name || session.user.email?.split('@')[0]) : 'LOGIN / MASUK'}</span>{session && <span className="text-[8px] font-bold opacity-60 uppercase tracking-widest leading-none mt-1">{isAdmin ? 'ADMIN REDAKSI' : 'COMMUNITY MEMBER'}</span>}</div>
-                    </button>
+                    ) : (
+                        <button onClick={onOpenLogin} className="w-full mt-8 flex items-center gap-4 p-4 bg-zinc-900 text-white hover:bg-blue-600 transition-all rounded-sm shadow-xl">
+                            <div className="w-10 h-10 rounded-sm bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/20">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            </div>
+                            <span className="text-[11px] font-black uppercase tracking-[0.15em]">LOGIN / MASUK</span>
+                        </button>
+                    )}
                 </div>
             </aside>
 

@@ -166,7 +166,7 @@ export default function App() {
       </div>
 
       <main className="max-w-[1000px] w-full flex-grow py-8 bg-white shadow-sm border-x border-zinc-200 px-6">
-        {activeTab === 'Home' && <HomeTab onOpenLogin={handleOpenAuth} session={session} />}
+        {activeTab === 'Home' && <HomeTab onOpenLogin={handleOpenAuth} onLogout={handleLogout} session={session} />}
         {activeTab === 'Katalog' && (
           <CatalogTab 
             items={smartphones} 
@@ -179,6 +179,7 @@ export default function App() {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             onOpenLogin={handleOpenAuth}
+            onLogout={handleLogout}
             session={session}
           />
         )}
