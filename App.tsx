@@ -205,6 +205,7 @@ interface TkdnItem {
   cert_date: string;
   status: 'UPCOMING' | 'RELEASED';
   created_at?: string;
+  is_visible?: boolean;
 }
 
 export default function App() {
@@ -279,7 +280,8 @@ export default function App() {
       const [phonesRes, articlesRes, tkdnRes] = await Promise.all([
         supabase.from('smartphones').select('*'),
         supabase.from('articles').select('*').eq('status', 'PUBLISHED').order('publish_date', { ascending: false }),
-        supabase.from('tkdn_monitor').select('*').order('cert_date', { ascending: false }) // Fetch TKDN data
+        // FIX: Fetch TKDN data filtered by `is_visible: true`
+        supabase.from('tkdn_monitor').select('*').eq('is_visible', true).order('cert_date', { ascending: false }) 
       ]);
 
       if (phonesRes.error) throw phonesRes.error;

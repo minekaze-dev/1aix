@@ -50,6 +50,8 @@ export interface Smartphone {
   // New Interactive Fields
   likes?: number;
   dislikes?: number;
+  // New: Added source property for AdminExtendedMod to track data origin
+  source?: 'AI' | 'MANUAL' | 'PUBLISHED_DB';
 }
 
 export interface Comment {
@@ -132,4 +134,22 @@ export interface Thread {
   reports?: string[];
   views?: number;
   created_at?: string;
+}
+
+// FIX: TkdnItem interface was moved and updated directly in AdminExtendedMod.tsx
+// But for consistency and to avoid re-defining, it's good to have it here too if other parts might use it.
+// Re-adding it here with the source property
+export interface TkdnItem {
+  cert_number: string;
+  brand: string;
+  codename: string;
+  marketing_name: string;
+  tkdn_score: number;
+  cert_date: string;
+  status: 'UPCOMING' | 'RELEASED';
+  created_at?: string;
+  // New property for UI only, not stored in DB
+  id: string; // Used for React keys and local identification, maps to cert_number
+  source?: 'AI' | 'MANUAL' | 'PUBLISHED_DB';
+  is_visible?: boolean; // New: Added for public visibility control
 }
