@@ -23,6 +23,33 @@ interface AdminExtendedModProps {
   onDataChange?: () => void; // Added onDataChange prop
 }
 
+// Helper function to format release date into quarter or actual date
+const formatReleasePeriod = (dateString: string, status: 'UPCOMING' | 'RELEASED'): string => {
+  if (!dateString) return 'N/A';
+  
+  if (status === 'RELEASED') {
+    return dateString; // Display exact date if released
+  }
+
+  // For 'UPCOMING', parse date to quarter
+  try {
+    const [year, month] = dateString.split('-').map(Number);
+    if (isNaN(year) || isNaN(month)) return dateString; // Fallback if date is invalid
+
+    let quarter;
+    if (month >= 1 && month <= 3) quarter = 'Q1';
+    else if (month >= 4 && month <= 6) quarter = 'Q2';
+    else if (month >= 7 && month <= 9) quarter = 'Q3';
+    else quarter = 'Q4';
+
+    return `${quarter} ${year}`;
+  } catch (e) {
+    console.warn("Failed to parse date for quarter prediction:", dateString, e);
+    return dateString; // Fallback to original string on error
+  }
+};
+
+
 const AdminExtendedMod: React.FC<AdminExtendedModProps> = ({ onDataChange }) => {
   const [data, setData] = useState<TkdnItem[]>([]); // All working items
   const [loading, setLoading] = useState(false);
@@ -463,13 +490,14 @@ const AdminExtendedMod: React.FC<AdminExtendedModProps> = ({ onDataChange }) => 
               <th className="px-4 py-4">CODENAME</th>
               <th className="px-4 py-4">NO. SERTIFIKAT</th>
               <th className="px-4 py-4">SKOR TKDN</th>
-              <th className="px-4 py-4">TGL VERIFIKASI</th>
+              <th className="px-4 py-4">STATUS</th> {/* Changed header */}
+              <th className="px-4 py-4">PERKIRAAN RILIS</th> {/* Changed header */}
               <th className="px-4 py-4 text-right">AKSI</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-50">
             {loading ? (
-              <tr><td colSpan={7} className="px-8 py-32 text-center text-zinc-300 font-black uppercase text-xs tracking-[0.5em] animate-pulse">Scanning feed...</td></tr>
+              <tr><td colSpan={8} className="px-8 py-32 text-center text-zinc-300 font-black uppercase text-xs tracking-[0.5em] animate-pulse">Scanning feed...</td></tr>
             ) : currentItems.length > 0 ? currentItems.map((item) => (
               <tr key={item.id} className="hover:bg-zinc-50/80 transition-colors">
                 <td className="px-4 py-4 w-12 text-center">
@@ -501,7 +529,20 @@ const AdminExtendedMod: React.FC<AdminExtendedModProps> = ({ onDataChange }) => 
                 <td className="px-4 py-4 text-[10px] font-mono text-zinc-400">{item.codename}</td>
                 <td className="px-4 py-4 text-[10px] font-mono text-zinc-400">{item.cert_number}</td>
                 <td className="px-4 py-4"><div className="text-xs font-black text-zinc-800 underline decoration-blue-500 decoration-2 underline-offset-4">{item.tkdn_score}%</div></td>
-                <td className="px-4 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-tight">{item.cert_date}</td>
+                <td className="px-4 py-4">
+                    <select
+                        value={item.status}
+                        onChange={(e) => handleUpdateItem(item.id, 'status', e.target.value as 'UPCOMING' | 'RELEASED')}
+                        className={`text-[8px] font-black px-2 py-1 rounded-sm uppercase appearance-none cursor-pointer ${item.status === 'RELEASED' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-amber-100 text-amber-600 border border-amber-200'}`}
+                        title="Edit Status Rilis"
+                    >
+                        <option value="UPCOMING">UPCOMING</option>
+                        <option value="RELEASED">RELEASED</option>
+                    </select>
+                </td>
+                <td className="px-4 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-tight">
+                    {formatReleasePeriod(item.cert_date, item.status)}
+                </td>
                 <td className="px-4 py-4 text-right">
                     <button 
                         onClick={() => handleDeleteItem(item.id)}
@@ -515,7 +556,7 @@ const AdminExtendedMod: React.FC<AdminExtendedModProps> = ({ onDataChange }) => 
                 </td>
               </tr>
             )) : (
-              <tr><td colSpan={7} className="px-8 py-32 text-center text-zinc-200 font-black uppercase text-xs tracking-widest italic">Tidak ada data monitor.</td></tr>
+              <tr><td colSpan={8} className="px-8 py-32 text-center text-zinc-200 font-black uppercase text-xs tracking-widest italic">Tidak ada data monitor.</td></tr>
             )}
           </tbody>
         </table>

@@ -18,6 +18,33 @@ interface ComingSoonTabProps {
     publishedAiData: PublishedTkdn[]; // Now received as a prop
 }
 
+// Helper function to format release date into quarter or actual date
+const formatReleasePeriod = (dateString: string, status: 'UPCOMING' | 'RELEASED'): string => {
+  if (!dateString) return 'N/A';
+  
+  if (status === 'RELEASED') {
+    return dateString; // Display exact date if released
+  }
+
+  // For 'UPCOMING', parse date to quarter
+  try {
+    const [year, month] = dateString.split('-').map(Number);
+    if (isNaN(year) || isNaN(month)) return dateString; // Fallback if date is invalid
+
+    let quarter;
+    if (month >= 1 && month <= 3) quarter = 'Q1';
+    else if (month >= 4 && month <= 6) quarter = 'Q2';
+    else if (month >= 7 && month <= 9) quarter = 'Q3';
+    else quarter = 'Q4';
+
+    return `${quarter} ${year}`;
+  } catch (e) {
+    console.warn("Failed to parse date for quarter prediction:", dateString, e);
+    return dateString; // Fallback to original string on error
+  }
+};
+
+
 const ComingSoonTab: React.FC<ComingSoonTabProps> = ({ items, publishedAiData }) => {
     // Removed internal state for publishedAiData and loading, and the useEffect.
     // The parent component (App.tsx) now manages fetching and passing this data.
@@ -49,7 +76,7 @@ const ComingSoonTab: React.FC<ComingSoonTabProps> = ({ items, publishedAiData })
                                     <th className="px-6 py-3 text-left font-black">NO. SERTIFIKAT</th>
                                     <th className="px-6 py-3 text-left font-black">STATUS</th>
                                     <th className="px-6 py-3 text-left font-black">NILAI TKDN</th>
-                                    <th className="px-6 py-3 text-left font-black">TGL VERIFIKASI</th>
+                                    <th className="px-6 py-3 text-left font-black">PERKIRAAN RILIS</th> {/* Changed header */}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-50">
@@ -72,7 +99,7 @@ const ComingSoonTab: React.FC<ComingSoonTabProps> = ({ items, publishedAiData })
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-2"><span className="text-[11px] font-black text-zinc-900 underline decoration-blue-500 decoration-2 underline-offset-4">{item.tkdn_score}%</span></td>
-                                                <td className="px-6 py-2 text-[10px] font-bold text-zinc-400 uppercase tracking-tight">{item.cert_date}</td>
+                                                <td className="px-6 py-2 text-[10px] font-bold text-zinc-400 uppercase tracking-tight">{formatReleasePeriod(item.cert_date, item.status)}</td> {/* Applied formatReleasePeriod */}
                                             </tr>
                                         ))}
                                         {upcoming.map(phone => (
@@ -85,7 +112,7 @@ const ComingSoonTab: React.FC<ComingSoonTabProps> = ({ items, publishedAiData })
                                                 <td className="px-6 py-2 font-mono text-[9px] text-zinc-400">{phone.postel_cert || 'N/A'}</td>
                                                 <td className="px-6 py-2"><div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#fef3c7] border border-[#fde68a] text-[#d97706] rounded-sm shadow-sm group cursor-help"><svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span className="text-[8px] font-black uppercase tracking-wider">UPCOMING</span></div></td>
                                                 <td className="px-6 py-2"><span className="text-[11px] font-black text-zinc-900 underline decoration-blue-500 decoration-2 underline-offset-4">{phone.tkdn_score}%</span></td>
-                                                <td className="px-6 py-2 text-[10px] font-bold text-zinc-400 uppercase tracking-tight">{phone.launch_date_indo}</td>
+                                                <td className="px-6 py-2 text-[10px] font-bold text-zinc-400 uppercase tracking-tight">{formatReleasePeriod(phone.launch_date_indo, phone.release_status === "Segera Rilis" || phone.release_status === "Pre-Order" ? 'UPCOMING' : 'RELEASED')}</td> {/* Applied formatReleasePeriod */}
                                             </tr>
                                         ))}
                                         {publishedAiData.length === 0 && upcoming.length === 0 && (
