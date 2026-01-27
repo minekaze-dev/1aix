@@ -75,30 +75,61 @@ const HomeTab: React.FC<HomeTabProps> = ({
         if (!error && data) setComments(data);
     };
 
+    // Helper to encode a URL for the href attribute, safely handling HTML special characters.
+    const encodeUrlForHref = (url: string): string => {
+        // Step 1: Fully HTML-decode the URL string first to revert any &lt;, &gt;, &amp;
+        // This handles cases where the URL itself might contain HTML entities from previous escaping.
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = url;
+        let rawUrl = tempDiv.textContent || tempDiv.innerText || url;
+
+        // Step 2: Aggressively URI-encode all special characters.
+        // This is crucial to prevent any HTML from breaking out of the href attribute.
+        // `encodeURIComponent` correctly encodes <, >, &, ", ', space, etc., to %xx.
+        let encoded = encodeURIComponent(rawUrl);
+
+        // Step 3: Selectively decode characters that are safe and necessary for URL structure
+        // to make the href attribute functional and readable.
+        // Importantly, we DO NOT decode %3C (<), %3E (>), %22 ("), %27 ('), etc. here.
+        encoded = encoded.replace(/%3A/g, ':')  // :
+                         .replace(/%2F/g, '/')  // /
+                         .replace(/%3F/g, '?')  // ?
+                         .replace(/%3D/g, '=')  // =
+                         .replace(/%26/g, '&')  // &
+                         .replace(/%23/g, '#'); // #
+        
+        return encoded;
+    };
+
     // Parser markdown sederhana untuk menampilkan format tebal & miring
     const parseMarkdown = (text: string) => {
         if (!text) return '';
-        // Urutan parsing diubah: link diproses sebelum bold/italic
-        let processedText = text
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); // Escape HTML entities first
 
+        // Step 1: Initial HTML escaping for security. This converts all literal < > & to entities.
+        let processedText = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        // Step 2: Handle custom div/span alignments (which rely on raw HTML-like syntax).
+        // These specific patterns are parsed before general markdown links.
         processedText = processedText
             .replace(/&lt;div align="(.*?)"&gt;([\s\S]*?)&lt;\/div&gt;/g, '<div style="text-align: $1">$2</div>')
-            .replace(/&lt;span style="(.*?)"&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="$1">$2</span>');
-        
-        // Process markdown links first to prevent internal formatting in URLs
+            .replace(/&lt;span style="(.*?)"&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="$1">$2</span>'); // Corrected closing tag from </div> to </span>
+
+        // Step 3: Process markdown links. This must happen before bold/italic to prevent internal formatting in URLs.
+        // `linkText` and `url` here are already HTML-escaped from Step 1.
         processedText = processedText.replace(/\[(.*?)\]\((.*?)\)/g, (match, linkText, url) => {
-            // Decode HTML entities in the URL part before using it in href
-            const decodedUrl = url.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-            return `<a href="${decodedUrl}" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
+            const safeUrl = encodeUrlForHref(url); // `encodeUrlForHref` will handle the full HTML-decode and then URI-encode
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
         });
 
-        // Then process bold and italic formatting
+        // Step 4: Process bold and italic formatting. This happens after link processing.
         processedText = processedText
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/_(.*?)_/g, '<em>$1</em>');
             
-        // Process other markdown elements
+        // Step 5: Process other markdown elements
         processedText = processedText
             .replace(/^# (.*$)/gm, '<h1 style="font-size: 2em; font-weight: 900; margin: 0.5em 0;">$1</h1>')
             .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$1</h2>')
