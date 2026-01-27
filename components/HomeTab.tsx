@@ -173,7 +173,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
     const heroArticles = filteredArticles.slice(0, 2);
     const articlesAfterHero = filteredArticles.slice(2); // All articles after the first two hero articles
     
-    const trendingArticles = articles.slice(0, 3);
+    const trendingArticles = articles.slice(0, 3); // Already set to 3, no change needed for count.
 
     const popularTags = useMemo(() => {
         const tagCounts: { [key: string]: number } = {};
@@ -243,14 +243,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
                     </div>
                 </div>
 
-                {/* Banner Ads Section */}
-                <div className="w-full">
-                    <div className="h-[250px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
-                        <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
-                        <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
-                    </div>
-                </div>
-
                 {/* Populer Tag Section */}
                 <div>
                     <div className="flex items-center gap-3 mb-6">
@@ -270,6 +262,14 @@ const HomeTab: React.FC<HomeTabProps> = ({
                         {popularTags.length === 0 && (
                             <p className="text-[10px] font-bold text-zinc-400 uppercase italic">Tidak ada tag populer.</p>
                         )}
+                    </div>
+                </div>
+
+                {/* Banner Ads Section */}
+                <div className="w-full">
+                    <div className="h-[250px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
+                        <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
+                        <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
                     </div>
                 </div>
             </aside>
@@ -321,14 +321,26 @@ const HomeTab: React.FC<HomeTabProps> = ({
                         <div className="border-t border-zinc-200 pt-12 mb-20">
                             <h3 className="text-xl font-black uppercase tracking-tighter mb-8 italic">Diskusi & Komentar</h3>
                             <div className="bg-[#f8fafc] border border-zinc-100 p-8 rounded mb-12">
-                                {session ? (
-                                    <div className="flex gap-4">
-                                        <div className="w-10 h-10 rounded bg-red-600 text-white flex items-center justify-center font-black flex-shrink-0">{(session.user.user_metadata?.full_name || session.user.email || 'U').charAt(0).toUpperCase()}</div>
-                                        <div className="flex-1 space-y-4"><textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Berikan pendapatmu tentang artikel ini..." className="w-full bg-white border border-zinc-200 p-4 rounded text-sm font-bold outline-none focus:border-red-600 transition-all resize-none" rows={3}/><button onClick={handlePostComment} className="px-8 py-3 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all">KIRIM KOMENTAR</button></div>
+                                <div className="flex gap-4">
+                                    <div className="w-10 h-10 rounded bg-red-600 text-white flex items-center justify-center font-black flex-shrink-0">
+                                        {(session?.user?.user_metadata?.full_name || session?.user?.email || 'U').charAt(0).toUpperCase()}
                                     </div>
-                                ) : (
-                                    <div className="text-center py-6"><p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">Anda harus login untuk berkomentar</p><button onClick={onOpenLogin} className="px-8 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all">MASUK</button></div>
-                                )}
+                                    <div className="flex-1 space-y-4">
+                                        <textarea 
+                                            value={newComment} 
+                                            onChange={(e) => setNewComment(e.target.value)} 
+                                            placeholder="Berikan pendapatmu tentang artikel ini..." 
+                                            className="w-full bg-white border border-zinc-200 p-4 rounded text-sm font-bold outline-none focus:border-red-600 transition-all resize-none" 
+                                            rows={3}
+                                        />
+                                        <button 
+                                            onClick={handlePostComment} 
+                                            className="px-8 py-3 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all"
+                                        >
+                                            KIRIM KOMENTAR
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                             <div className="space-y-8">
                                 {comments.map(c => (
@@ -363,7 +375,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                                         <ChatAlt2Icon className="w-3 h-3 text-zinc-400" strokeWidth={2} />
                                                         <span>{articleCommentCounts[art.id] || 0}</span>
                                                     </div>
-                                                    <h2 className="text-2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors">{art.title}</h2>
+                                                    <h2 className="2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors">{art.title}</h2>
                                                 </div>
                                             </div>
                                         ))}
