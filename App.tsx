@@ -1,8 +1,6 @@
-
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import type { Smartphone, Brand, Article } from './types';
 import Header from './components/Header';
-import HomeTab from './components/HomeTab';
 import CatalogTab from './components/CatalogTab';
 import ComingSoonTab from './components/ComingSoonTab';
 import ComparisonTab from './components/ComparisonTab';
@@ -11,6 +9,8 @@ import AuthModal from './components/AuthModal';
 import Footer from './components/Footer';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
+// FIX: Add missing import for HomeTab
+import HomeTab from './components/HomeTab';
 
 const FaqPage = () => {
     const faqs = [
@@ -195,9 +195,22 @@ const TermsPage = () => (
     </div>
 );
 
+// Define the TkdnItem interface for consistency
+interface TkdnItem {
+  cert_number: string;
+  brand: string;
+  codename: string;
+  marketing_name: string;
+  tkdn_score: number;
+  cert_date: string;
+  status: 'UPCOMING' | 'RELEASED';
+  created_at?: string;
+}
+
 export default function App() {
   const [smartphones, setSmartphones] = useState<Smartphone[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
+  const [tkdnMonitorData, setTkdnMonitorData] = useState<TkdnItem[]>([]); // New state for TKDN data
   const [loading, setLoading] = useState(true);
   const [route, setRoute] = useState(() => window.location.hash.replace(/^#\/?/, '') || 'home');
   const [session, setSession] = useState<Session | null>(null);
@@ -263,16 +276,19 @@ export default function App() {
   const fetchData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [phonesRes, articlesRes] = await Promise.all([
+      const [phonesRes, articlesRes, tkdnRes] = await Promise.all([
         supabase.from('smartphones').select('*'),
-        supabase.from('articles').select('*').eq('status', 'PUBLISHED').order('publish_date', { ascending: false })
+        supabase.from('articles').select('*').eq('status', 'PUBLISHED').order('publish_date', { ascending: false }),
+        supabase.from('tkdn_monitor').select('*').order('cert_date', { ascending: false }) // Fetch TKDN data
       ]);
 
       if (phonesRes.error) throw phonesRes.error;
       if (articlesRes.error) throw articlesRes.error;
+      if (tkdnRes.error) throw tkdnRes.error; // Handle TKDN fetch error
 
       setSmartphones(sortSmartphones(phonesRes.data || []));
       setArticles(articlesRes.data || []);
+      setTkdnMonitorData(tkdnRes.data || []); // Set TKDN data
     } catch (err) {
       console.error("Fetch Error:", err);
     } finally {
@@ -315,6 +331,7 @@ export default function App() {
   const handleGoHome = () => {
     setSelectedBrand(null);
     resetAllSearchFilters();
+    setTargetArticle(null); // Ensure targetArticle is cleared to show article list
     window.location.hash = '#/home';
   };
 
@@ -379,7 +396,7 @@ export default function App() {
             <AdminDashboard 
                 session={session} 
                 onLogout={handleLogout} 
-                onDataChange={() => fetchData(true)}
+                onDataChange={() => fetchData(true)} // Pass fetchData to refresh all data
             />
         );
     } else {
@@ -461,7 +478,7 @@ export default function App() {
             onClearTarget={() => setTargetProduct(null)}
           />
         )}
-        {activeTab === 'Segera Rilis' && <ComingSoonTab items={smartphones} />}
+        {activeTab === 'Segera Rilis' && <ComingSoonTab items={smartphones} publishedAiData={tkdnMonitorData} />}
         {activeTab === 'Bandingkan' && <ComparisonTab items={smartphones} />}
         {activeTab === 'FAQ' && <FaqPage />}
         {activeTab === 'Kebijakan' && <PolicyPage />}

@@ -5,7 +5,7 @@ import { BRANDS } from '../constants';
 import { supabase } from '../lib/supabase';
 
 interface TkdnItem {
-  id: string;
+  id: string; // This `id` is mapped to `cert_number` in fetchDataFromAi
   brand: string;
   codename: string;
   marketing_name: string;
@@ -15,7 +15,11 @@ interface TkdnItem {
   status: 'UPCOMING' | 'RELEASED';
 }
 
-const AdminExtendedMod: React.FC = () => {
+interface AdminExtendedModProps {
+  onDataChange?: () => void; // Added onDataChange prop
+}
+
+const AdminExtendedMod: React.FC<AdminExtendedModProps> = ({ onDataChange }) => {
   const [data, setData] = useState<TkdnItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -23,8 +27,15 @@ const AdminExtendedMod: React.FC = () => {
   const itemsPerPage = 10;
 
   const fetchExistingData = async () => {
-    const { data: dbData } = await supabase.from('tkdn_monitor').select('*').order('cert_date', { ascending: false });
-    if (dbData) setData(dbData);
+    // This function is still used internally by AdminExtendedMod to populate its own table
+    // when first loaded or after a local publish.
+    // The ComingSoonTab now gets its data from App.tsx via props.
+    const { data: dbData, error } = await supabase.from('tkdn_monitor').select('*').order('cert_date', { ascending: false });
+    if (error) {
+        console.error("Error fetching existing TKDN data:", error);
+    } else {
+        setData(dbData || []);
+    }
   };
 
   useEffect(() => {
@@ -54,7 +65,7 @@ const AdminExtendedMod: React.FC = () => {
       const parsedRaw = JSON.parse(response.text || '[]');
       const parsed = parsedRaw.map((item: any, idx: number) => ({
         ...item,
-        id: item.cert_number || `tkdn-${Date.now()}-${idx}`
+        id: item.cert_number || `tkdn-${Date.now()}-${idx}` // Ensure id is cert_number for consistency
       }));
       
       setData(parsed);
@@ -72,9 +83,28 @@ const AdminExtendedMod: React.FC = () => {
     setData(newData);
   };
 
-  const handleDeleteItem = (id: string) => {
-    if (!window.confirm("Hapus baris ini dari monitor?")) return;
-    setData(data.filter(item => item.id !== id));
+  const handleDeleteItem = async (id: string) => {
+    if (!window.confirm("Hapus baris ini secara permanen dari database TKDN Monitor? Tindakan ini tidak bisa dibatalkan.")) return;
+    
+    try {
+        const { error } = await supabase
+            .from('tkdn_monitor')
+            .delete()
+            .eq('cert_number', id); // 'id' from the TkdnItem state is actually the cert_number
+
+        if (error) throw error;
+        
+        // Update local state
+        setData(data.filter(item => item.id !== id));
+        alert("Data berhasil dihapus dari database.");
+        
+        // Notify parent to refresh all data, including ComingSoonTab's TKDN data
+        onDataChange?.(); 
+
+    } catch (err: any) {
+        console.error("Gagal menghapus item TKDN:", err);
+        alert("Gagal menghapus data dari database: " + err.message);
+    }
   };
 
   const handlePublish = async () => {
@@ -82,14 +112,18 @@ const AdminExtendedMod: React.FC = () => {
     setIsPublishing(true);
     
     try {
-        const payload = data.map(({ id, ...rest }) => ({ ...rest }));
+        // Prepare payload, ensuring 'id' (which is just a UI key) is not sent to DB, 
+        // as 'cert_number' is the PK for upsert.
+        const payload = data.map(({ id, ...rest }) => ({ ...rest })); 
         
         const { error } = await supabase
             .from('tkdn_monitor')
-            .upsert(payload, { onConflict: 'cert_number' });
+            .upsert(payload, { onConflict: 'cert_number' }); // Use cert_number as unique key for upsert
 
         if (error) throw error;
         alert("DATA BERHASIL DISINKRONISASI KE LIVE DB!");
+        fetchExistingData(); // Re-fetch to show latest data in AdminExtendedMod
+        onDataChange?.(); // Notify parent to refresh all data, including ComingSoonTab
     } catch (err: any) {
         console.error(err);
         alert("Gagal sinkronisasi: " + err.message);

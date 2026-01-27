@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import type { Smartphone, Brand, Article } from '../types';
 import { TOP_BRANDS } from '../constants';
@@ -33,7 +32,13 @@ const SpecRow = ({ label, value }: { label: string; value?: string | number }) =
     );
 };
 
-const SpecSection = ({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) => {
+// FIX: Added explicit interface for SpecSectionProps and used React.FC
+interface SpecSectionProps {
+    icon: React.ReactNode;
+    title: string;
+    children: React.ReactNode;
+}
+const SpecSection: React.FC<SpecSectionProps> = ({ icon, title, children }) => {
     const hasContent = React.Children.toArray(children).some(child => child !== null);
     if (!hasContent) return null;
     return (
@@ -300,14 +305,42 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                         </div>
                         <div className="flex items-center justify-center my-10"><div className="h-px bg-zinc-100 flex-1"></div><span className="mx-6 text-[10px] font-black text-zinc-300 uppercase tracking-[0.5em]">SPESIFIKASI LENGKAP</span><div className="h-px bg-zinc-100 flex-1"></div></div>
                         <div className="space-y-2 mb-16">
-                            <SpecSection title="BODY & MATERIAL" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>}><SpecRow label="DIMENSI / BERAT" value={selectedProduct.dimensions_weight} /><SpecRow label="MATERIAL" value={selectedProduct.material} /><SpecRow label="WARNA" value={selectedProduct.colors} /></SpecSection>
-                            <SpecSection title="CONNECTIVITY" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>}><SpecRow label="JARINGAN" value={selectedProduct.network} /><SpecRow label="WIFI" value={selectedProduct.wifi} /></SpecSection>
-                            <SpecSection title="DISPLAY" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M9.75 17L9 20l-1 1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>}><SpecRow label="TIPE LAYAR" value={selectedProduct.display_type} /></SpecSection>
-                            <SpecSection title="PLATFORM" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>}><SpecRow label="OS" value={selectedProduct.os} /><SpecRow label="CHIPSET" value={selectedProduct.chipset} /><SpecRow label="CPU" value={selectedProduct.cpu} /><SpecRow label="GPU" value={selectedProduct.gpu} /></SpecSection>
-                            <SpecSection title="MEMORY" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75m-16.5-3.75v3.75"></path></svg>}><SpecRow label="RAM / ROM" value={selectedProduct.ram_storage} /></SpecSection>
-                            <SpecSection title="CAMERA" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"></path><path d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"></path></svg>}><SpecRow label="UTAMA" value={selectedProduct.camera_main} /><SpecRow label="SELFIE" value={selectedProduct.camera_selfie} /></SpecSection>
-                            <SpecSection title="BATTERY" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"></path></svg>}><SpecRow label="KAPASITAS" value={selectedProduct.battery_capacity} /><SpecRow label="CHARGING" value={selectedProduct.charging} /></SpecSection>
-                            <SpecSection title="HARDWARE & FEATURES" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>}><SpecRow label="SENSOR" value={selectedProduct.sensors} /><SpecRow label="TIPE USB" value={selectedProduct.usb_type} /><SpecRow label="AUDIO" value={selectedProduct.audio} /><SpecRow label="FITUR LAIN" value={selectedProduct.features_extra} /></SpecSection>
+                            {/* FIX: Ensure `SpecSection` components correctly pass `children` implicitly within the JSX structure */}
+                            <SpecSection title="BODY & MATERIAL" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>}>
+                                <SpecRow label="DIMENSI / BERAT" value={selectedProduct.dimensions_weight} />
+                                <SpecRow label="MATERIAL" value={selectedProduct.material} />
+                                <SpecRow label="WARNA" value={selectedProduct.colors} />
+                            </SpecSection>
+                            <SpecSection title="CONNECTIVITY" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>}>
+                                <SpecRow label="JARINGAN" value={selectedProduct.network} />
+                                <SpecRow label="WIFI" value={selectedProduct.wifi} />
+                            </SpecSection>
+                            <SpecSection title="DISPLAY" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M9.75 17L9 20l-1 1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>}>
+                                <SpecRow label="TIPE LAYAR" value={selectedProduct.display_type} />
+                            </SpecSection>
+                            <SpecSection title="PLATFORM" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>}>
+                                <SpecRow label="OS" value={selectedProduct.os} />
+                                <SpecRow label="CHIPSET" value={selectedProduct.chipset} />
+                                <SpecRow label="CPU" value={selectedProduct.cpu} />
+                                <SpecRow label="GPU" value={selectedProduct.gpu} />
+                            </SpecSection>
+                            <SpecSection title="MEMORY" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75m-16.5-3.75v3.75"></path></svg>}>
+                                <SpecRow label="RAM / ROM" value={selectedProduct.ram_storage} />
+                            </SpecSection>
+                            <SpecSection title="CAMERA" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"></path><path d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"></path></svg>}>
+                                <SpecRow label="UTAMA" value={selectedProduct.camera_main} />
+                                <SpecRow label="SELFIE" value={selectedProduct.camera_selfie} />
+                            </SpecSection>
+                            <SpecSection title="BATTERY" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"></path></svg>}>
+                                <SpecRow label="KAPASITAS" value={selectedProduct.battery_capacity} />
+                                <SpecRow label="CHARGING" value={selectedProduct.charging} />
+                            </SpecSection>
+                            <SpecSection title="HARDWARE & FEATURES" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>}>
+                                <SpecRow label="SENSOR" value={selectedProduct.sensors} />
+                                <SpecRow label="TIPE USB" value={selectedProduct.usb_type} />
+                                <SpecRow label="AUDIO" value={selectedProduct.audio} />
+                                <SpecRow label="FITUR LAIN" value={selectedProduct.features_extra} />
+                            </SpecSection>
                         </div>
                         <div className="flex flex-col items-center py-12 bg-white border-t border-zinc-100">
                             <h3 className="text-[12px] font-black text-zinc-900 uppercase tracking-[0.4em] mb-12">BERI PENILAIAN</h3>

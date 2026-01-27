@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import type { Brand, Smartphone, Article } from '../types';
+import type { Brand, Smartphone, Article } from '../types'; // FIX: Added Smartphone and Article types
 import type { Session } from '@supabase/supabase-js';
 
 interface HeaderProps {
@@ -15,10 +15,10 @@ interface HeaderProps {
     session?: Session | null;
     searchQuery?: string;
     onSearchChange?: (query: string) => void;
-    smartphones?: Smartphone[]; // Added missing prop
-    articles?: Article[]; // Added missing prop
-    onProductSelect?: (phone: Smartphone) => void; // Added missing prop
-    onArticleSelect?: (article: Article) => void; // Added missing prop
+    smartphones?: Smartphone[]; // FIX: Added missing prop
+    articles?: Article[]; // FIX: Added missing prop
+    onProductSelect?: (phone: Smartphone) => void; // FIX: Added missing prop
+    onArticleSelect?: (article: Article) => void; // FIX: Added missing prop
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -33,10 +33,10 @@ const Header: React.FC<HeaderProps> = ({
     session,
     searchQuery = "",
     onSearchChange,
-    smartphones = [], // Destructure with default value
-    articles = [], // Destructure with default value
-    onProductSelect, // Destructure
-    onArticleSelect // Destructure
+    smartphones = [], // FIX: Destructure with default value
+    articles = [], // FIX: Destructure with default value
+    onProductSelect, // FIX: Destructure
+    onArticleSelect // FIX: Destructure
 }) => {
     const brands: Brand[] = [
         "Samsung", "Xiaomi", "Apple", "Oppo", "Vivo", "Realme", "Infinix", "Poco",
@@ -107,6 +107,7 @@ const Header: React.FC<HeaderProps> = ({
                             value={searchQuery}
                             onChange={(e) => onSearchChange?.(e.target.value)}
                             onFocus={() => setIsSearchFocused(true)}
+                            // Removed automatic navigation to #/katalog on focus
                             className="w-full bg-[#1a1a1a] border border-zinc-800 rounded-sm py-2.5 pl-10 pr-4 text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-zinc-600 focus:bg-black transition-all"
                         />
                     </div>

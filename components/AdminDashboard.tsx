@@ -13,7 +13,7 @@ import type { Article } from '../types';
 interface AdminDashboardProps {
   session: Session | null;
   onLogout: () => void;
-  onDataChange?: () => void;
+  onDataChange?: () => void; // Prop to notify App.tsx of data changes
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDataChange }) => {
@@ -207,7 +207,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
         {activeTab === 'artikel' && <AdminArticleMod onCreateArticle={handleCreateArticle} onEditArticle={handleEditArticle} />}
         {activeTab === 'penulis' && <AdminAuthorMod />}
         {activeTab === 'member' && <AdminMemberMod />}
-        {activeTab === 'extended' && <AdminExtendedMod />}
+        {activeTab === 'extended' && <AdminExtendedMod onDataChange={onDataChange} />} {/* Pass onDataChange here */}
       </main>
     </div>
   );

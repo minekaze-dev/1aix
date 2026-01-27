@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { BRANDS } from '../constants';
 import type { Smartphone, Brand, ReleaseStatus, MarketCategory } from '../types';
@@ -10,6 +9,22 @@ interface AdminGadgetModProps {
 }
 
 const CATEGORIES: MarketCategory[] = ["Entry-level", "Mid-range", "Flagship"];
+
+// FIX: Added explicit interface for FormSectionProps and used React.FC
+interface FormSectionProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+// FIX: Updated FormSection to be a React.FC
+const FormSection: React.FC<FormSectionProps> = ({ title, children }) => (
+  <div className="space-y-6 pt-6 first:pt-0">
+      <h3 className="text-[11px] font-black text-red-600 uppercase tracking-[0.3em] border-l-4 border-red-600 pl-4 mb-4">{title}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {children}
+      </div>
+  </div>
+);
 
 const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
   const [smartphones, setSmartphones] = useState<Smartphone[]>([]);
@@ -114,17 +129,16 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     if (!formData.model_name || !formData.brand) { alert("Masukkan Nama Brand dan Model terlebih dahulu!"); return; }
     setIsAiLoading(true);
     try {
+      // FIX: Corrected the prompt and configuration for Gemini API call
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `Generate complete technical specifications for the smartphone "${formData.brand} ${formData.model_name}".
+      const response = await ai.models.generateContent({ 
+        model: 'gemini-3-flash-preview', // Using a recommended model
+        contents: [{text: `Generate complete technical specifications for the smartphone "${formData.brand} ${formData.model_name}".
       Prioritize official information from the brand's Indonesian website, then GSM Arena, and finally other reliable tech sources.
       Ensure all specifications are relevant to the **Indonesian market (official version)**.
       Return a STRICT JSON object with these keys:
       market_category (Flagship/Mid-range/Entry-level), release_month (in Indonesian, e.g., 'Januari'), release_year, chipset, ram_storage, dimensions_weight, material, colors, network, wifi, display_type, os, cpu, gpu, camera_main, camera_video_main, camera_selfie, camera_video_selfie, battery_capacity, charging, sensors, usb_type, audio, features_extra, tkdn_score (number, estimate if official data isn't widely available, but prefer actual), price_srp (number, in IDR, prefer official launch price).
-      Double-check the accuracy of specifications, especially for the Indonesian variant.`;
-      
-      const response = await ai.models.generateContent({ 
-        model: 'gemini-3-flash-preview', 
-        contents: prompt, 
+      Double-check the accuracy of specifications, especially for the Indonesian variant.`}], 
         config: { responseMimeType: "application/json" } 
       });
       
@@ -221,15 +235,6 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
         alert("Gagal menyimpan data ke database: " + err.message); 
     } finally { setIsSubmitting(false); }
   };
-
-  const FormSection = ({ title, children }: { title: string, children: React.ReactNode }) => (
-    <div className="space-y-6 pt-6 first:pt-0">
-        <h3 className="text-[11px] font-black text-red-600 uppercase tracking-[0.3em] border-l-4 border-red-600 pl-4 mb-4">{title}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {children}
-        </div>
-    </div>
-  );
 
   const FormInput = ({ label, value, onChange, type = "text", placeholder = "", name }: { label: string, value: any, onChange: (val: any) => void, type?: string, placeholder?: string, name: string }) => {
     // State lokal hanya untuk input numerik agar tidak "loncat"
@@ -336,7 +341,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                 type="button" 
                 onClick={handleAiAutoFill} 
                 disabled={isAiLoading || !formData.model_name || !formData.brand} 
-                title={getAiButtonTitle} // Added title attribute
+                title={getAiButtonTitle}
                 className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg"
               >
                 {isAiLoading ? 'GENERATING...' : 'AI ASSISTANCE AUTO-FILL'}

@@ -1,11 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import type { Smartphone } from '../types';
-import { supabase } from '../lib/supabase';
-
-interface ComingSoonTabProps {
-    items: Smartphone[];
-}
+import { supabase } from '../lib/supabase'; // Keep supabase import for potential future uses or consistency
 
 interface PublishedTkdn {
     brand: string;
@@ -17,33 +13,17 @@ interface PublishedTkdn {
     status: 'UPCOMING' | 'RELEASED';
 }
 
-const ComingSoonTab: React.FC<ComingSoonTabProps> = ({ items }) => {
-    const [publishedAiData, setPublishedAiData] = useState<PublishedTkdn[]>([]);
-    const [loading, setLoading] = useState(true);
+interface ComingSoonTabProps {
+    items: Smartphone[];
+    publishedAiData: PublishedTkdn[]; // Now received as a prop
+}
 
-    const fetchTkdnData = async () => {
-        setLoading(true);
-        try {
-            const { data, error } = await supabase
-                .from('tkdn_monitor')
-                .select('*')
-                .order('cert_date', { ascending: false });
-            
-            if (!error && data) {
-                setPublishedAiData(data);
-            }
-        } catch (err) {
-            console.error("Fetch TKDN Error:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchTkdnData();
-    }, []);
+const ComingSoonTab: React.FC<ComingSoonTabProps> = ({ items, publishedAiData }) => {
+    // Removed internal state for publishedAiData and loading, and the useEffect.
+    // The parent component (App.tsx) now manages fetching and passing this data.
 
     const upcoming = items.filter(i => i.release_status === "Segera Rilis" || i.release_status === "Pre-Order");
+    const isLoading = !publishedAiData.length && !upcoming.length; // Simplified loading check based on data presence
 
     return (
         <div className="w-full animate-in fade-in duration-700">
@@ -73,12 +53,12 @@ const ComingSoonTab: React.FC<ComingSoonTabProps> = ({ items }) => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-50">
-                                {loading ? (
+                                {isLoading ? (
                                     <tr><td colSpan={5} className="px-6 py-20 text-center animate-pulse font-black text-zinc-200 uppercase text-[10px] tracking-[0.5em]">Syncing Database...</td></tr>
                                 ) : (
                                     <>
                                         {publishedAiData.map((item, idx) => (
-                                            <tr key={`ai-${idx}`} className="hover:bg-blue-50/50 transition-colors bg-blue-50/20">
+                                            <tr key={`ai-${item.cert_number}`} className="hover:bg-blue-50/50 transition-colors bg-blue-50/20">
                                                 <td className="px-6 py-2">
                                                     <div className="text-[12px] font-black text-zinc-900 uppercase leading-none mb-0.5">{item.brand}</div>
                                                     <div className="text-[11px] font-black text-blue-600 uppercase leading-none mb-0.5">{item.marketing_name}</div>
