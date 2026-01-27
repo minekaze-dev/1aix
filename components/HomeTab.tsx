@@ -78,23 +78,36 @@ const HomeTab: React.FC<HomeTabProps> = ({
     // Parser markdown sederhana untuk menampilkan format tebal & miring
     const parseMarkdown = (text: string) => {
         if (!text) return '';
-        return text
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        // Urutan parsing diubah: link diproses sebelum bold/italic
+        let processedText = text
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); // Escape HTML entities first
+
+        processedText = processedText
             .replace(/&lt;div align="(.*?)"&gt;([\s\S]*?)&lt;\/div&gt;/g, '<div style="text-align: $1">$2</div>')
-            .replace(/&lt;span style="(.*?)"&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="$1">$2</span>')
+            .replace(/&lt;span style="(.*?)"&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="$1">$2</span>');
+        
+        // Process markdown links first to prevent internal formatting in URLs
+        processedText = processedText.replace(/\[(.*?)\]\((.*?)\)/g, (match, linkText, url) => {
+            // Decode HTML entities in the URL part before using it in href
+            const decodedUrl = url.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+            return `<a href="${decodedUrl}" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
+        });
+
+        // Then process bold and italic formatting
+        processedText = processedText
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/_(.*?)_/g, '<em>$1</em>')
-            .replace(/\[(.*?)\]\((.*?)\)/g, (match, linkText, url) => {
-                // Decode HTML entities in the URL part before using it in href
-                const decodedUrl = url.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-                return `<a href="${decodedUrl}" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
-            })
+            .replace(/_(.*?)_/g, '<em>$1</em>');
+            
+        // Process other markdown elements
+        processedText = processedText
             .replace(/^# (.*$)/gm, '<h1 style="font-size: 2em; font-weight: 900; margin: 0.5em 0;">$1</h1>')
             .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$1</h2>')
             .replace(/^&gt; (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500">$1</blockquote>')
             .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
             .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 list-decimal">$1</li>')
             .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="w-full my-4 rounded shadow-lg" />');
+
+        return processedText;
     };
 
     useEffect(() => {
@@ -325,26 +338,14 @@ const HomeTab: React.FC<HomeTabProps> = ({
                         <div className="border-t border-zinc-200 pt-12 mb-20">
                             <h3 className="text-xl font-black uppercase tracking-tighter mb-8 italic">Diskusi & Komentar</h3>
                             <div className="bg-[#f8fafc] border border-zinc-100 p-8 rounded mb-12">
-                                <div className="flex gap-4">
-                                    <div className="w-10 h-10 rounded bg-red-600 text-white flex items-center justify-center font-black flex-shrink-0">
-                                        {(session?.user?.user_metadata?.full_name || session?.user?.email || 'U').charAt(0).toUpperCase()}
+                                {session ? (
+                                    <div className="flex gap-4">
+                                        <div className="w-10 h-10 rounded bg-red-600 text-white flex items-center justify-center font-black flex-shrink-0">{(session.user.user_metadata?.full_name || session.user.email || 'U').charAt(0).toUpperCase()}</div>
+                                        <div className="flex-1 space-y-4"><textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Berikan pendapatmu tentang artikel ini..." className="w-full bg-white border border-zinc-200 p-4 rounded text-sm font-bold outline-none focus:border-red-600 transition-all resize-none" rows={3}/><button onClick={handlePostComment} className="px-8 py-3 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all">KIRIM KOMENTAR</button></div>
                                     </div>
-                                    <div className="flex-1 space-y-4">
-                                        <textarea 
-                                            value={newComment} 
-                                            onChange={(e) => setNewComment(e.target.value)} 
-                                            placeholder="Berikan pendapatmu tentang artikel ini..." 
-                                            className="w-full bg-white border border-zinc-200 p-4 rounded text-sm font-bold outline-none focus:border-red-600 transition-all resize-none" 
-                                            rows={3}
-                                        />
-                                        <button 
-                                            onClick={handlePostComment} 
-                                            className="px-8 py-3 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all"
-                                        >
-                                            KIRIM KOMENTAR
-                                        </button>
-                                    </div>
-                                </div>
+                                ) : (
+                                    <div className="text-center py-6"><p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">Anda harus login untuk berkomentar</p><button onClick={onOpenLogin} className="px-8 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all">MASUK</button></div>
+                                )}
                             </div>
                             <div className="space-y-8">
                                 {comments.map(c => (

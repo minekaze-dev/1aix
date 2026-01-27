@@ -196,23 +196,36 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
 
   const renderContent = (content: string) => {
       if (!content) return '<p class="text-zinc-400 italic">Pratinjau konten Anda akan muncul di sini...</p>';
-      return content
-          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      
+      let processedContent = content
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); // Escape HTML entities first
+
+      processedContent = processedContent
           .replace(/&lt;div align="(.*?)"&gt;([\s\S]*?)&lt;\/div&gt;/g, '<div style="text-align: $1">$2</div>')
-          .replace(/&lt;span style="(.*?)"&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="$1">$2</span>')
+          .replace(/&lt;span style="(.*?)"&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="$1">$2</span>');
+
+      // Process markdown links first to prevent internal formatting in URLs
+      processedContent = processedContent.replace(/\[(.*?)\]\((.*?)\)/g, (match, linkText, url) => {
+          // Decode HTML entities in the URL part before using it in href
+          const decodedUrl = url.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+          return `<a href="${decodedUrl}" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
+      });
+
+      // Then process bold and italic formatting
+      processedContent = processedContent
           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-          .replace(/_(.*?)_/g, '<em>$1</em>')
-          .replace(/\[(.*?)\]\((.*?)\)/g, (match, linkText, url) => {
-                // Decode HTML entities in the URL part before using it in href
-                const decodedUrl = url.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-                return `<a href="${decodedUrl}" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
-          })
+          .replace(/_(.*?)_/g, '<em>$1</em>');
+
+      // Process other markdown elements
+      processedContent = processedContent
           .replace(/^# (.*$)/gm, '<h1 style="font-size: 2em; font-weight: 900; margin: 0.5em 0;">$1</h1>')
           .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$2</h2>')
           .replace(/^&gt; (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500 my-4">$1</blockquote>')
           .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
           .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 list-decimal">$1</li>')
           .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="w-full my-6 rounded shadow-lg" />');
+          
+      return processedContent;
   };
 
   return (
