@@ -1,6 +1,5 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { NEWS_UPDATES } from './constants';
 import type { Smartphone, Brand, Article } from './types';
 import Header from './components/Header';
 import HomeTab from './components/HomeTab';
@@ -63,33 +62,135 @@ const FaqPage = () => {
                     </div>
                 ))}
             </div>
+
+            {/* Bagian Hubungi 1AIX yang terhighlight */}
+            <div className="mt-16 text-center max-w-xl mx-auto">
+                <div className="flex gap-2 items-center justify-center mb-4">
+                    <span className="text-red-600 font-black text-lg leading-tight">Q:</span>
+                    <h3 className="text-lg font-black uppercase tracking-tight text-zinc-900 leading-tight">
+                        BAGAIMANA CARA MENGHUBUNGI 1AIX?
+                    </h3>
+                </div>
+                <p className="text-base font-bold text-zinc-500 leading-relaxed">
+                    ANDA BISA MENGIRIMKAN PERTANYAHAN, MASUKAN, ATAU KERJASAMA KE ALAMAT EMAIL RESMI KAMI: 
+                    <a href="mailto:1aix.team@gmail.com" className="text-red-600 hover:text-red-700 transition-colors underline ml-1">1AIX.TEAM@GMAIL.COM</a>.
+                </p>
+            </div>
         </div>
     );
 };
 
 const PolicyPage = () => (
-    <div className="animate-in fade-in duration-500 max-w-2xl mx-auto py-12">
-        <h1 className="text-3xl font-black uppercase tracking-tighter italic mb-8 border-l-4 border-red-600 pl-4">KEBIJAKAN 1AIX</h1>
-        <div className="prose prose-zinc max-w-none text-zinc-600">
-            <p className="font-bold uppercase text-sm mb-6">PRIVASI ANDA ADALAH PRIORITAS KAMI. KAMI HANYA MENGUMPULKAN DATA YANG DIPERLUKAN UNTUK PENGALAMAN INTERAKSI KOMUNITAS YANG LEBIH BAIK.</p>
-            <h3 className="text-[11px] font-black uppercase tracking-widest text-blue-600 mb-4">PENGUMPULAN DATA</h3>
-            <p className="text-sm font-bold leading-relaxed uppercase mb-6">KAMI MENYIMPAN ALAMAT EMAIL DAN NAMA PENGGUNA UNTUK KEPERLUAN LOGIN DAN PENULISAN KOMENTAR. DATA ANDA TIDAK AKAN PERNAH DIBERIKAN KEPADA PIHAK KETIGA TANPA IZIN.</p>
-            <h3 className="text-[11px] font-black uppercase tracking-widest text-blue-600 mb-4">KEAMANAN</h3>
-            <p className="text-sm font-bold leading-relaxed uppercase">SISTEM KAMI MENGGUNAKAN INFRASTRUKTUR SUPABASE UNTUK MENJAMIN KEAMANAN DATA PENGGUNA DAN ENKRIPSI PASSWORD YANG AMAN.</p>
+    <div className="animate-in fade-in duration-700 py-12 max-w-[900px] mx-auto">
+        <div className="mb-12 text-center">
+            <h1 className="text-4xl font-black uppercase tracking-tighter italic text-zinc-900 leading-none">KEBIJAKAN PRIVASI</h1>
+            <div className="h-1 w-20 bg-red-600 mx-auto mt-4"></div>
+        </div>
+        <div className="space-y-6">
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Pengantar</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                    Privasi Anda adalah prioritas kami di 1AIX. Dokumen ini menjelaskan bagaimana kami mengumpulkan, menggunakan, dan melindungi informasi Anda saat Anda menggunakan layanan kami. Dengan mengakses atau menggunakan platform kami, Anda menyetujui praktik data yang dijelaskan dalam Kebijakan Privasi ini.
+                </p>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Informasi yang Kami Kumpulkan</h3>
+                <div className="text-[11px] font-bold text-zinc-500 leading-relaxed space-y-3">
+                    <p>Kami hanya mengumpulkan informasi yang diperlukan untuk menyediakan layanan yang optimal dan meningkatkan pengalaman pengguna:</p>
+                    <ul className="list-disc list-inside space-y-1 pl-4">
+                        <li><b>Data Akun:</b> Saat Anda mendaftar atau login, kami mengumpulkan alamat email dan nama tampilan (display name) Anda. Password Anda disimpan dalam bentuk terenkripsi dan tidak dapat diakses oleh kami.</li>
+                        <li><b>Data Interaksi:</b> Informasi tentang interaksi Anda dengan fitur-fitur platform, seperti komentar yang Anda posting atau artikel yang Anda baca.</li>
+                        <li><b>Data Analitik:</b> Data anonim tentang penggunaan situs web (misalnya, jumlah pengunjung, waktu membaca) untuk analisis kinerja dan peningkatan fitur.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Bagaimana Kami Menggunakan Informasi Anda</h3>
+                <div className="text-[11px] font-bold text-zinc-500 leading-relaxed space-y-3">
+                    <ul className="list-disc list-inside space-y-1 pl-4">
+                        <li>Untuk mengelola akun Anda dan memfasilitasi login.</li>
+                        <li>Untuk mempublikasikan komentar dan kontribusi Anda di bawah nama tampilan Anda.</li>
+                        <li>Untuk menganalisis tren penggunaan dan meningkatkan fungsionalitas platform.</li>
+                        <li>Untuk mematuhi kewajiban hukum.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Pembagian Data</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                    Alamat email Anda tidak akan pernah dibagikan kepada pihak ketiga untuk tujuan pemasaran. Nama tampilan dan komentar Anda bersifat publik di platform. Kami menggunakan infrastruktur Supabase untuk keamanan data dan otentikasi.
+                </p>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Keamanan Data</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                    Kami berkomitmen untuk melindungi data Anda dengan langkah-langkah keamanan yang sesuai, termasuk enkripsi password. Meskipun demikian, tidak ada sistem yang sepenuhnya aman, dan kami tidak dapat menjamin keamanan mutlak.
+                </p>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Hak Anda</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                    Anda memiliki hak untuk mengakses, mengubah, atau menghapus informasi pribadi Anda. Untuk permintaan tersebut, silakan hubungi kami.
+                </p>
+            </div>
         </div>
     </div>
 );
 
 const TermsPage = () => (
-    <div className="animate-in fade-in duration-500 max-w-2xl mx-auto py-12">
-        <h1 className="text-3xl font-black uppercase tracking-tighter italic mb-8 border-l-4 border-red-600 pl-4">SYARAT & KETENTUAN</h1>
-        <div className="prose prose-zinc max-w-none text-zinc-600">
-            <p className="font-bold uppercase text-sm mb-6">DENGAN MENGGUNAKAN LAYANAN 1AIX, ANDA SETUJU UNTUK MEMATUHI SELURUH ATURAN YANG BERLAKU DI BAWAH INI.</p>
-            <ul className="space-y-4">
-                <li className="text-sm font-bold uppercase leading-relaxed">1. PENGGUNA DILARANG MEMBERIKAN KOMENTAR YANG MENGANDUNG SARA, PENGHINAAN, ATAU HOAX.</li>
-                <li className="text-sm font-bold uppercase leading-relaxed">2. SELURUH DATA SPESIFIKASI DISEDIAKAN SEYBAGAI REFERENSI, KAMI TIDAK BERTANGGUNG JAWAB ATAS PERUBAHAN MENDADAK DARI BRAND.</li>
-                <li className="text-sm font-bold uppercase leading-relaxed">3. PENYALAHGUNAAN AKUN ATAU PERCOBAAN PERETASAN AKAN MENGAKIBATKAN BLOKIR PERMANEN.</li>
-            </ul>
+    <div className="animate-in fade-in duration-700 py-12 max-w-[900px] mx-auto">
+        <div className="mb-12 text-center">
+            <h1 className="text-4xl font-black uppercase tracking-tighter italic text-zinc-900 leading-none">SYARAT & KETENTUAN</h1>
+            <div className="h-1 w-20 bg-red-600 mx-auto mt-4"></div>
+        </div>
+        <div className="space-y-6">
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Persetujuan Penggunaan</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                    Dengan mengakses dan menggunakan layanan 1AIX, Anda secara otomatis menyetujui semua Syarat & Ketentuan yang berlaku. Jika Anda tidak menyetujui salah satu bagian dari ketentuan ini, mohon untuk tidak menggunakan layanan kami.
+                </p>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Kewajiban Pengguna</h3>
+                <div className="text-[11px] font-bold text-zinc-500 leading-relaxed space-y-3">
+                    <ul className="list-disc list-inside space-y-1 pl-4">
+                        <li>Dilarang keras menyebarkan konten yang mengandung unsur SARA, kebencian, pornografi, atau informasi palsu (hoax).</li>
+                        <li>Dilarang melakukan tindakan peretasan atau percobaan akses tidak sah ke sistem kami.</li>
+                        <li>Pengguna bertanggung jawab penuh atas setiap komentar atau kontribusi yang diposting.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Informasi Produk</h3>
+                <div className="text-[11px] font-bold text-zinc-500 leading-relaxed space-y-3">
+                    <ul className="list-disc list-inside space-y-1 pl-4">
+                        <li>Semua data spesifikasi smartphone, TKDN, dan harga SRP disajikan sebagai referensi berdasarkan data resmi.</li>
+                        <li>Kami tidak bertanggung jawab atas perubahan spesifikasi, harga, atau ketersediaan produk oleh pihak brand.</li>
+                        <li>Pengguna disarankan untuk selalu memverifikasi informasi dengan sumber resmi brand terkait.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Pelanggaran & Sanksi</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                    Setiap pelanggaran terhadap Syarat & Ketentuan ini dapat mengakibatkan penangguhan atau pemblokiran akun secara permanen, serta penghapusan konten yang melanggar. Kami berhak mengambil tindakan hukum jika diperlukan.
+                </p>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Perubahan Ketentuan</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                    1AIX berhak untuk mengubah atau memperbarui Syarat & Ketentuan ini kapan saja tanpa pemberitahuan sebelumnya. Penggunaan berkelanjutan layanan kami setelah perubahan tersebut merupakan bentuk persetujuan Anda terhadap ketentuan yang baru.
+                </p>
+            </div>
         </div>
     </div>
 );
@@ -106,7 +207,11 @@ export default function App() {
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
   const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(0);
-  const [searchQuery, setSearchQuery] = useState("");
+  
+  // Global search for Header and CatalogTab
+  const [searchQuery, setSearchQuery] = useState(""); 
+  // Local search for HomeTab articles (e.g., from Popular Tags)
+  const [homeTabArticleFilterQuery, setHomeTabArticleFilterQuery] = useState("");
 
   // Target item for direct navigation from search
   const [targetProduct, setTargetProduct] = useState<Smartphone | null>(null);
@@ -193,17 +298,28 @@ export default function App() {
     }
   }, [route]);
 
+  // Function to reset all search-related states
+  const resetAllSearchFilters = useCallback(() => {
+    setSearchQuery("");
+    setHomeTabArticleFilterQuery("");
+    setTargetProduct(null);
+    setTargetArticle(null);
+  }, []);
+
   const handleGoToCatalog = () => {
     setSelectedBrand(null);
+    resetAllSearchFilters();
     window.location.hash = '#/katalog';
   };
 
   const handleGoHome = () => {
     setSelectedBrand(null);
+    resetAllSearchFilters();
     window.location.hash = '#/home';
   };
 
   const handleGoToCompare = () => {
+    resetAllSearchFilters();
     window.location.hash = '#/bandingkan';
   };
 
@@ -215,6 +331,7 @@ export default function App() {
     try {
         await supabase.auth.signOut();
         setSession(null); 
+        resetAllSearchFilters(); // Reset search on logout as well
         window.location.hash = '#/home';
     } catch (error) {
         console.error("Logout Error:", error);
@@ -224,15 +341,26 @@ export default function App() {
   const handleProductSelect = (phone: Smartphone) => {
     setTargetProduct(phone);
     setSelectedBrand(phone.brand);
-    setSearchQuery("");
+    setSearchQuery(""); // Clear global search on product select
+    setHomeTabArticleFilterQuery(""); // Clear article filter
     window.location.hash = '#/katalog';
   };
 
   const handleArticleSelect = (article: Article) => {
     setTargetArticle(article);
-    setSearchQuery("");
+    setSearchQuery(""); // Clear global search on article select
+    setHomeTabArticleFilterQuery(""); // Clear article filter
     window.location.hash = '#/home';
   };
+
+  // Memoized content for the marquee - NOW LIMITED TO 3
+  const trendingNewsForMarquee = useMemo(() => {
+    if (articles.length === 0) {
+        return ["SISTEM DATABASE 1AIX TELAH AKTIF SEPENUHNYA", "SELURUH HARGA SRP BERSUMBER DARI STORE RESMI"];
+    }
+    // Take the top 3 articles and format their titles
+    return articles.slice(0, 3).map(article => article.title.toUpperCase());
+  }, [articles]);
 
   if (loading) {
     return (
@@ -283,13 +411,22 @@ export default function App() {
       <div className="w-full max-w-[1000px] bg-[#d41525] shadow-md border-b border-[#b0111e] overflow-hidden">
         <div className="flex items-center h-10">
             <div className="inline-block animate-marquee px-4 font-black text-[10px] text-white uppercase tracking-widest italic whitespace-nowrap">
-            {NEWS_UPDATES.map((news, i) => (
+            {trendingNewsForMarquee.map((news, i) => (
                 <span key={i} className="mx-4">{news} <span className="text-white/30 ml-4">//</span></span>
             ))}
-            {NEWS_UPDATES.map((news, i) => (
+            {/* Repeat for seamless loop */}
+            {trendingNewsForMarquee.map((news, i) => (
                 <span key={i + 'copy'} className="mx-4">{news} <span className="text-white/30 ml-4">//</span></span>
             ))}
             </div>
+        </div>
+      </div>
+
+      {/* Banner Ads Section (Main Banner) */}
+      <div className="w-full max-w-[1000px] mt-px">
+        <div className="h-[120px] bg-zinc-100 border-x border-zinc-200 flex flex-col items-center justify-center shadow-inner">
+          <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
+          <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
         </div>
       </div>
 
@@ -299,7 +436,9 @@ export default function App() {
                 onOpenLogin={handleOpenAuth} 
                 onLogout={handleLogout} 
                 session={session} 
-                searchQuery={searchQuery}
+                globalSearchQuery={searchQuery} // Pass global search to HomeTab
+                articleFilterQuery={homeTabArticleFilterQuery} // Pass local filter for articles
+                onSetArticleFilterQuery={setHomeTabArticleFilterQuery} // Pass setter for local article filter
                 initialArticle={targetArticle}
                 onClearTarget={() => setTargetArticle(null)}
             />
@@ -313,8 +452,8 @@ export default function App() {
             setMinPrice={setMinPrice}
             maxPrice={maxPrice}
             setMaxPrice={setMaxPrice}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
+            searchQuery={searchQuery} // CatalogTab uses global search query
+            setSearchQuery={setSearchQuery} // And can modify it
             onOpenLogin={handleOpenAuth}
             onLogout={handleLogout}
             session={session}

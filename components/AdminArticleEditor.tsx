@@ -18,7 +18,8 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
     summary: '',
     content: '',
     categories: [],
-    author_name: 'Redaksi 1AIX',
+    author_name: 'Redaksi 1AIX', // Default fallback name
+    author_id: null, // New: Default to null
     status: 'DRAFT',
     ...article
   });
@@ -27,11 +28,12 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
   const [authors, setAuthors] = useState<Author[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<string[]>([]
+  );
   const [historyIndex, setHistoryIndex] = useState(-1);
 
   useEffect(() => {
-    const fetchCats = async () => {
+    const fetchCats = () => {
         const localCats = localStorage.getItem('1AIX_LOCAL_CATEGORIES');
         if (localCats) {
             setDynamicCategories(JSON.parse(localCats));
@@ -40,10 +42,13 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
         }
     };
     
-    const fetchAuthors = () => {
-        const localAuthors = localStorage.getItem('1AIX_LOCAL_AUTHORS');
-        if (localAuthors) {
-            setAuthors(JSON.parse(localAuthors));
+    // Fetch authors directly from Supabase, not local storage
+    const fetchAuthors = async () => {
+        const { data, error } = await supabase.from('authors').select('*');
+        if (error) {
+            console.error("Error fetching authors:", error);
+        } else {
+            setAuthors(data || []);
         }
     };
 
@@ -55,7 +60,7 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
     setHistory(prev => {
         const sliced = prev.slice(0, historyIndex + 1);
         const next = [...sliced, newContent];
-        if (next.length > 50) next.shift();
+        if (next.length > 50) next.shift(); // Keep history to max 50 items
         return next;
     });
     setHistoryIndex(prev => Math.min(prev + 1, 49));
@@ -84,10 +89,15 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
       switch(type) {
         case 'B': newContent = `${before}**${selection}**${after}`; break;
         case 'I': newContent = `${before}_${selection}_${after}`; break;
-        case 'QUOTE': newContent = `${before}\n> ${selection}${after}`; break;
+        case 'QUOTE': 
+            const quotedSelection = selection.split('\n').map(line => `> ${line}`).join('\n');
+            // Add newlines around the quote for proper block separation if not already there
+            newContent = `${before}${before.endsWith('\n') || before === '' ? '' : '\n\n'}${quotedSelection}${after.startsWith('\n') || after === '' ? '' : '\n\n'}${after}`;
+            break;
         case 'UL': newContent = `${before}\n- ${selection}${after}`; break;
         case 'OL': newContent = `${before}\n1. ${selection}${after}`; break;
         case 'IMAGE': newContent = `${before}![Deskripsi Gambar](URL_GAMBAR)${after}`; break;
+        case 'LINK': newContent = `${before}[${selection}](URL_ANDA_DI_SINI)${after}`; break; // New: Link tool
         case 'LEFT': newContent = `${before}<div align="left">${selection}</div>${after}`; break;
         case 'CENTER': newContent = `${before}<div align="center">${selection}</div>${after}`; break;
         case 'RIGHT': newContent = `${before}<div align="right">${selection}</div>${after}`; break;
@@ -121,10 +131,15 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
   };
 
   useEffect(() => { if (history.length === 0) { setHistory([formData.content || '']); setHistoryIndex(0); } }, []);
+  useEffect(() => { 
+    if (textareaRef.current) {
+        pushHistory(formData.content || '');
+    }
+  }, [formData.content]); // Track content changes for history
 
   // Permalink otomatis dari Judul
   useEffect(() => {
-    if (formData.title && !article) {
+    if (formData.title && !article) { // Only auto-generate permalink for new articles
         const slug = formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         setFormData(prev => ({ ...prev, permalink: `/news/${slug}` }));
     }
@@ -153,11 +168,18 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
     setIsSaving(true);
     
     try {
-        const payload = { ...formData, status };
+        const payload = { 
+          ...formData, 
+          status,
+          // Ensure author_id is null if 'Redaksi 1AIX' is selected (empty string value), otherwise use the selected ID
+          author_id: formData.author_id === '' ? null : formData.author_id 
+        };
+        
         if (article?.id) {
             const { error } = await supabase.from('articles').update(payload).eq('id', article.id);
             if (error) throw error;
         } else {
+            // When inserting, make sure 'id' is not in payload if it's auto-generated.
             const { id, ...newPayload } = payload;
             const { error } = await supabase.from('articles').insert([newPayload]);
             if (error) throw error;
@@ -166,7 +188,7 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
         onClose();
     } catch (err) {
         console.error(err);
-        alert("Gagal menyimpan ke database.");
+        alert("Gagal menyimpan data ke database.");
     } finally {
         setIsSaving(false);
     }
@@ -180,6 +202,7 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
           .replace(/&lt;span style="(.*?)"&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="$1">$2</span>')
           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
           .replace(/_(.*?)_/g, '<em>$1</em>')
+          .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>') // Added this line for links
           .replace(/^# (.*$)/gm, '<h1 style="font-size: 2em; font-weight: 900; margin: 0.5em 0;">$1</h1>')
           .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$2</h2>')
           .replace(/^&gt; (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500 my-4">$1</blockquote>')
@@ -219,10 +242,22 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
                         </div>
                         <div>
                             <label className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-2 block">PENULIS (AUTHOR)</label>
-                            <select value={formData.author_name} onChange={(e) => setFormData({...formData, author_name: e.target.value})} className="w-full bg-zinc-50 border border-zinc-100 p-3 rounded text-[11px] font-black uppercase outline-none focus:border-blue-500">
-                                <option value="Redaksi 1AIX">REDAKSI 1AIX</option>
+                            <select 
+                                value={formData.author_id || ''} // Bind to author_id
+                                onChange={(e) => {
+                                    const selectedId = e.target.value;
+                                    const selectedAuthor = authors.find(auth => auth.id === selectedId);
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        author_id: selectedId === '' ? null : selectedId, // Set to null if 'Redaksi 1AIX' is selected
+                                        author_name: selectedId === '' ? 'Redaksi 1AIX' : selectedAuthor?.name || 'Redaksi 1AIX'
+                                    }));
+                                }} 
+                                className="w-full bg-zinc-50 border border-zinc-100 p-3 rounded text-[11px] font-black uppercase outline-none focus:border-blue-500"
+                            >
+                                <option value="">REDAKSI 1AIX</option> {/* Option for default 'Redaksi 1AIX' without an ID */}
                                 {authors.map(auth => (
-                                    <option key={auth.id} value={auth.name}>{auth.name.toUpperCase()}</option>
+                                    <option key={auth.id} value={auth.id}>{auth.name.toUpperCase()}</option>
                                 ))}
                             </select>
                         </div>
@@ -258,6 +293,9 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
                         <button onClick={() => insertText('B')} title="Bold (CTRL+B)" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600 font-bold">B</button>
                         <button onClick={() => insertText('I')} title="Italic (CTRL+I)" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600 italic font-serif">I</button>
                         <div className="h-5 w-px bg-zinc-200 self-center mx-1"></div>
+                        <button onClick={() => insertText('QUOTE')} title="Quote" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 8h10M7 12h10M7 16h10M4 6v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                        </button>
                         <button onClick={() => insertText('UL')} title="Bullet List" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2.5" strokeLinecap="round"></path><circle cx="2" cy="6" r="1" fill="currentColor"/><circle cx="2" cy="12" r="1" fill="currentColor"/><circle cx="2" cy="18" r="1" fill="currentColor"/></svg></button>
                         <button onClick={() => insertText('OL')} title="Numbered List" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 6h13M7 12h13M7 18h13" strokeWidth="2.5" strokeLinecap="round"></path><text x="0" y="7" fontSize="8" fontWeight="black">1</text><text x="0" y="13" fontSize="8" fontWeight="black">2</text></svg></button>
                         <div className="h-5 w-px bg-zinc-200 self-center mx-1"></div>
@@ -266,6 +304,9 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
                         <button onClick={() => insertText('RIGHT')} title="Rata Kanan" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M10 12h10M4 18h16" strokeWidth="2.5" strokeLinecap="round"></path></svg></button>
                         <div className="h-5 w-px bg-zinc-200 self-center mx-1"></div>
                         <button onClick={() => insertText('IMAGE')} title="Tambah Gambar" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>
+                        <button onClick={() => insertText('LINK')} title="Tambah Link" className="w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.795-1.795m11.524-1.524a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"></path></svg>
+                        </button>
                         <button onClick={handleUndo} title="Undo (CTRL+Z)" className="ml-auto w-9 h-9 flex items-center justify-center hover:bg-white rounded transition-all text-zinc-400 hover:text-zinc-900"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>
                     </div>
                     <textarea 
@@ -316,6 +357,7 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
                     )}
                     
                     <div className="prose prose-zinc max-w-none">
+                        {/* Fix: Changed dangerYSetInnerHTML to dangerouslySetInnerHTML */}
                         <div 
                             className="text-zinc-800 text-base leading-loose whitespace-pre-wrap article-preview-body" 
                             dangerouslySetInnerHTML={{ __html: renderContent(formData.content || '') }} 
@@ -338,6 +380,7 @@ const AdminArticleEditor: React.FC<AdminArticleEditorProps> = ({ article, onClos
         .article-preview-body blockquote { font-size: 1.1em; color: #666; background: #f9fafb; margin: 1.5rem 0; }
         .article-preview-body li { margin-bottom: 0.5rem; }
         .article-preview-body img { margin: 2rem 0; display: block; width: 100%; border-radius: 4px; }
+        .article-preview-body a { color: #3b82f6; text-decoration: underline; }
       `}</style>
     </div>
   );

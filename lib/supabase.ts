@@ -14,7 +14,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  * ==============================================================================
  * 
  * -- 1. TABEL PENULIS (AUTHORS)
- * CREATE TABLE authors (
+ * CREATE TABLE IF NOT EXISTS authors (
  *   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
  *   name TEXT NOT NULL,
  *   role TEXT CHECK (role IN ('ADMIN', 'AUTHOR')) DEFAULT 'AUTHOR',
@@ -101,7 +101,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  *   created_at TIMESTAMPTZ DEFAULT NOW()
  * );
  * 
- * -- 6. TABEL KOMENTAR
+ * -- 6. TABEL TKDN MONITOR ORDER (Untuk menyimpan urutan TKDN item)
+ * -- Kolom cert_number REFERENSI ke tkdn_monitor, order_rank untuk posisi di UI.
+ * CREATE TABLE tkdn_monitor_order (
+ *   cert_number TEXT REFERENCES tkdn_monitor(cert_number) ON DELETE CASCADE PRIMARY KEY,
+ *   order_rank INTEGER DEFAULT 0
+ * );
+ * 
+ * -- 7. TABEL KOMENTAR
  * CREATE TABLE comments (
  *   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
  *   target_id UUID, 
@@ -111,7 +118,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  *   created_at TIMESTAMPTZ DEFAULT NOW()
  * );
  * 
- * -- 7. TABEL RATING (LIKES/DISLIKES)
+ * -- 8. TABEL RATING (LIKES/DISLIKES)
  * CREATE TABLE ratings (
  *   target_id UUID PRIMARY KEY,
  *   likes INTEGER DEFAULT 0,
@@ -119,7 +126,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  *   updated_at TIMESTAMPTZ DEFAULT NOW()
  * );
  * 
- * -- 8. TABEL ANALITIK
+ * -- 9. TABEL ANALITIK
  * CREATE TABLE site_analytics (
  *   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
  *   event_type TEXT NOT NULL,

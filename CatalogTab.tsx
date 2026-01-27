@@ -83,7 +83,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
             .select('*')
             .eq('status', 'PUBLISHED')
             .order('publish_date', { ascending: false })
-            .limit(5);
+            .limit(3); // Changed from 5 to 3
         
         if (!error && data) setSidebarArticles(data);
         setArticlesLoading(false);

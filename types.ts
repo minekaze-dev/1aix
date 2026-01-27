@@ -75,6 +75,7 @@ export interface Article {
   status: 'DRAFT' | 'PUBLISHED' | 'TRASH';
   created_at: string;
   author_name?: string;
+  author_id?: string | null; // New: Link to authors table, explicitly nullable
 }
 
 export interface Author {

@@ -30,11 +30,11 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     release_month: 'Januari',
     release_year: new Date().getFullYear().toString(),
     launch_date_indo: new Date().toISOString().split('T')[0],
-    tkdn_score: 35,
-    order_rank: 0,
+    tkdn_score: 0, // Set default to 0 for number input
+    order_rank: 0, // Set default to 0 for number input
     chipset: '',
     ram_storage: '',
-    price_srp: 0,
+    price_srp: 0, // Set default to 0 for number input
     image_url: '',
     official_store_link: '',
     // Technical Fields
@@ -115,10 +115,12 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     setIsAiLoading(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `Generate complete technical specifications for "${formData.brand} ${formData.model_name}" for the Indonesian market.
+      const prompt = `Generate complete technical specifications for the smartphone "${formData.brand} ${formData.model_name}".
+      Prioritize official information from the brand's Indonesian website, then GSM Arena, and finally other reliable tech sources.
+      Ensure all specifications are relevant to the **Indonesian market (official version)**.
       Return a STRICT JSON object with these keys:
-      market_category (Flagship/Mid-range/Entry-level), release_month, release_year, chipset, ram_storage, dimensions_weight, material, colors, network, wifi, display_type, os, cpu, gpu, camera_main, camera_video_main, camera_selfie, camera_video_selfie, battery_capacity, charging, sensors, usb_type, audio, features_extra, tkdn_score (number), price_srp (number).
-      Ensure data is as accurate as possible for the Indonesian official version.`;
+      market_category (Flagship/Mid-range/Entry-level), release_month (in Indonesian, e.g., 'Januari'), release_year, chipset, ram_storage, dimensions_weight, material, colors, network, wifi, display_type, os, cpu, gpu, camera_main, camera_video_main, camera_selfie, camera_video_selfie, battery_capacity, charging, sensors, usb_type, audio, features_extra, tkdn_score (number, estimate if official data isn't widely available, but prefer actual), price_srp (number, in IDR, prefer official launch price).
+      Double-check the accuracy of specifications, especially for the Indonesian variant.`;
       
       const response = await ai.models.generateContent({ 
         model: 'gemini-3-flash-preview', 
@@ -143,7 +145,9 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
         if (error) throw error;
         fetchSmartphones(true);
         if (onDataChange) onDataChange();
-    } catch (err) { alert("Gagal menghapus."); }
+    } catch (err: any) { // Catching any error type for better message display
+      alert("Gagal menghapus: " + err.message);
+    }
   };
 
   const handleMove = (index: number, direction: 'up' | 'down') => {
@@ -175,12 +179,13 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
             .eq('id', phone.id);
       });
 
+      // Use Promise.allSettled to see individual results, but Promise.all is fine for "all or nothing" logic
       await Promise.all(updates);
       alert("URUTAN BERHASIL DISIMPAN!");
       setIsDirty(false);
       if (onDataChange) onDataChange();
-    } catch (err) {
-      alert("Gagal menyimpan urutan.");
+    } catch (err: any) { // Catching any error type for better message display
+      alert("Gagal menyimpan urutan: " + err.message);
     } finally {
       setIsSavingOrder(false);
     }
@@ -190,12 +195,20 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+        // Ensure price_srp and tkdn_score are numbers or 0, not NaN or null
+        const submissionData = {
+          ...formData,
+          price_srp: isNaN(Number(formData.price_srp)) ? 0 : Number(formData.price_srp),
+          tkdn_score: isNaN(Number(formData.tkdn_score)) ? 0 : Number(formData.tkdn_score),
+          order_rank: isNaN(Number(formData.order_rank)) ? 0 : Number(formData.order_rank),
+        };
+
         if (editingId) {
-            const { error } = await supabase.from('smartphones').update(formData).eq('id', editingId);
+            const { error } = await supabase.from('smartphones').update(submissionData).eq('id', editingId);
             if (error) throw error;
             alert("Berhasil diperbarui!");
         } else {
-            const { id, ...payload } = formData;
+            const { id, ...payload } = submissionData; // 'id' might be undefined for new items, which is fine as DB generates UUID
             const { error } = await supabase.from('smartphones').insert([payload]);
             if (error) throw error;
             alert("Berhasil ditambahkan ke katalog!");
@@ -203,7 +216,10 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
         setShowForm(false);
         fetchSmartphones(true);
         if (onDataChange) onDataChange();
-    } catch (err) { console.error(err); alert("Gagal menyimpan data ke database."); } finally { setIsSubmitting(false); }
+    } catch (err: any) { 
+        console.error("Submission error:", err); 
+        alert("Gagal menyimpan data ke database: " + err.message); 
+    } finally { setIsSubmitting(false); }
   };
 
   const FormSection = ({ title, children }: { title: string, children: React.ReactNode }) => (
@@ -215,18 +231,80 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     </div>
   );
 
-  const FormInput = ({ label, value, onChange, type = "text", placeholder = "" }: { label: string, value: any, onChange: (val: any) => void, type?: string, placeholder?: string }) => (
-    <label className="block">
-        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">{label}</span>
-        <input 
-            type={type} 
-            value={value || ''} 
-            onChange={e => onChange(type === 'number' ? Number(e.target.value) : e.target.value)} 
-            placeholder={placeholder}
-            className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none focus:border-blue-500 transition-colors"
-        />
-    </label>
-  );
+  const FormInput = ({ label, value, onChange, type = "text", placeholder = "", name }: { label: string, value: any, onChange: (val: any) => void, type?: string, placeholder?: string, name: string }) => {
+    // State lokal hanya untuk input numerik agar tidak "loncat"
+    // Inisialisasi dengan string kosong jika nilai adalah 0 atau null, agar placeholder terlihat.
+    const [localNumInputValue, setLocalNumInputValue] = useState(
+      type === 'number' ? (value === 0 || value === null ? '' : String(value)) : ''
+    );
+  
+    // Sinkronkan localNumInputValue dengan prop `value` dari parent ketika prop berubah, hanya untuk number
+    useEffect(() => {
+      if (type === 'number') {
+        setLocalNumInputValue(value === 0 || value === null ? '' : String(value));
+      }
+    }, [value, type]);
+  
+    const handleNumericInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const rawVal = e.target.value;
+      setLocalNumInputValue(rawVal); // Selalu update state lokal dengan string mentah
+    };
+
+    const handleNumericBlur = () => {
+      if (localNumInputValue === '') {
+        onChange(0); // Jika input kosong, set ke 0 di parent
+      } else {
+        const numVal = Number(localNumInputValue);
+        onChange(isNaN(numVal) ? 0 : numVal); // Jika NaN, kirim 0; jika valid, kirim angka
+      }
+    };
+
+    // Untuk input teks, langsung gunakan nilai parent dan update parent pada setiap perubahan
+    const handleTextInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange(e.target.value);
+    };
+
+    if (type === 'number') {
+      return (
+        <label className="block">
+            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">{label}</span>
+            <input 
+                type="number" 
+                name={name}
+                value={localNumInputValue} // Gunakan state lokal untuk input numerik
+                onChange={handleNumericInputChange}
+                onBlur={handleNumericBlur} // Kirim nilai ke parent saat input kehilangan fokus
+                placeholder={placeholder}
+                className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none focus:border-blue-500 transition-colors"
+            />
+        </label>
+      );
+    } else { // type === "text"
+      return (
+        <label className="block">
+            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">{label}</span>
+            <input 
+                type="text" 
+                name={name}
+                value={value || ''} // Langsung gunakan nilai dari parent untuk input teks
+                onChange={handleTextInputChange} // Update parent langsung pada setiap ketikan
+                placeholder={placeholder}
+                className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none focus:border-blue-500 transition-colors"
+            />
+        </label>
+      );
+    }
+  };
+
+  const getAiButtonTitle = useMemo(() => {
+    if (isAiLoading) {
+      return 'AI sedang mengambil data spesifikasi...';
+    }
+    if (!formData.brand || !formData.model_name) {
+      return 'Isi Nama Brand dan Model terlebih dahulu untuk mengaktifkan AI Auto-Fill';
+    }
+    return 'Gunakan AI untuk mengisi otomatis spesifikasi';
+  }, [isAiLoading, formData.brand, formData.model_name]);
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -254,69 +332,77 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
           
           <form onSubmit={handleSubmit} className="space-y-12 divide-y divide-zinc-50">
             <div className="flex justify-end pb-4">
-              <button type="button" onClick={handleAiAutoFill} disabled={isAiLoading || !formData.model_name} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg">{isAiLoading ? 'GENERATING...' : 'AI ASSISTANCE AUTO-FILL'}</button>
+              <button 
+                type="button" 
+                onClick={handleAiAutoFill} 
+                disabled={isAiLoading || !formData.model_name || !formData.brand} 
+                title={getAiButtonTitle} // Added title attribute
+                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg"
+              >
+                {isAiLoading ? 'GENERATING...' : 'AI ASSISTANCE AUTO-FILL'}
+              </button>
             </div>
 
             <FormSection title="IDENTITAS UTAMA">
                 <label className="block">
                     <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">OFFICIAL BRAND</span>
-                    <select value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value as Brand})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none focus:border-blue-500">{BRANDS.map(b => <option key={b} value={b}>{b.toUpperCase()}</option>)}</select>
+                    <select name="brand" value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value as Brand})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none focus:border-blue-500">{BRANDS.map(b => <option key={b} value={b}>{b.toUpperCase()}</option>)}</select>
                 </label>
-                <FormInput label="NAMA MODEL" value={formData.model_name} onChange={v => setFormData({...formData, model_name: v})} placeholder="Galaxy S25 Ultra" />
+                <FormInput label="NAMA MODEL" name="model_name" value={formData.model_name} onChange={v => setFormData({...formData, model_name: v})} placeholder="Galaxy S25 Ultra" />
                 <label className="block">
                     <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">KATEGORI PASAR</span>
-                    <select value={formData.market_category} onChange={e => setFormData({...formData, market_category: e.target.value as MarketCategory})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none focus:border-blue-500">{CATEGORIES.map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}</select>
+                    <select name="market_category" value={formData.market_category} onChange={e => setFormData({...formData, market_category: e.target.value as MarketCategory})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none focus:border-blue-500">{CATEGORIES.map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}</select>
                 </label>
-                <FormInput label="HARGA SRP (IDR)" type="number" value={formData.price_srp} onChange={v => setFormData({...formData, price_srp: v})} />
-                <FormInput label="OFFICIAL STORE LINK" value={formData.official_store_link} onChange={v => setFormData({...formData, official_store_link: v})} />
-                <FormInput label="IMAGE URL" value={formData.image_url} onChange={v => setFormData({...formData, image_url: v})} />
+                <FormInput label="HARGA SRP (IDR)" name="price_srp" type="number" value={formData.price_srp} onChange={v => setFormData({...formData, price_srp: v})} />
+                <FormInput label="OFFICIAL STORE LINK" name="official_store_link" value={formData.official_store_link} onChange={v => setFormData({...formData, official_store_link: v})} />
+                <FormInput label="IMAGE URL" name="image_url" value={formData.image_url} onChange={v => setFormData({...formData, image_url: v})} />
             </FormSection>
 
             <FormSection title="BODY & MATERIAL">
-                <FormInput label="DIMENSI / BERAT" value={formData.dimensions_weight} onChange={v => setFormData({...formData, dimensions_weight: v})} placeholder="164.4 x 77.9 x 7.9 mm, 200g" />
-                <FormInput label="MATERIAL" value={formData.material} onChange={v => setFormData({...formData, material: v})} placeholder="Glass front, plastic frame..." />
-                <FormInput label="WARNA" value={formData.colors} onChange={v => setFormData({...formData, colors: v})} placeholder="Titanium Black, Gray, Silver" />
+                <FormInput label="DIMENSI / BERAT" name="dimensions_weight" value={formData.dimensions_weight} onChange={v => setFormData({...formData, dimensions_weight: v})} placeholder="164.4 x 77.9 x 7.9 mm, 200g" />
+                <FormInput label="MATERIAL" name="material" value={formData.material} onChange={v => setFormData({...formData, material: v})} placeholder="Glass front, plastic frame..." />
+                <FormInput label="WARNA" name="colors" value={formData.colors} onChange={v => setFormData({...formData, colors: v})} placeholder="Titanium Black, Gray, Silver" />
             </FormSection>
 
             <FormSection title="CONNECTIVITY & DISPLAY">
-                <FormInput label="JARINGAN" value={formData.network} onChange={v => setFormData({...formData, network: v})} placeholder="GSM / HSPA / LTE / 5G" />
-                <FormInput label="WIFI" value={formData.wifi} onChange={v => setFormData({...formData, wifi: v})} placeholder="Wi-Fi 802.11 a/b/g/n/ac/6e/7" />
-                <FormInput label="TIPE LAYAR" value={formData.display_type} onChange={v => setFormData({...formData, display_type: v})} placeholder="6.7-inch Super AMOLED, 120Hz..." />
+                <FormInput label="JARINGAN" name="network" value={formData.network} onChange={v => setFormData({...formData, network: v})} placeholder="GSM / HSPA / LTE / 5G" />
+                <FormInput label="WIFI" name="wifi" value={formData.wifi} onChange={v => setFormData({...formData, wifi: v})} placeholder="Wi-Fi 802.11 a/b/g/n/ac/6e/7" />
+                <FormInput label="TIPE LAYAR" name="display_type" value={formData.display_type} onChange={v => setFormData({...formData, display_type: v})} placeholder="6.7-inch Super AMOLED, 120Hz..." />
             </FormSection>
 
             <FormSection title="PLATFORM (INTERNAL)">
-                <FormInput label="OS" value={formData.os} onChange={v => setFormData({...formData, os: v})} placeholder="Android 15, One UI 7" />
-                <FormInput label="CHIPSET" value={formData.chipset} onChange={v => setFormData({...formData, chipset: v})} placeholder="Exynos 1330 (5nm)" />
-                <FormInput label="CPU" value={formData.cpu} onChange={v => setFormData({...formData, cpu: v})} placeholder="Octa-core (2x2.4 GHz...)" />
-                <FormInput label="GPU" value={formData.gpu} onChange={v => setFormData({...formData, gpu: v})} placeholder="Mali-G68 MP2" />
-                <FormInput label="RAM / ROM" value={formData.ram_storage} onChange={v => setFormData({...formData, ram_storage: v})} placeholder="8GB RAM / 256GB STORAGE" />
+                <FormInput label="OS" name="os" value={formData.os} onChange={v => setFormData({...formData, os: v})} placeholder="Android 15, One UI 7" />
+                <FormInput label="CHIPSET" name="chipset" value={formData.chipset} onChange={v => setFormData({...formData, chipset: v})} placeholder="Exynos 1330 (5nm)" />
+                <FormInput label="CPU" name="cpu" value={formData.cpu} onChange={v => setFormData({...formData, cpu: v})} placeholder="Octa-core (2x2.4 GHz...)" />
+                <FormInput label="GPU" name="gpu" value={formData.gpu} onChange={v => setFormData({...formData, gpu: v})} placeholder="Mali-G68 MP2" />
+                <FormInput label="RAM / ROM" name="ram_storage" value={formData.ram_storage} onChange={v => setFormData({...formData, ram_storage: v})} placeholder="8GB RAM / 256GB STORAGE" />
             </FormSection>
 
             <FormSection title="CAMERA">
-                <FormInput label="KAMERA UTAMA" value={formData.camera_main} onChange={v => setFormData({...formData, camera_main: v})} placeholder="50 MP, f/1.8 (wide)..." />
-                <FormInput label="VIDEO UTAMA" value={formData.camera_video_main} onChange={v => setFormData({...formData, camera_video_main: v})} />
-                <FormInput label="KAMERA SELFIE" value={formData.camera_selfie} onChange={v => setFormData({...formData, camera_selfie: v})} placeholder="13 MP, f/2.0 (wide)" />
-                <FormInput label="VIDEO SELFIE" value={formData.camera_video_selfie} onChange={v => setFormData({...formData, camera_video_selfie: v})} />
+                <FormInput label="KAMERA UTAMA" name="camera_main" value={formData.camera_main} onChange={v => setFormData({...formData, camera_main: v})} placeholder="50 MP, f/1.8 (wide)..." />
+                <FormInput label="VIDEO UTAMA" name="camera_video_main" value={formData.camera_video_main} onChange={v => setFormData({...formData, camera_video_main: v})} />
+                <FormInput label="KAMERA SELFIE" name="camera_selfie" value={formData.camera_selfie} onChange={v => setFormData({...formData, camera_selfie: v})} placeholder="13 MP, f/2.0 (wide)" />
+                <FormInput label="VIDEO SELFIE" name="camera_video_selfie" value={formData.camera_video_selfie} onChange={v => setFormData({...formData, camera_video_selfie: v})} />
             </FormSection>
 
             <FormSection title="BATTERY & HARDWARE">
-                <FormInput label="KAPASITAS BATERAI" value={formData.battery_capacity} onChange={v => setFormData({...formData, battery_capacity: v})} placeholder="5000 mAh" />
-                <FormInput label="CHARGING" value={formData.charging} onChange={v => setFormData({...formData, charging: v})} placeholder="25W Wired" />
-                <FormInput label="SENSORS" value={formData.sensors} onChange={v => setFormData({...formData, sensors: v})} placeholder="Fingerprint, Accelerometer..." />
-                <FormInput label="TIPE USB" value={formData.usb_type} onChange={v => setFormData({...formData, usb_type: v})} placeholder="USB Type-C 2.0" />
-                <FormInput label="AUDIO" value={formData.audio} onChange={v => setFormData({...formData, audio: v})} placeholder="Loudspeaker, 3.5mm jack" />
-                <FormInput label="FITUR EXTRA" value={formData.features_extra} onChange={v => setFormData({...formData, features_extra: v})} placeholder="NFC, IP54 Resistance..." />
+                <FormInput label="KAPASITAS BATERAI" name="battery_capacity" value={formData.battery_capacity} onChange={v => setFormData({...formData, battery_capacity: v})} placeholder="5000 mAh" />
+                <FormInput label="CHARGING" name="charging" value={formData.charging} onChange={v => setFormData({...formData, charging: v})} placeholder="25W Wired" />
+                <FormInput label="SENSORS" name="sensors" value={formData.sensors} onChange={v => setFormData({...formData, sensors: v})} placeholder="Fingerprint, Accelerometer..." />
+                <FormInput label="TIPE USB" name="usb_type" value={formData.usb_type} onChange={v => setFormData({...formData, usb_type: v})} placeholder="USB Type-C 2.0" />
+                <FormInput label="AUDIO" name="audio" value={formData.audio} onChange={v => setFormData({...formData, audio: v})} placeholder="Loudspeaker, 3.5mm jack" />
+                <FormInput label="FITUR EXTRA" name="features_extra" value={formData.features_extra} onChange={v => setFormData({...formData, features_extra: v})} placeholder="NFC, IP54 Resistance..." />
             </FormSection>
 
             <FormSection title="ADMINISTRASI & STATUS">
                 <label className="block">
                     <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">STATUS RILIS</span>
-                    <select value={formData.release_status} onChange={e => setFormData({...formData, release_status: e.target.value as ReleaseStatus})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none focus:border-blue-500"><option value="Tersedia">TERSEDIA</option><option value="Pre-Order">PRE-ORDER</option><option value="Segera Rilis">SEGERA RILIS</option></select>
+                    <select name="release_status" value={formData.release_status} onChange={e => setFormData({...formData, release_status: e.target.value as ReleaseStatus})} className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none focus:border-blue-500"><option value="Tersedia">TERSEDIA</option><option value="Pre-Order">PRE-ORDER</option><option value="Segera Rilis">SEGERA RILIS</option></select>
                 </label>
-                <FormInput label="SKOR TKDN (%)" type="number" value={formData.tkdn_score} onChange={v => setFormData({...formData, tkdn_score: v})} />
-                <FormInput label="BULAN RILIS" value={formData.release_month} onChange={v => setFormData({...formData, release_month: v})} />
-                <FormInput label="TAHUN RILIS" value={formData.release_year} onChange={v => setFormData({...formData, release_year: v})} />
-                <FormInput label="URUTAN PRIORITAS" type="number" value={formData.order_rank} onChange={v => setFormData({...formData, order_rank: v})} />
+                <FormInput label="SKOR TKDN (%)" name="tkdn_score" type="number" value={formData.tkdn_score} onChange={v => setFormData({...formData, tkdn_score: v})} />
+                <FormInput label="BULAN RILIS" name="release_month" value={formData.release_month} onChange={v => setFormData({...formData, release_month: v})} />
+                <FormInput label="TAHUN RILIS" name="release_year" value={formData.release_year} onChange={v => setFormData({...formData, release_year: v})} />
+                <FormInput label="URUTAN PRIORITAS" name="order_rank" type="number" value={formData.order_rank} onChange={v => setFormData({...formData, order_rank: v})} />
             </FormSection>
 
             <div className="flex justify-end gap-4 pt-10 border-t border-zinc-100">
@@ -348,12 +434,18 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
                         <td className="px-8 py-5">
                             <div className="flex gap-2">
                                 <button onClick={() => handleMove(idx, 'up')} disabled={idx === 0} className={`w-8 h-8 border rounded flex items-center justify-center transition-all ${idx === 0 ? 'opacity-20 cursor-not-allowed' : 'border-zinc-200 text-zinc-400 hover:border-blue-500 hover:text-blue-500'}`}><svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"></path></svg></button>
-                                <button onClick={() => handleMove(idx, 'down')} disabled={idx === filteredSmartphones.length - 1} className={`w-8 h-8 border rounded flex items-center justify-center transition-all ${idx === filteredSmartphones.length - 1 ? 'opacity-20 cursor-not-allowed' : 'border-zinc-200 text-zinc-400 hover:border-blue-500 hover:text-blue-500'}`}><svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg></button>
+                                <button onClick={() => handleMove(idx, 'down')} disabled={idx === filteredSmartphones.length - 1} className={`w-8 h-8 border rounded flex items-center justify-center transition-all ${idx === filteredSmartphones.length - 1 ? 'opacity-20 cursor-not-allowed' : 'border-zinc-200 text-zinc-400 hover:border-blue-500 hover:text-blue-500'}`}><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg></button>
                             </div>
                         </td>
                         <td className="px-8 py-5">
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-zinc-100 rounded p-1 flex items-center justify-center"><img src={phone.image_url} alt="" className="max-w-full max-h-full object-contain mix-blend-multiply" /></div>
+                                <div className="w-10 h-10 bg-zinc-100 rounded p-1 flex items-center justify-center">
+                                    <img 
+                                        src={phone.image_url || 'https://via.placeholder.com/300x400?text=No+Image'} 
+                                        alt="" 
+                                        className="max-w-full max-h-full object-contain mix-blend-multiply" 
+                                    />
+                                </div>
                                 <div><div className="text-[11px] font-black text-zinc-900 uppercase leading-none mb-1">{phone.model_name}</div><div className="text-[9px] font-black text-red-600 uppercase tracking-widest">{phone.brand}</div></div>
                             </div>
                         </td>

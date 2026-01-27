@@ -13,28 +13,28 @@ const Footer: React.FC = () => {
                         </svg>
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[11px] font-black uppercase tracking-widest text-white leading-none mb-1">SUPPORT BY GSMARENA</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest text-white leading-none mb-1">1AIX</span>
                         <span className="text-[9px] font-bold text-zinc-600 tracking-widest leading-none">&copy; {new Date().getFullYear()} 1AIX | Referensi Smartphone Resmi Indonesia</span>
                     </div>
                 </div>
 
-                {/* Right Section: Links */}
-                <div className="flex items-center gap-12">
+                {/* Right Section: Links - Adjusted to be smaller and stacked */}
+                <div className="flex flex-col items-end gap-2"> 
                     <button 
                         onClick={() => window.location.hash = '#/faq'} 
-                        className="text-[10px] font-black text-zinc-600 hover:text-white transition-colors uppercase tracking-widest"
+                        className="text-[8px] font-black text-zinc-600 hover:text-white transition-colors uppercase tracking-widest"
                     >
                         FAQ
                     </button>
                     <button 
                         onClick={() => window.location.hash = '#/kebijakan'} 
-                        className="text-[10px] font-black text-zinc-600 hover:text-white transition-colors uppercase tracking-widest"
+                        className="text-[8px] font-black text-zinc-600 hover:text-white transition-colors uppercase tracking-widest"
                     >
                         KEBIJAKAN 1AIX
                     </button>
                     <button 
                         onClick={() => window.location.hash = '#/syarat-ketentuan'} 
-                        className="text-[10px] font-black text-zinc-600 hover:text-white transition-colors uppercase tracking-widest"
+                        className="text-[8px] font-black text-zinc-600 hover:text-white transition-colors uppercase tracking-widest"
                     >
                         SYARAT & KETENTUAN
                     </button>

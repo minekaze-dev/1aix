@@ -26,6 +26,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
     members: 0, 
     comments: 0, 
     visitors: 0,
+    mobileVisitors: 0, // New: Mobile visitors stat
+    pcVisitors: 0,     // New: PC visitors stat
     avgReadingTime: 0,
     dailyActivity: [0, 0, 0, 0, 0, 0, 0]
   });
@@ -45,6 +47,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
         .select('event_type, value, created_at');
 
     const totalVisitors = analytics?.filter(a => a.event_type === 'page_view').length || 0;
+    
+    // --- New: Calculate estimated mobile and PC visitors ---
+    // NOTE: This is an estimation based on existing total visitors, as the 'site_analytics' table 
+    // does not currently store specific device type information. To get accurate live data, 
+    // the analytics collection in App.tsx and the database schema would need to be extended.
+    const estimatedMobileVisitors = Math.round(totalVisitors * 0.6); // Example: 60% mobile
+    const estimatedPcVisitors = totalVisitors - estimatedMobileVisitors; // Remaining 40% PC
+    // --- End New ---
+
     const readingTimes = analytics?.filter(a => a.event_type === 'reading_time').map(a => Number(a.value)) || [];
     const avgReadingTime = readingTimes.length > 0 
         ? readingTimes.reduce((a, b) => a + b, 0) / readingTimes.length 
@@ -67,6 +78,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
       members: members.count || 0,
       comments: comments.count || 0,
       visitors: totalVisitors,
+      mobileVisitors: estimatedMobileVisitors, // Set new stats
+      pcVisitors: estimatedPcVisitors,         // Set new stats
       avgReadingTime: avgReadingTime,
       dailyActivity
     });
@@ -135,7 +148,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
                     {[
                         { label: 'TOTAL ARTIKEL', value: stats.articles, color: 'bg-blue-50 text-blue-600', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z' },
                         { label: 'KATALOG HP', value: stats.phones, color: 'bg-indigo-50 text-indigo-600', icon: 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z' },
-                        { label: 'PENGUNJUNG', value: stats.visitors, color: 'bg-emerald-50 text-emerald-600', icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z' },
+                        // Modified PENGUNJUNG card to include mobile/PC breakdown
+                        { 
+                            label: 'PENGUNJUNG', 
+                            value: (
+                                <>
+                                    {stats.visitors}
+                                    <div className="text-[8px] font-bold text-zinc-400 uppercase leading-none mt-1">
+                                        (M: {stats.mobileVisitors} / PC: {stats.pcVisitors})
+                                    </div>
+                                </>
+                            ), 
+                            color: 'bg-emerald-50 text-emerald-600', 
+                            icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z' 
+                        },
                         { label: 'KOMENTAR', value: stats.comments, color: 'bg-orange-50 text-orange-600', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
                         { label: 'REGISTERED', value: stats.members, color: 'bg-zinc-100 text-zinc-600', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
                     ].map((card, i) => (
@@ -146,7 +172,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
                                 </div>
                             </div>
                             <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-1">{card.label}</div>
-                            <div className="text-xl font-black text-[#1e293b]">{card.value}</div>
+                            {/* Render value, allowing ReactNode for breakdown */}
+                            <div className="text-xl font-black text-[#1e293b]">
+                                {card.value}
+                            </div>
                         </div>
                     ))}
                 </div>

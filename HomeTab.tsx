@@ -173,7 +173,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
     const heroArticles = filteredArticles.slice(0, 2);
     const articlesAfterHero = filteredArticles.slice(2); // All articles after the first two hero articles
     
-    const trendingArticles = articles.slice(0, 3);
+    const trendingArticles = articles.slice(0, 3); // Already set to 3, no change needed for count.
 
     const popularTags = useMemo(() => {
         const tagCounts: { [key: string]: number } = {};
@@ -287,8 +287,23 @@ const HomeTab: React.FC<HomeTabProps> = ({
                             <div className="whitespace-pre-wrap article-view-body" dangerouslySetInnerHTML={{ __html: parseMarkdown(viewArticle.content || '') }} />
                         </div>
 
+                        {/* Display Hashtags (Tags) - Updated for better visibility and spacing */}
+                        {viewArticle.tags && viewArticle.tags.split(/\s+/).filter(tag => tag.trim() !== '').length > 0 && (
+                            <div className="mt-12 mb-8 pt-6 border-t border-zinc-100 bg-[#f8fafc] p-8 rounded-sm shadow-sm flex flex-wrap gap-2 items-center">
+                                <span className="text-[10px] font-black text-zinc-900 uppercase tracking-widest mr-2">HASHTAGS:</span>
+                                {viewArticle.tags.split(/\s+/).filter(tag => tag.trim() !== '').map((tag, idx) => (
+                                    <span 
+                                        key={idx} 
+                                        className="text-[10px] font-black text-blue-600 uppercase tracking-wider rounded-full px-2 py-0.5 bg-blue-50 border border-blue-100"
+                                    >
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
                         {/* Banner Ads Section for Article Detail */}
-                        <div className="w-full mb-10">
+                        <div className="w-full my-10">
                           <div className="h-[120px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
                             <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
                             <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
@@ -304,7 +319,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                         <div className="flex-1 space-y-4"><textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Berikan pendapatmu tentang artikel ini..." className="w-full bg-white border border-zinc-200 p-4 rounded text-sm font-bold outline-none focus:border-red-600 transition-all resize-none" rows={3}/><button onClick={handlePostComment} className="px-8 py-3 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all">KIRIM KOMENTAR</button></div>
                                     </div>
                                 ) : (
-                                    <div className="text-center py-6"><p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">Anda harus login untuk berkomentar</p><button onClick={onOpenLogin} className="px-8 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all">MASUK PANEL</button></div>
+                                    <div className="text-center py-6"><p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">Anda harus login untuk berkomentar</p><button onClick={onOpenLogin} className="px-8 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all">MASUK</button></div>
                                 )}
                             </div>
                             <div className="space-y-8">

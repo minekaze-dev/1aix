@@ -15,10 +15,10 @@ interface HeaderProps {
     session?: Session | null;
     searchQuery?: string;
     onSearchChange?: (query: string) => void;
-    smartphones?: Smartphone[];
-    articles?: Article[];
-    onProductSelect?: (phone: Smartphone) => void;
-    onArticleSelect?: (article: Article) => void;
+    smartphones?: Smartphone[]; // Added missing prop
+    articles?: Article[]; // Added missing prop
+    onProductSelect?: (phone: Smartphone) => void; // Added missing prop
+    onArticleSelect?: (article: Article) => void; // Added missing prop
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -33,10 +33,10 @@ const Header: React.FC<HeaderProps> = ({
     session,
     searchQuery = "",
     onSearchChange,
-    smartphones = [],
-    articles = [],
-    onProductSelect,
-    onArticleSelect
+    smartphones = [], // Destructure with default value
+    articles = [], // Destructure with default value
+    onProductSelect, // Destructure
+    onArticleSelect // Destructure
 }) => {
     const brands: Brand[] = [
         "Samsung", "Xiaomi", "Apple", "Oppo", "Vivo", "Realme", "Infinix", "Poco",
