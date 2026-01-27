@@ -1,10 +1,11 @@
 
+
 import React, { useState, useEffect } from 'react';
 import type { Smartphone, Brand, Article } from '../types';
 import { TOP_BRANDS } from '../constants';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { DisplayScreenIcon, CameraShutterIcon, CpuChipIcon, BatteryFullIcon, ThumbUpIcon, ThumbDownIcon } from './icons'; // FIX: Import ThumbUpIcon and ThumbDownIcon
+import { DisplayScreenIcon, CameraShutterIcon, CpuChipIcon, BatteryFullIcon, ThumbUpIcon, ThumbDownIcon } from './icons'; // Restore ThumbUpIcon and ThumbDownIcon
 
 interface CatalogTabProps {
     items: Smartphone[];
@@ -33,6 +34,7 @@ const SpecRow = ({ label, value }: { label: string; value?: string | number }) =
     );
 };
 
+// FIX: Added explicit interface for SpecSectionProps and used React.FC
 interface SpecSectionProps {
     icon: React.ReactNode;
     title: string;
@@ -347,13 +349,21 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                             <div className="flex gap-16">
                                 <div className="flex flex-col items-center">
                                     <button onClick={() => handleRating(selectedProduct.id, 'like')} className={`w-24 h-24 rounded-full bg-white shadow-xl flex items-center justify-center text-blue-500 hover:scale-110 active:scale-95 transition-all mb-6 group border ${userVotes[selectedProduct.id] === 'like' ? 'border-blue-500 bg-blue-50 ring-4 ring-blue-100' : 'border-blue-50'}`}>
-                                        <ThumbUpIcon className={`w-10 h-10 ${userVotes[selectedProduct.id] === 'like' ? 'fill-blue-500' : 'fill-none'}`} stroke="currentColor" strokeWidth={1.5} /> {/* FIX: Using component */}
+                                        <ThumbUpIcon 
+                                            className="w-10 h-10" 
+                                            fill={userVotes[selectedProduct.id] === 'like' ? 'currentColor' : 'none'} 
+                                            stroke="currentColor" 
+                                        />
                                     </button>
                                     <span className={`text-2xl font-black tracking-tighter ${userVotes[selectedProduct.id] === 'like' ? 'text-blue-600' : 'text-blue-600/40'}`}>{ratings[selectedProduct.id]?.likes || 0}</span>
                                 </div>
                                 <div className="flex flex-col items-center">
                                     <button onClick={() => handleRating(selectedProduct.id, 'dislike')} className={`w-24 h-24 rounded-full bg-white shadow-xl flex items-center justify-center text-zinc-400 hover:scale-110 active:scale-95 transition-all mb-6 group border ${userVotes[selectedProduct.id] === 'dislike' ? 'border-zinc-800 bg-zinc-50 ring-4 ring-zinc-100' : 'border-zinc-50'}`}>
-                                        <ThumbDownIcon className={`w-10 h-10 ${userVotes[selectedProduct.id] === 'dislike' ? 'fill-zinc-800' : 'fill-none'}`} stroke="currentColor" strokeWidth={1.5} /> {/* FIX: Using component */}
+                                        <ThumbDownIcon 
+                                            className="w-10 h-10" 
+                                            fill={userVotes[selectedProduct.id] === 'dislike' ? 'currentColor' : 'none'} 
+                                            stroke="currentColor" 
+                                        />
                                     </button>
                                     <span className={`text-2xl font-black tracking-tighter ${userVotes[selectedProduct.id] === 'dislike' ? 'text-zinc-800' : 'text-zinc-400'}`}>{ratings[selectedProduct.id]?.dislikes || 0}</span>
                                 </div>

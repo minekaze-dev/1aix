@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 type IconProps = React.SVGProps<SVGSVGElement>;
@@ -78,16 +77,14 @@ export const TrashIcon: React.FC<IconProps> = (props) => (
 );
 
 export const ThumbUpIcon: React.FC<IconProps> = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.683.31-.742.56-1.54.56-2.325V3.75a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v.75c0 .621.152 1.224.455 1.768.303.544.74 1.023 1.254 1.399.515.376 1.096.657 1.714.84.618.183 1.272.274 1.938.274.23 0 .454-.02.673-.055.219-.035.426-.08.632-.135.206-.055.398-.12.576-.195.178-.075.342-.16.494-.255c.152-.095.29-.204.413-.328c.122-.123.23-.26.32-.41a.75.75 0 011.023.242.75.75 0 01-.035 1.05c-.388.462-.851.84-1.368 1.144c-.517.303-1.069.52-1.658.66c-.59.14-1.204.2-1.83.2c-1.238 0-2.417-.333-3.464-.94c-.052-.03-.105-.058-.158-.086c-1.06-.577-2.007-1.388-2.822-2.398s-1.484-2.14-1.916-3.356c-.432-1.215-.644-2.49-.644-3.795V3.75a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v.75c0 1.02.312 2.004.896 2.828c.145.208.29.413.438.614c.148.202.302.398.46.588c.158.19.322.373.492.548c.17.175.345.342.524.5a9.041 9.041 0 01-2.86 2.4c-.806.428-1.591.754-2.441.932C7.994 10.334 7.317 10.5 6.633 10.5z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 1.242-.39 2.404-1.09 3.393l-3.716 5.204a2.25 2.25 0 01-3.182 0l-3.716-5.204c-.7-.99-1.09-2.15-1.09-3.393V6.388a2.25 2.25 0 012.25-2.25h.106c1.192 0 2.261.644 2.774 1.695l.1.215l.1-.215A3.374 3.374 0 0115.149 4.14h.106a2.25 2.25 0 012.25 2.25v4.112z" />
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
   </svg>
 );
 
 export const ThumbDownIcon: React.FC<IconProps> = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21L5.25 15.75V12a2.25 2.25 0 012.25-2.25h1.5M10.5 21h.75v-5.25h2.25V21h.75a2.25 2.25 0 002.25-2.25V15a2.25 2.25 0 00-2.25-2.25H15M10.5 21V9a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 9v.75" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15 9.75a3 3 0 013-3h.008a3 3 0 013 3v1.5a3 3 0 01-3 3h-.008a3 3 0 01-3-3V9.75z" />
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3zm7-13h3a2 2 0 012 2v7a2 2 0 01-2 2h-3" />
   </svg>
 );
 
