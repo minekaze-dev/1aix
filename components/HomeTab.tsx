@@ -84,7 +84,11 @@ const HomeTab: React.FC<HomeTabProps> = ({
             .replace(/&lt;span style="(.*?)"&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="$1">$2</span>')
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/_(.*?)_/g, '<em>$1</em>')
-            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>') // Added this line for links
+            .replace(/\[(.*?)\]\((.*?)\)/g, (match, linkText, url) => {
+                // Decode HTML entities in the URL part before using it in href
+                const decodedUrl = url.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+                return `<a href="${decodedUrl}" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
+            })
             .replace(/^# (.*$)/gm, '<h1 style="font-size: 2em; font-weight: 900; margin: 0.5em 0;">$1</h1>')
             .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$1</h2>')
             .replace(/^&gt; (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500">$1</blockquote>')
@@ -375,7 +379,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                                         <ChatAlt2Icon className="w-3 h-3 text-zinc-400" strokeWidth={2} />
                                                         <span>{articleCommentCounts[art.id] || 0}</span>
                                                     </div>
-                                                    <h2 className="2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors">{art.title}</h2>
+                                                    <h2 className="text-2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors">{art.title}</h2>
                                                 </div>
                                             </div>
                                         ))}
