@@ -182,17 +182,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
                         </div>
                         <ReaderChart />
                     </div>
-                    <div className="space-y-6">
-                        <div className="bg-gradient-to-br from-[#4f46e5] to-[#3b82f6] p-8 rounded-2xl shadow-lg text-white">
-                            <div className="flex items-center gap-3 mb-6">
+                    <div className="flex flex-col">
+                        <div className="flex-1 bg-gradient-to-br from-[#4f46e5] to-[#3b82f6] p-8 rounded-2xl shadow-lg text-white flex flex-col justify-between">
+                            <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
                                 <span className="text-[9px] font-black uppercase tracking-widest">AVG. READING TIME</span>
                             </div>
-                            <div className="text-5xl font-black mb-2 italic">
-                                {stats.avgReadingTime.toFixed(1)}
-                                <span className="text-xl ml-1 not-italic">m</span>
+                            <div className="py-4">
+                                <div className="text-5xl font-black mb-2 italic">
+                                    {stats.avgReadingTime.toFixed(1)}
+                                    <span className="text-xl ml-1 not-italic">m</span>
+                                </div>
+                                <p className="text-[10px] font-bold text-white/60 leading-tight uppercase">Rata-rata waktu yang dihabiskan pembaca per artikel.</p>
                             </div>
-                            <p className="text-[10px] font-bold text-white/60 leading-tight uppercase">Rata-rata waktu yang dihabiskan pembaca per artikel.</p>
+                            <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                                <div className="h-full bg-white/40" style={{ width: `${Math.min((stats.avgReadingTime / 10) * 100, 100)}%` }}></div>
+                            </div>
                         </div>
                     </div>
                 </div>
