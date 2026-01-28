@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { TOP_BRANDS } from '../constants';
 import type { Session } from '@supabase/supabase-js';
@@ -90,11 +89,11 @@ const HomeTab: React.FC<HomeTabProps> = ({
             .replace(/_(.*?)_/g, '<em>$1</em>')
             .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>') // Added this line for links
             .replace(/^# (.*$)/gm, '<h1 style="font-size: 2em; font-weight: 900; margin: 0.5em 0;">$1</h1>')
-            .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$1</h2>')
-            .replace(/^&gt; (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500">$1</blockquote>')
+            .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$2</h2>')
+            .replace(/^&gt; (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500 my-4">$1</blockquote>')
             .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
             .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 list-decimal">$1</li>')
-            .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="w-full my-4 rounded shadow-lg" />');
+            .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="w-full my-6 rounded shadow-lg" />');
     };
 
     useEffect(() => {
@@ -104,6 +103,8 @@ const HomeTab: React.FC<HomeTabProps> = ({
 
     useEffect(() => {
         if (viewArticle) {
+            const slug = viewArticle.permalink.replace(/^\//, '');
+            window.location.hash = `#${slug}`;
             const startTime = Date.now();
             return () => {
                 const duration = (Date.now() - startTime) / 1000;
@@ -157,7 +158,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
     };
 
     const handleShare = (platform: string) => {
-        const url = window.location.origin + '/#' + viewArticle?.permalink;
+        const url = window.location.origin + '/#' + viewArticle?.permalink.replace(/^\//, '');
         const text = viewArticle?.title || "Cek berita gadget terbaru di 1AIX!";
         if (platform === 'wa') window.open(`https://wa.me/?text=${encodeURIComponent(text + " " + url)}`);
         else if (platform === 'tw') window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`);
@@ -201,6 +202,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
 
     const handleBackToHome = () => {
         setViewArticle(null);
+        window.location.hash = '#/home';
         onSetArticleFilterQuery?.(""); // Clear article filter when going back to main list
     };
 
@@ -340,6 +342,23 @@ const HomeTab: React.FC<HomeTabProps> = ({
                           )}
                         </div>
 
+                        {/* Tombol Bagikan Artikel */}
+                        <div className="flex flex-col items-center py-10 border-t border-zinc-100 mt-10">
+                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-4">SHARE THIS NEWS</span>
+                            <button 
+                                onClick={() => {
+                                    const slug = viewArticle.permalink.replace(/^\//, '');
+                                    const url = window.location.origin + '/#' + slug;
+                                    navigator.clipboard.writeText(url);
+                                    alert("LINK ARTIKEL BERHASIL DISALIN!");
+                                }}
+                                className="flex items-center gap-3 px-10 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-red-600 transition-all shadow-xl active:scale-95"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                                SALIN LINK ARTIKEL
+                            </button>
+                        </div>
+
                         <div className="border-t border-zinc-200 pt-12 mb-20">
                             <h3 className="text-xl font-black uppercase tracking-tighter mb-8 italic">Diskusi & Komentar</h3>
                             <div className="bg-[#f8fafc] border border-zinc-100 p-8 rounded mb-12">
@@ -391,20 +410,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                         ))}
                                     </div>
                                 )}
-
-                                {/* Article Ad Section on Home Feed */}
-                                <div className="w-full py-4">
-                                  {articleAd?.image_url ? (
-                                    <a href={articleAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full overflow-hidden border border-zinc-100 rounded shadow-sm hover:shadow-md transition-shadow">
-                                       <img src={articleAd.image_url} alt="Promo" className="w-full h-auto max-h-[120px] object-cover" />
-                                    </a>
-                                  ) : (
-                                    <div className="h-[120px] bg-zinc-50 border border-zinc-100 flex flex-col items-center justify-center shadow-inner rounded-sm">
-                                      <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
-                                      <span className="text-zinc-300 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
-                                    </div>
-                                  )}
-                                </div>
 
                                 {/* Combined Recent and Past Articles */}
                                 {articlesAfterHero.length > 0 && (

@@ -411,21 +411,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                         ))}
                                     </div>
                                 )}
-
-                                {/* Article Ad Section on Home Feed */}
-                                <div className="w-full py-4">
-                                  {articleAd?.image_url ? (
-                                    <a href={articleAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full overflow-hidden border border-zinc-100 rounded shadow-sm hover:shadow-md transition-shadow">
-                                       <img src={articleAd.image_url} alt="Promo" className="w-full h-auto max-h-[120px] object-cover" />
-                                    </a>
-                                  ) : (
-                                    <div className="h-[120px] bg-zinc-50 border border-zinc-100 flex flex-col items-center justify-center shadow-inner rounded-sm">
-                                      <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
-                                      <span className="text-zinc-300 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
-                                    </div>
-                                  )}
-                                </div>
-
                                 {/* Combined Recent and Past Articles */}
                                 {articlesAfterHero.length > 0 && (
                                     <div className="pt-4">
