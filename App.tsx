@@ -68,7 +68,7 @@ const FaqPage = () => {
             <div className="mt-16 text-center max-w-xl mx-auto">
                 <div className="flex gap-2 items-center justify-center mb-4">
                     <span className="text-red-600 font-black text-lg leading-tight">Q:</span>
-                    <h3 className="text-lg font-black uppercase tracking-tight text-zinc-900 leading-tight">
+                    <h3 className="text-lg font-black uppercase tracking-tight text-zinc-900 text-zinc-900 leading-tight">
                         BAGAIMANA CARA MENGHUBUNGI 1AIX?
                     </h3>
                 </div>
@@ -251,10 +251,6 @@ export default function App() {
     supabase.from('site_analytics').insert([{ event_type: 'page_view', value: 1 }]).then();
   }, []);
 
-  const isAdmin = useMemo(() => {
-    return session?.user?.email === 'admin@1aix.com' || session?.user?.email === 'rifki.mau@gmail.com';
-  }, [session]);
-
   useEffect(() => {
     const handleHashChange = () => {
       const currentHash = window.location.hash.replace(/^#\/?/, '') || 'home';
@@ -263,6 +259,10 @@ export default function App() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  const isAdmin = useMemo(() => {
+    return session?.user?.email === 'admin@1aix.com' || session?.user?.email === 'rifki.mau@gmail.com';
+  }, [session]);
 
   // Helper untuk sorting smartphone agar konsisten dengan Admin Panel
   const sortSmartphones = (data: Smartphone[]) => {
@@ -290,14 +290,35 @@ export default function App() {
       if (articlesRes.error) throw articlesRes.error;
       if (tkdnRes.error) throw tkdnRes.error;
 
-      setSmartphones(sortSmartphones(phonesRes.data || []));
-      setArticles(articlesRes.data || []);
+      const allPhones = sortSmartphones(phonesRes.data || []);
+      const allArticles = articlesRes.data || [];
+
+      setSmartphones(allPhones);
+      setArticles(allArticles);
       setTkdnMonitorData(tkdnRes.data || []);
       
       if (!adsRes.error && adsRes.data) {
-        // FIX: Normalize keys to lowercase to ensure ads['header'] etc always work
+        // Normalize keys to lowercase to ensure ads['header'] etc always work
         const adsMap = adsRes.data.reduce((acc, curr) => ({ ...acc, [curr.id.toLowerCase()]: curr }), {});
         setAds(adsMap);
+      }
+
+      // Logic Deep Linking (Hash Routing)
+      const currentHash = window.location.hash.replace(/^#\/?/, '');
+      if (currentHash.startsWith('news/')) {
+        const targetPermalink = '/' + currentHash;
+        const found = allArticles.find(a => a.permalink === targetPermalink);
+        if (found) setTargetArticle(found);
+      } else if (currentHash.startsWith('katalog/')) {
+        const parts = currentHash.split('/');
+        if (parts.length > 1) {
+          const modelSlug = parts.slice(1).join('/');
+          const found = allPhones.find(p => p.model_name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === modelSlug);
+          if (found) {
+            setTargetProduct(found);
+            setSelectedBrand(found.brand);
+          }
+        }
       }
 
     } catch (err) {
@@ -312,6 +333,9 @@ export default function App() {
   }, [fetchData]);
 
   const activeTab = useMemo(() => {
+    if (route.startsWith('news/')) return 'Home';
+    if (route.startsWith('katalog/') && route.split('/').length > 1) return 'Katalog';
+
     switch(route) {
       case 'home': return 'Home';
       case 'katalog': return 'Katalog';
@@ -370,14 +394,15 @@ export default function App() {
     setSelectedBrand(phone.brand);
     setSearchQuery(""); 
     setHomeTabArticleFilterQuery(""); 
-    window.location.hash = '#/katalog';
+    const slug = phone.model_name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    window.location.hash = `#/katalog/${slug}`;
   };
 
   const handleArticleSelect = (article: Article) => {
     setTargetArticle(article);
     setSearchQuery(""); 
     setHomeTabArticleFilterQuery(""); 
-    window.location.hash = '#/home';
+    window.location.hash = `#${article.permalink.replace(/^\//, '')}`;
   };
 
   const trendingNewsForMarquee = useMemo(() => {

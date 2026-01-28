@@ -111,6 +111,13 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
         }
     }, [initialProduct, onClearTarget]);
 
+    useEffect(() => {
+        if (selectedProduct) {
+            const slug = selectedProduct.model_name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            window.location.hash = `#/katalog/${slug}`;
+        }
+    }, [selectedProduct]);
+
     const handleRating = async (id: string, type: 'like' | 'dislike') => {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
@@ -172,6 +179,11 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
         const matchesMaxPrice = maxPrice === 0 || i.price_srp <= maxPrice;
         return matchesBrand && matchesSearch && matchesMinPrice && matchesMaxPrice;
     });
+
+    const handleBack = () => {
+        setSelectedProduct(null);
+        window.location.hash = '#/katalog';
+    };
 
     return (
         <div className="flex gap-8">
@@ -241,7 +253,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
             <div className="flex-grow">
                 {selectedProduct ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <button onClick={() => setSelectedProduct(null)} className="mb-8 flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>KEMBALI KE {selectedBrand || 'KATALOG'}</button>
+                        <button onClick={handleBack} className="mb-8 flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>KEMBALI KE {selectedBrand || 'KATALOG'}</button>
                         <div className="flex flex-col md:flex-row gap-8 items-end">
                             <div className="md:w-[220px] flex-shrink-0">
                                 <div className="bg-[#f8f9fa] border border-zinc-100 p-4 flex items-center justify-center rounded-sm">
@@ -376,7 +388,8 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                             <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-4">SHARE THIS DEVICE</span>
                             <button 
                                 onClick={() => {
-                                    const url = window.location.href; // Membagikan URL spesifik produk saat ini (berdasarkan hash katalog)
+                                    const slug = selectedProduct.model_name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                                    const url = window.location.origin + '/#/katalog/' + slug;
                                     navigator.clipboard.writeText(url);
                                     alert("LINK PRODUK BERHASIL DISALIN!");
                                 }}

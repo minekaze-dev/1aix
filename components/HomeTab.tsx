@@ -104,6 +104,8 @@ const HomeTab: React.FC<HomeTabProps> = ({
 
     useEffect(() => {
         if (viewArticle) {
+            const slug = viewArticle.permalink.replace(/^\//, '');
+            window.location.hash = `#${slug}`;
             const startTime = Date.now();
             return () => {
                 const duration = (Date.now() - startTime) / 1000;
@@ -157,7 +159,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
     };
 
     const handleShare = (platform: string) => {
-        const url = window.location.origin + '/#' + viewArticle?.permalink;
+        const url = window.location.origin + '/#' + viewArticle?.permalink.replace(/^\//, '');
         const text = viewArticle?.title || "Cek berita gadget terbaru di 1AIX!";
         if (platform === 'wa') window.open(`https://wa.me/?text=${encodeURIComponent(text + " " + url)}`);
         else if (platform === 'tw') window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`);
@@ -201,6 +203,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
 
     const handleBackToHome = () => {
         setViewArticle(null);
+        window.location.hash = '#/home';
         onSetArticleFilterQuery?.(""); // Clear article filter when going back to main list
     };
 
@@ -345,7 +348,8 @@ const HomeTab: React.FC<HomeTabProps> = ({
                             <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-4">SHARE THIS NEWS</span>
                             <button 
                                 onClick={() => {
-                                    const url = window.location.origin + '/#' + viewArticle.permalink;
+                                    const slug = viewArticle.permalink.replace(/^\//, '');
+                                    const url = window.location.origin + '/#' + slug;
                                     navigator.clipboard.writeText(url);
                                     alert("LINK ARTIKEL BERHASIL DISALIN!");
                                 }}
