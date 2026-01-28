@@ -340,7 +340,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
                           )}
                         </div>
 
-                        {/* Tombol Bagikan Baru */}
+                        {/* Tombol Bagikan Artikel */}
                         <div className="flex flex-col items-center py-10 border-t border-zinc-100 mt-10">
                             <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-4">SHARE THIS NEWS</span>
                             <button 
@@ -424,7 +424,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
 
                                 {/* Combined Recent and Past Articles */}
                                 {articlesAfterHero.length > 0 && (
-                                    <div className="pt-8">
+                                    <div className="pt-4">
                                         <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-6 italic">Rekomendasi Lainnya</h3> {/* Single heading for combined list */}
                                         <div className="grid grid-cols-1 gap-6">
                                             {articlesAfterHero.slice(0, visibleArticlesAfterHero).map(art => (

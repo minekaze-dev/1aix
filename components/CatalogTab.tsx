@@ -339,7 +339,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                 <SpecRow label="MATERIAL" value={selectedProduct.material} />
                                 <SpecRow label="WARNA" value={selectedProduct.colors} />
                             </SpecSection>
-                            <SpecSection title="CONNECTIVITY" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>}>
+                            <SpecSection title="CONNECTIVITY" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 0 019-9"></path></svg>}>
                                 <SpecRow label="JARINGAN" value={selectedProduct.network} />
                                 <SpecRow label="WIFI" value={selectedProduct.wifi} />
                             </SpecSection>
@@ -352,7 +352,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                 <SpecRow label="CPU" value={selectedProduct.cpu} />
                                 <SpecRow label="GPU" value={selectedProduct.gpu} />
                             </SpecSection>
-                            <SpecSection title="MEMORY" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75m-16.5-3.75v3.75"></path></svg>}>
+                            <SpecSection title="MEMORY" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694-4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75m-16.5-3.75v3.75"></path></svg>}>
                                 <SpecRow label="RAM / ROM" value={selectedProduct.ram_storage} />
                             </SpecSection>
                             <SpecSection title="CAMERA" icon={<svg className="w-6 h-6 text-zinc-300 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"></path><path d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"></path></svg>}>
@@ -371,12 +371,12 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                             </SpecSection>
                         </div>
 
-                        {/* Tombol Bagikan Baru */}
+                        {/* Tombol Bagikan Produk */}
                         <div className="flex flex-col items-center py-10 border-t border-zinc-100">
                             <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-4">SHARE THIS DEVICE</span>
                             <button 
                                 onClick={() => {
-                                    const url = window.location.href; // Single Page App hash will include catalog/search state
+                                    const url = window.location.href; // Membagikan URL spesifik produk saat ini (berdasarkan hash katalog)
                                     navigator.clipboard.writeText(url);
                                     alert("LINK PRODUK BERHASIL DISALIN!");
                                 }}
