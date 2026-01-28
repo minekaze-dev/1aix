@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import type { Smartphone, Brand, Article, AdConfig } from './types';
 import Header from './components/Header';
@@ -9,8 +10,8 @@ import AuthModal from './components/AuthModal';
 import Footer from './components/Footer';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
+// FIX: Add missing import for HomeTab
 import HomeTab from './components/HomeTab';
-import { CompareIcon, CatalogIcon, TkdnIcon, ChevronDownIcon, ChevronUpIcon } from './components/icons';
 
 const FaqPage = () => {
     const faqs = [
@@ -41,9 +42,9 @@ const FaqPage = () => {
     ];
 
     return (
-        <div className="animate-in fade-in duration-700 py-12 max-w-[900px] mx-auto px-4">
+        <div className="animate-in fade-in duration-700 py-12 max-w-[900px] mx-auto">
             <div className="mb-12 text-center">
-                <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter italic text-zinc-900 leading-none">FREQUENTLY ASKED QUESTIONS</h1>
+                <h1 className="text-4xl font-black uppercase tracking-tighter italic text-zinc-900 leading-none">FREQUENTLY ASKED QUESTIONS</h1>
                 <div className="h-1 w-20 bg-red-600 mx-auto mt-4"></div>
             </div>
             
@@ -63,10 +64,11 @@ const FaqPage = () => {
                 ))}
             </div>
 
+            {/* Bagian Hubungi 1AIX yang terhighlight */}
             <div className="mt-16 text-center max-w-xl mx-auto">
                 <div className="flex gap-2 items-center justify-center mb-4">
                     <span className="text-red-600 font-black text-lg leading-tight">Q:</span>
-                    <h3 className="text-lg font-black uppercase tracking-tight text-zinc-900 leading-tight">
+                    <h3 className="text-lg font-black uppercase tracking-tight text-zinc-900 text-zinc-900 leading-tight">
                         BAGAIMANA CARA MENGHUBUNGI 1AIX?
                     </h3>
                 </div>
@@ -80,9 +82,9 @@ const FaqPage = () => {
 };
 
 const PolicyPage = () => (
-    <div className="animate-in fade-in duration-700 py-12 max-w-[900px] mx-auto px-4">
+    <div className="animate-in fade-in duration-700 py-12 max-w-[900px] mx-auto">
         <div className="mb-12 text-center">
-            <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter italic text-zinc-900 leading-none">KEBIJAKAN PRIVASI</h1>
+            <h1 className="text-4xl font-black uppercase tracking-tighter italic text-zinc-900 leading-none">KEBIJAKAN PRIVASI</h1>
             <div className="h-1 w-20 bg-red-600 mx-auto mt-4"></div>
         </div>
         <div className="space-y-6">
@@ -92,14 +94,59 @@ const PolicyPage = () => (
                     Privasi Anda adalah prioritas kami di 1AIX. Dokumen ini menjelaskan bagaimana kami mengumpulkan, menggunakan, dan melindungi informasi Anda saat Anda menggunakan layanan kami. Dengan mengakses atau menggunakan platform kami, Anda menyetujui praktik data yang dijelaskan dalam Kebijakan Privasi ini.
                 </p>
             </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Informasi yang Kami Kumpulkan</h3>
+                <div className="text-[11px] font-bold text-zinc-500 leading-relaxed space-y-3">
+                    <p>Kami hanya mengumpulkan informasi yang diperlukan untuk menyediakan layanan yang optimal dan meningkatkan pengalaman pengguna:</p>
+                    <ul className="list-disc list-inside space-y-1 pl-4">
+                        <li><b>Data Akun:</b> Saat Anda mendaftar atau login, kami mengumpulkan alamat email dan nama tampilan (display name) Anda. Password Anda disimpan dalam bentuk terenkripsi dan tidak dapat diakses oleh kami.</li>
+                        <li><b>Data Interaksi:</b> Informasi tentang interaksi Anda dengan fitur-fitur platform, seperti komentar yang Anda posting atau artikel yang Anda baca.</li>
+                        <li><b>Data Analitik:</b> Data anonim tentang penggunaan situs web (misalnya, jumlah pengunjung, waktu membaca) untuk analisis kinerja dan peningkatan fitur.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Bagaimana Kami Menggunakan Informasi Anda</h3>
+                <div className="text-[11px] font-bold text-zinc-500 leading-relaxed space-y-3">
+                    <ul className="list-disc list-inside space-y-1 pl-4">
+                        <li>Untuk mengelola akun Anda dan memfasilitasi login.</li>
+                        <li>Untuk mempublikasikan komentar dan kontribusi Anda di bawah nama tampilan Anda.</li>
+                        <li>Untuk menganalisis tren penggunaan dan meningkatkan fungsionalitas platform.</li>
+                        <li>Untuk mematuhi kewajiban hukum.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Pembagian Data</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                    Alamat email Anda tidak akan pernah dibagikan kepada pihak ketiga untuk tujuan pemasaran. Nama tampilan dan komentar Anda bersifat publik di platform. Kami menggunakan infrastruktur Supabase untuk keamanan data and otentikasi.
+                </p>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Keamanan Data</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                    Kami berkomitmen untuk melindungi data Anda dengan langkah-langkah keamanan yang sesuai, termasuk enkripsi password. Meskipun demikian, tidak ada sistem yang sepenuhnya aman, dan kami tidak dapat menjamin keamanan mutlak.
+                </p>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Hak Anda</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                    Anda memiliki hak untuk mengakses, mengubah, atau menghapus informasi pribadi Anda. Untuk permintaan tersebut, silakan hubungi kami.
+                </p>
+            </div>
         </div>
     </div>
 );
 
 const TermsPage = () => (
-    <div className="animate-in fade-in duration-700 py-12 max-w-[900px] mx-auto px-4">
+    <div className="animate-in fade-in duration-700 py-12 max-w-[900px] mx-auto">
         <div className="mb-12 text-center">
-            <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter italic text-zinc-900 leading-none">SYARAT & KETENTUAN</h1>
+            <h1 className="text-4xl font-black uppercase tracking-tighter italic text-zinc-900 leading-none">SYARAT & KETENTUAN</h1>
             <div className="h-1 w-20 bg-red-600 mx-auto mt-4"></div>
         </div>
         <div className="space-y-6">
@@ -109,10 +156,47 @@ const TermsPage = () => (
                     Dengan mengakses dan menggunakan layanan 1AIX, Anda secara otomatis menyetujui semua Syarat & Ketentuan yang berlaku. Jika Anda tidak menyetujui salah satu bagian dari ketentuan ini, mohon untuk tidak menggunakan layanan kami.
                 </p>
             </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Kewajiban Pengguna</h3>
+                <div className="text-[11px] font-bold text-zinc-500 leading-relaxed space-y-3">
+                    <ul className="list-disc list-inside space-y-1 pl-4">
+                        <li>Dilarang keras menyebarkan konten yang mengandung unsur SARA, kebencian, pornografi, atau informasi palsu (hoax).</li>
+                        <li>Dilarang melakukan tindakan peretasan atau percobaan akses tidak sah ke sistem kami.</li>
+                        <li>Pengguna bertanggung jawab penuh atas setiap komentar atau kontribusi yang diposting.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Informasi Produk</h3>
+                <div className="text-[11px] font-bold text-zinc-500 leading-relaxed space-y-3">
+                    <ul className="list-disc list-inside space-y-1 pl-4">
+                        <li>Semua data spesifikasi smartphone, TKDN, dan harga SRP disajikan sebagai referensi berdasarkan data resmi.</li>
+                        <li>Kami tidak bertanggung jawab atas perubahan spesifikasi, harga, atau ketersediaan produk oleh pihak brand.</li>
+                        <li>Pengguna disarankan untuk selalu memverifikasi informasi dengan sumber resmi brand terkait.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Pelanggaran & Sanksi</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                    Setiap pelanggaran terhadap Syarat & Ketentuan ini dapat mengakibatkan penangguhan atau pemblokiran akun secara permanen, serta penghapusan konten yang melanggar. Kami berhak mengambil tindakan hukum jika diperlukan.
+                </p>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Perubahan Ketentuan</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                    1AIX berhak untuk mengubah atau memperbarui Syarat & Ketentuan ini kapan saja tanpa pemberitahuan sebelumnya. Penggunaan berkelanjutan layanan kami setelah perubahan tersebut merupakan bentuk persetujuan Anda terhadap ketentuan yang baru.
+                </p>
+            </div>
         </div>
     </div>
 );
 
+// Define the TkdnItem interface for consistency
 interface TkdnItem {
   cert_number: string;
   brand: string;
@@ -128,35 +212,41 @@ interface TkdnItem {
 export default function App() {
   const [smartphones, setSmartphones] = useState<Smartphone[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
-  const [tkdnMonitorData, setTkdnMonitorData] = useState<TkdnItem[]>([]); 
+  const [tkdnMonitorData, setTkdnMonitorData] = useState<TkdnItem[]>([]); // New state for TKDN data
   const [ads, setAds] = useState<Record<string, AdConfig>>({});
   const [loading, setLoading] = useState(true);
   const [route, setRoute] = useState(() => window.location.hash.replace(/^#\/?/, '') || 'home');
   const [session, setSession] = useState<Session | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  
-  // Mobile Nav State
-  const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
 
   // Filters
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
   const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(0);
+  
+  // Global search for Header and CatalogTab
   const [searchQuery, setSearchQuery] = useState(""); 
+  // Local search for HomeTab articles (e.g., from Popular Tags)
   const [homeTabArticleFilterQuery, setHomeTabArticleFilterQuery] = useState("");
+
+  // Target item for direct navigation from search
   const [targetProduct, setTargetProduct] = useState<Smartphone | null>(null);
   const [targetArticle, setTargetArticle] = useState<Article | null>(null);
 
+  // Sync with Supabase Auth
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
+
     return () => subscription.unsubscribe();
   }, []);
 
+  // Tracking page visit
   useEffect(() => {
     supabase.from('site_analytics').insert([{ event_type: 'page_view', value: 1 }]).then();
   }, []);
@@ -174,11 +264,14 @@ export default function App() {
     return session?.user?.email === 'admin@1aix.com' || session?.user?.email === 'rifki.mau@gmail.com';
   }, [session]);
 
+  // Helper untuk sorting smartphone agar konsisten dengan Admin Panel
   const sortSmartphones = (data: Smartphone[]) => {
     return [...data].sort((a, b) => {
         const rA = a.order_rank ?? 0;
         const rB = b.order_rank ?? 0;
+        // Primary sort: Order Rank (Descending)
         if (rB !== rA) return rB - rA;
+        // Secondary sort: Created At (Newest)
         return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
   };
@@ -205,10 +298,12 @@ export default function App() {
       setTkdnMonitorData(tkdnRes.data || []);
       
       if (!adsRes.error && adsRes.data) {
+        // Normalize keys to lowercase to ensure ads['header'] etc always work
         const adsMap = adsRes.data.reduce((acc, curr) => ({ ...acc, [curr.id.toLowerCase()]: curr }), {});
         setAds(adsMap);
       }
 
+      // Logic Deep Linking (Hash Routing)
       const currentHash = window.location.hash.replace(/^#\/?/, '');
       if (currentHash.startsWith('news/')) {
         const targetPermalink = '/' + currentHash;
@@ -225,6 +320,7 @@ export default function App() {
           }
         }
       }
+
     } catch (err) {
       console.error("Fetch Error:", err);
     } finally {
@@ -236,9 +332,10 @@ export default function App() {
     fetchData();
   }, [fetchData]);
 
-  const activeTabName = useMemo(() => {
+  const activeTab = useMemo(() => {
     if (route.startsWith('news/')) return 'Home';
     if (route.startsWith('katalog/') && route.split('/').length > 1) return 'Katalog';
+
     switch(route) {
       case 'home': return 'Home';
       case 'katalog': return 'Katalog';
@@ -326,7 +423,7 @@ export default function App() {
     );
   }
 
-  if (activeTabName === 'Admin') {
+  if (activeTab === 'Admin') {
     if (isAdmin) {
         return (
             <AdminDashboard 
@@ -341,12 +438,13 @@ export default function App() {
     }
   }
 
+  // Consistent lookup using normalized keys
   const headerAd = ads['header'];
 
   return (
-    <div className="min-h-screen bg-[#f0f2f5] text-zinc-900 font-sans flex flex-col items-center selection:bg-blue-600 selection:text-white pb-16 lg:pb-0">
+    <div className="min-h-screen bg-[#f0f2f5] text-zinc-900 font-sans flex flex-col items-center selection:bg-blue-600 selection:text-white">
       <Header 
-        activeTab={activeTabName} 
+        activeTab={activeTab} 
         selectedBrand={selectedBrand}
         onSelectBrand={(brand) => { setSelectedBrand(brand); window.location.hash = '#/katalog'; }}
         onGoHome={handleGoHome}
@@ -383,15 +481,15 @@ export default function App() {
             <img src={headerAd.image_url} alt="Promo" className="w-full h-auto max-h-[120px] object-cover" />
           </a>
         ) : (
-          <div className="h-[100px] lg:h-[120px] bg-zinc-100 border-x border-zinc-200 flex flex-col items-center justify-center shadow-inner">
+          <div className="h-[120px] bg-zinc-100 border-x border-zinc-200 flex flex-col items-center justify-center shadow-inner">
             <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
-            <span className="text-zinc-400 font-black uppercase tracking-widest text-lg md:text-xl">PARTNER SPACE</span>
+            <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
           </div>
         )}
       </div>
 
-      <main className="max-w-[1000px] w-full flex-grow py-8 bg-white shadow-sm border-x border-zinc-200 px-4 lg:px-6">
-        {activeTabName === 'Home' && (
+      <main className="max-w-[1000px] w-full flex-grow py-8 bg-white shadow-sm border-x border-zinc-200 px-6">
+        {activeTab === 'Home' && (
             <HomeTab 
                 onOpenLogin={handleOpenAuth} 
                 onLogout={handleLogout} 
@@ -405,7 +503,7 @@ export default function App() {
                 sidebarAd={ads['sidebar']}
             />
         )}
-        {activeTabName === 'Katalog' && (
+        {activeTab === 'Katalog' && (
           <CatalogTab 
             items={smartphones} 
             selectedBrand={selectedBrand}
@@ -424,55 +522,14 @@ export default function App() {
             sidebarAd={ads['sidebar']}
           />
         )}
-        {activeTabName === 'Segera Rilis' && <ComingSoonTab items={smartphones} publishedAiData={tkdnMonitorData} />}
-        {activeTabName === 'Bandingkan' && <ComparisonTab items={smartphones} />}
-        {activeTabName === 'FAQ' && <FaqPage />}
-        {activeTabName === 'Kebijakan' && <PolicyPage />}
-        {activeTabName === 'Syarat & Ketentuan' && <TermsPage />}
+        {activeTab === 'Segera Rilis' && <ComingSoonTab items={smartphones} publishedAiData={tkdnMonitorData} />}
+        {activeTab === 'Bandingkan' && <ComparisonTab items={smartphones} />}
+        {activeTab === 'FAQ' && <FaqPage />}
+        {activeTab === 'Kebijakan' && <PolicyPage />}
+        {activeTab === 'Syarat & Ketentuan' && <TermsPage />}
       </main>
 
       <Footer />
-
-      {/* Mobile Hideable Bottom Navigation */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[60] flex flex-col items-center pointer-events-none">
-        {/* Toggle Arrow Button */}
-        <button 
-          onClick={() => setIsBottomNavVisible(!isBottomNavVisible)}
-          className="w-12 h-7 bg-black text-white flex items-center justify-center rounded-t-lg pointer-events-auto shadow-lg mb-[-1px] transition-transform active:scale-95"
-          title={isBottomNavVisible ? "Hide Menu" : "Show Menu"}
-        >
-          {isBottomNavVisible ? <ChevronDownIcon className="w-5 h-5" /> : <ChevronUpIcon className="w-5 h-5" />}
-        </button>
-
-        {/* The Bar */}
-        <div className={`w-full bg-[#0b0b0b] border-t border-white/5 pointer-events-auto transition-all duration-300 transform ${isBottomNavVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
-          <div className="flex items-center justify-around h-16">
-            <button 
-              onClick={handleGoToCompare}
-              className={`flex flex-col items-center gap-1 transition-colors ${activeTabName === 'Bandingkan' ? 'text-red-600' : 'text-zinc-500'}`}
-            >
-              <CompareIcon className="w-6 h-6" />
-              <span className="text-[10px] font-black uppercase tracking-widest">COMPARE</span>
-            </button>
-
-            <button 
-              onClick={handleGoToCatalog}
-              className={`flex flex-col items-center gap-1 transition-colors ${activeTabName === 'Katalog' ? 'text-red-600' : 'text-zinc-500'}`}
-            >
-              <CatalogIcon className="w-6 h-6" />
-              <span className="text-[10px] font-black uppercase tracking-widest">KATALOG</span>
-            </button>
-
-            <button 
-              onClick={() => window.location.hash = '#/coming-soon'}
-              className={`flex flex-col items-center gap-1 transition-colors ${activeTabName === 'Segera Rilis' ? 'text-red-600' : 'text-zinc-500'}`}
-            >
-              <TkdnIcon className="w-6 h-6" />
-              <span className="text-[10px] font-black uppercase tracking-widest">TKDN</span>
-            </button>
-          </div>
-        </div>
-      </div>
 
       {showAuthModal && (
         <AuthModal 
