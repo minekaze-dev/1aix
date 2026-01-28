@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import type { Smartphone, Brand, Article } from './types';
+import type { Smartphone, Brand, Article, AdConfig } from './types';
 import Header from './components/Header';
 import CatalogTab from './components/CatalogTab';
 import ComingSoonTab from './components/ComingSoonTab';
@@ -121,7 +122,7 @@ const PolicyPage = () => (
             <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
                 <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Pembagian Data</h3>
                 <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
-                    Alamat email Anda tidak akan pernah dibagikan kepada pihak ketiga untuk tujuan pemasaran. Nama tampilan dan komentar Anda bersifat publik di platform. Kami menggunakan infrastruktur Supabase untuk keamanan data dan otentikasi.
+                    Alamat email Anda tidak akan pernah dibagikan kepada pihak ketiga untuk tujuan pemasaran. Nama tampilan dan komentar Anda bersifat publik di platform. Kami menggunakan infrastruktur Supabase untuk keamanan data and otentikasi.
                 </p>
             </div>
 
@@ -212,6 +213,7 @@ export default function App() {
   const [smartphones, setSmartphones] = useState<Smartphone[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
   const [tkdnMonitorData, setTkdnMonitorData] = useState<TkdnItem[]>([]); // New state for TKDN data
+  const [ads, setAds] = useState<Record<string, AdConfig>>({});
   const [loading, setLoading] = useState(true);
   const [route, setRoute] = useState(() => window.location.hash.replace(/^#\/?/, '') || 'home');
   const [session, setSession] = useState<Session | null>(null);
@@ -277,20 +279,27 @@ export default function App() {
   const fetchData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [phonesRes, articlesRes, tkdnRes] = await Promise.all([
+      const [phonesRes, articlesRes, tkdnRes, adsRes] = await Promise.all([
         supabase.from('smartphones').select('*'),
         supabase.from('articles').select('*').eq('status', 'PUBLISHED').order('publish_date', { ascending: false }),
-        // FIX: Fetch TKDN data filtered by `is_visible: true`
-        supabase.from('tkdn_monitor').select('*').eq('is_visible', true).order('cert_date', { ascending: false }) 
+        supabase.from('tkdn_monitor').select('*').eq('is_visible', true).order('cert_date', { ascending: false }),
+        supabase.from('ads_banners').select('*')
       ]);
 
       if (phonesRes.error) throw phonesRes.error;
       if (articlesRes.error) throw articlesRes.error;
-      if (tkdnRes.error) throw tkdnRes.error; // Handle TKDN fetch error
+      if (tkdnRes.error) throw tkdnRes.error;
 
       setSmartphones(sortSmartphones(phonesRes.data || []));
       setArticles(articlesRes.data || []);
-      setTkdnMonitorData(tkdnRes.data || []); // Set TKDN data
+      setTkdnMonitorData(tkdnRes.data || []);
+      
+      if (!adsRes.error && adsRes.data) {
+        // FIX: Normalize keys to lowercase to ensure ads['header'] etc always work
+        const adsMap = adsRes.data.reduce((acc, curr) => ({ ...acc, [curr.id.toLowerCase()]: curr }), {});
+        setAds(adsMap);
+      }
+
     } catch (err) {
       console.error("Fetch Error:", err);
     } finally {
@@ -316,7 +325,6 @@ export default function App() {
     }
   }, [route]);
 
-  // Function to reset all search-related states
   const resetAllSearchFilters = useCallback(() => {
     setSearchQuery("");
     setHomeTabArticleFilterQuery("");
@@ -333,7 +341,7 @@ export default function App() {
   const handleGoHome = () => {
     setSelectedBrand(null);
     resetAllSearchFilters();
-    setTargetArticle(null); // Ensure targetArticle is cleared to show article list
+    setTargetArticle(null); 
     window.location.hash = '#/home';
   };
 
@@ -350,7 +358,7 @@ export default function App() {
     try {
         await supabase.auth.signOut();
         setSession(null); 
-        resetAllSearchFilters(); // Reset search on logout as well
+        resetAllSearchFilters(); 
         window.location.hash = '#/home';
     } catch (error) {
         console.error("Logout Error:", error);
@@ -360,24 +368,22 @@ export default function App() {
   const handleProductSelect = (phone: Smartphone) => {
     setTargetProduct(phone);
     setSelectedBrand(phone.brand);
-    setSearchQuery(""); // Clear global search on product select
-    setHomeTabArticleFilterQuery(""); // Clear article filter
+    setSearchQuery(""); 
+    setHomeTabArticleFilterQuery(""); 
     window.location.hash = '#/katalog';
   };
 
   const handleArticleSelect = (article: Article) => {
     setTargetArticle(article);
-    setSearchQuery(""); // Clear global search on article select
-    setHomeTabArticleFilterQuery(""); // Clear article filter
+    setSearchQuery(""); 
+    setHomeTabArticleFilterQuery(""); 
     window.location.hash = '#/home';
   };
 
-  // Memoized content for the marquee - NOW LIMITED TO 3
   const trendingNewsForMarquee = useMemo(() => {
     if (articles.length === 0) {
         return ["SISTEM DATABASE 1AIX TELAH AKTIF SEPENUHNYA", "SELURUH HARGA SRP BERSUMBER DARI STORE RESMI"];
     }
-    // Take the top 3 articles and format their titles
     return articles.slice(0, 3).map(article => article.title.toUpperCase());
   }, [articles]);
 
@@ -398,7 +404,7 @@ export default function App() {
             <AdminDashboard 
                 session={session} 
                 onLogout={handleLogout} 
-                onDataChange={() => fetchData(true)} // Pass fetchData to refresh all data
+                onDataChange={() => fetchData(true)} 
             />
         );
     } else {
@@ -406,6 +412,9 @@ export default function App() {
         return null;
     }
   }
+
+  // Consistent lookup using normalized keys
+  const headerAd = ads['header'];
 
   return (
     <div className="min-h-screen bg-[#f0f2f5] text-zinc-900 font-sans flex flex-col items-center selection:bg-blue-600 selection:text-white">
@@ -433,7 +442,6 @@ export default function App() {
             {trendingNewsForMarquee.map((news, i) => (
                 <span key={i} className="mx-4">{news} <span className="text-white/30 ml-4">//</span></span>
             ))}
-            {/* Repeat for seamless loop */}
             {trendingNewsForMarquee.map((news, i) => (
                 <span key={i + 'copy'} className="mx-4">{news} <span className="text-white/30 ml-4">//</span></span>
             ))}
@@ -443,10 +451,16 @@ export default function App() {
 
       {/* Banner Ads Section (Main Banner) */}
       <div className="w-full max-w-[1000px] mt-px">
-        <div className="h-[120px] bg-zinc-100 border-x border-zinc-200 flex flex-col items-center justify-center shadow-inner">
-          <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
-          <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
-        </div>
+        {headerAd?.image_url ? (
+          <a href={headerAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full overflow-hidden">
+            <img src={headerAd.image_url} alt="Promo" className="w-full h-auto max-h-[120px] object-cover" />
+          </a>
+        ) : (
+          <div className="h-[120px] bg-zinc-100 border-x border-zinc-200 flex flex-col items-center justify-center shadow-inner">
+            <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
+            <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
+          </div>
+        )}
       </div>
 
       <main className="max-w-[1000px] w-full flex-grow py-8 bg-white shadow-sm border-x border-zinc-200 px-6">
@@ -455,11 +469,13 @@ export default function App() {
                 onOpenLogin={handleOpenAuth} 
                 onLogout={handleLogout} 
                 session={session} 
-                globalSearchQuery={searchQuery} // Pass global search to HomeTab
-                articleFilterQuery={homeTabArticleFilterQuery} // Pass local filter for articles
-                onSetArticleFilterQuery={setHomeTabArticleFilterQuery} // Pass setter for local article filter
+                globalSearchQuery={searchQuery} 
+                articleFilterQuery={homeTabArticleFilterQuery} 
+                onSetArticleFilterQuery={setHomeTabArticleFilterQuery} 
                 initialArticle={targetArticle}
                 onClearTarget={() => setTargetArticle(null)}
+                articleAd={ads['article']}
+                sidebarAd={ads['sidebar']}
             />
         )}
         {activeTab === 'Katalog' && (
@@ -471,13 +487,14 @@ export default function App() {
             setMinPrice={setMinPrice}
             maxPrice={maxPrice}
             setMaxPrice={setMaxPrice}
-            searchQuery={searchQuery} // CatalogTab uses global search query
-            setSearchQuery={setSearchQuery} // And can modify it
+            searchQuery={searchQuery} 
+            setSearchQuery={setSearchQuery} 
             onOpenLogin={handleOpenAuth}
             onLogout={handleLogout}
             session={session}
             initialProduct={targetProduct}
             onClearTarget={() => setTargetProduct(null)}
+            sidebarAd={ads['sidebar']}
           />
         )}
         {activeTab === 'Segera Rilis' && <ComingSoonTab items={smartphones} publishedAiData={tkdnMonitorData} />}

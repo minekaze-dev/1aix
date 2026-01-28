@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { TOP_BRANDS } from '../constants';
 import type { Session } from '@supabase/supabase-js';
-import type { Article, Comment } from '../types';
+import type { Article, Comment, AdConfig } from '../types';
 import { supabase } from '../lib/supabase';
 import { HashtagIcon, ChatAlt2Icon } from './icons'; // Import ChatAlt2Icon
 
@@ -15,6 +15,8 @@ interface HomeTabProps {
     onSetArticleFilterQuery?: (query: string) => void; // Setter for local article filter
     initialArticle?: Article | null;
     onClearTarget?: () => void;
+    articleAd?: AdConfig; // Ad inside article content
+    sidebarAd?: AdConfig; // Ad for global sidebar
 }
 
 const HomeTab: React.FC<HomeTabProps> = ({ 
@@ -25,7 +27,9 @@ const HomeTab: React.FC<HomeTabProps> = ({
     articleFilterQuery = "", 
     onSetArticleFilterQuery, 
     initialArticle, 
-    onClearTarget 
+    onClearTarget,
+    articleAd,
+    sidebarAd
 }) => {
     const [viewArticle, setViewArticle] = useState<Article | null>(null);
     const [articles, setArticles] = useState<Article[]>([]);
@@ -264,6 +268,26 @@ const HomeTab: React.FC<HomeTabProps> = ({
                         )}
                     </div>
                 </div>
+
+                {/* Banner Ads Section (Sidebar Ad) */}
+                <div className="w-full">
+                    {sidebarAd?.image_url ? (
+                      <a href={sidebarAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full">
+                         <img src={sidebarAd.image_url} alt="Promo" className="w-full h-auto rounded shadow-md" />
+                         {(sidebarAd.title || sidebarAd.subtitle) && (
+                           <div className="mt-2 text-center">
+                             <h4 className="text-[10px] font-black text-zinc-800 uppercase">{sidebarAd.title}</h4>
+                             <p className="text-[8px] font-bold text-zinc-400 uppercase">{sidebarAd.subtitle}</p>
+                           </div>
+                         )}
+                      </a>
+                    ) : (
+                      <div className="h-[250px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
+                          <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
+                          <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
+                      </div>
+                    )}
+                </div>
             </aside>
 
             <div className="flex-grow">
@@ -302,12 +326,18 @@ const HomeTab: React.FC<HomeTabProps> = ({
                             </div>
                         )}
 
-                        {/* Banner Ads Section for Article Detail */}
+                        {/* Banner Ads Section for Article Detail (Article Content Ad) */}
                         <div className="w-full my-10">
-                          <div className="h-[120px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
-                            <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
-                            <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
-                          </div>
+                          {articleAd?.image_url ? (
+                            <a href={articleAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full">
+                               <img src={articleAd.image_url} alt="Promo" className="w-full h-auto rounded shadow-lg" />
+                            </a>
+                          ) : (
+                            <div className="h-[120px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
+                              <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
+                              <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
+                            </div>
+                          )}
                         </div>
 
                         <div className="border-t border-zinc-200 pt-12 mb-20">
@@ -362,9 +392,23 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                     </div>
                                 )}
 
+                                {/* Article Ad Section on Home Feed */}
+                                <div className="w-full py-4">
+                                  {articleAd?.image_url ? (
+                                    <a href={articleAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full overflow-hidden border border-zinc-100 rounded shadow-sm hover:shadow-md transition-shadow">
+                                       <img src={articleAd.image_url} alt="Promo" className="w-full h-auto max-h-[120px] object-cover" />
+                                    </a>
+                                  ) : (
+                                    <div className="h-[120px] bg-zinc-50 border border-zinc-100 flex flex-col items-center justify-center shadow-inner rounded-sm">
+                                      <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
+                                      <span className="text-zinc-300 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
+                                    </div>
+                                  )}
+                                </div>
+
                                 {/* Combined Recent and Past Articles */}
                                 {articlesAfterHero.length > 0 && (
-                                    <div className="pt-8">
+                                    <div className="pt-4">
                                         <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-6 italic">Rekomendasi Lainnya</h3> {/* Single heading for combined list */}
                                         <div className="grid grid-cols-1 gap-6">
                                             {articlesAfterHero.slice(0, visibleArticlesAfterHero).map(art => (

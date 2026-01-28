@@ -4,6 +4,15 @@ export type Brand = "Samsung" | "Xiaomi" | "Apple" | "Oppo" | "Vivo" | "Realme" 
 export type ReleaseStatus = "Tersedia" | "Pre-Order" | "Segera Rilis";
 export type MarketCategory = "Entry-level" | "Mid-range" | "Flagship";
 
+export interface AdConfig {
+  id: string; // 'header', 'article', or 'sidebar'
+  image_url: string;
+  target_url: string;
+  title?: string;
+  subtitle?: string;
+  updated_at?: string;
+}
+
 export interface Smartphone {
   id: string;
   brand: Brand;

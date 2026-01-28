@@ -8,6 +8,7 @@ import AdminArticleEditor from './AdminArticleEditor';
 import AdminAuthorMod from './AdminAuthorMod';
 import AdminMemberMod from './AdminMemberMod';
 import AdminExtendedMod from './AdminExtendedMod';
+import AdminAdsMod from './AdminAdsMod'; // Import baru
 import type { Article } from '../types';
 
 interface AdminDashboardProps {
@@ -49,9 +50,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
     const totalVisitors = analytics?.filter(a => a.event_type === 'page_view').length || 0;
     
     // --- New: Calculate estimated mobile and PC visitors ---
-    // NOTE: This is an estimation based on existing total visitors, as the 'site_analytics' table 
-    // does not currently store specific device type information. To get accurate live data, 
-    // the analytics collection in App.tsx and the database schema would need to be extended.
     const estimatedMobileVisitors = Math.round(totalVisitors * 0.6); // Example: 60% mobile
     const estimatedPcVisitors = totalVisitors - estimatedMobileVisitors; // Remaining 40% PC
     // --- End New ---
@@ -95,6 +93,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
     { id: 'artikel', label: 'ARTIKEL', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z' },
     { id: 'penulis', label: 'PENULIS', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
     { id: 'member', label: 'MEMBER AKUN', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+    { id: 'ads', label: 'IKLAN', icon: 'M4 6h16M4 12h16M4 18h16' }, // Menu baru di atas Extended
     { id: 'extended', label: '1AIX EXTENDED', icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z' },
   ];
 
@@ -109,10 +108,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
 
   const ReaderChart = () => {
     const days = ['SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB', 'MIN'];
-    // Reorder days based on current day
-    const currentDayIdx = new Date().getDay(); // 0 is Sunday
+    const currentDayIdx = new Date().getDay();
     const reorderedDays = [...days.slice(currentDayIdx), ...days.slice(0, currentDayIdx)];
-    
     const maxVal = Math.max(...stats.dailyActivity, 10);
 
     return (
@@ -148,7 +145,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
                     {[
                         { label: 'TOTAL ARTIKEL', value: stats.articles, color: 'bg-blue-50 text-blue-600', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z' },
                         { label: 'KATALOG HP', value: stats.phones, color: 'bg-indigo-50 text-indigo-600', icon: 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z' },
-                        // Modified PENGUNJUNG card to include mobile/PC breakdown
                         { 
                             label: 'PENGUNJUNG', 
                             value: (
@@ -172,7 +168,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
                                 </div>
                             </div>
                             <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-1">{card.label}</div>
-                            {/* Render value, allowing ReactNode for breakdown */}
                             <div className="text-xl font-black text-[#1e293b]">
                                 {card.value}
                             </div>
@@ -207,7 +202,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
         {activeTab === 'artikel' && <AdminArticleMod onCreateArticle={handleCreateArticle} onEditArticle={handleEditArticle} />}
         {activeTab === 'penulis' && <AdminAuthorMod />}
         {activeTab === 'member' && <AdminMemberMod />}
-        {activeTab === 'extended' && <AdminExtendedMod onDataChange={onDataChange} />} {/* Pass onDataChange here */}
+        {activeTab === 'ads' && <AdminAdsMod onDataChange={onDataChange} />}
+        {activeTab === 'extended' && <AdminExtendedMod onDataChange={onDataChange} />}
       </main>
     </div>
   );

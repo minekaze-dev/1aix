@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { TOP_BRANDS } from '../constants';
 import type { Session } from '@supabase/supabase-js';
-import type { Article, Comment } from '../types';
+import type { Article, Comment, AdConfig } from '../types';
 import { supabase } from '../lib/supabase';
 import { HashtagIcon, ChatAlt2Icon } from './icons'; // Import ChatAlt2Icon
 
@@ -15,6 +15,8 @@ interface HomeTabProps {
     onSetArticleFilterQuery?: (query: string) => void; // Setter for local article filter
     initialArticle?: Article | null;
     onClearTarget?: () => void;
+    articleAd?: AdConfig; // Ad inside article content
+    sidebarAd?: AdConfig; // Ad for global sidebar
 }
 
 const HomeTab: React.FC<HomeTabProps> = ({ 
@@ -25,7 +27,9 @@ const HomeTab: React.FC<HomeTabProps> = ({
     articleFilterQuery = "", 
     onSetArticleFilterQuery, 
     initialArticle, 
-    onClearTarget 
+    onClearTarget,
+    articleAd,
+    sidebarAd
 }) => {
     const [viewArticle, setViewArticle] = useState<Article | null>(null);
     const [articles, setArticles] = useState<Article[]>([]);
@@ -75,70 +79,22 @@ const HomeTab: React.FC<HomeTabProps> = ({
         if (!error && data) setComments(data);
     };
 
-    // Helper to encode a URL for the href attribute, safely handling HTML special characters.
-    const encodeUrlForHref = (url: string): string => {
-        // Step 1: Fully HTML-decode the URL string first to revert any &lt;, &gt;, &amp;
-        // This handles cases where the URL itself might contain HTML entities from previous escaping.
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = url;
-        let rawUrl = tempDiv.textContent || tempDiv.innerText || url;
-
-        // Step 2: Aggressively URI-encode all special characters.
-        // This is crucial to prevent any HTML from breaking out of the href attribute.
-        // `encodeURIComponent` correctly encodes <, >, &, ", ', space, etc., to %xx.
-        let encoded = encodeURIComponent(rawUrl);
-
-        // Step 3: Selectively decode characters that are safe and necessary for URL structure
-        // to make the href attribute functional and readable.
-        // Importantly, we DO NOT decode %3C (<), %3E (>), %22 ("), %27 ('), etc. here.
-        encoded = encoded.replace(/%3A/g, ':')  // :
-                         .replace(/%2F/g, '/')  // /
-                         .replace(/%3F/g, '?')  // ?
-                         .replace(/%3D/g, '=')  // =
-                         .replace(/%26/g, '&')  // &
-                         .replace(/%23/g, '#'); // #
-        
-        return encoded;
-    };
-
     // Parser markdown sederhana untuk menampilkan format tebal & miring
     const parseMarkdown = (text: string) => {
         if (!text) return '';
-
-        // Step 1: Initial HTML escaping for security. This converts all literal < > & to entities.
-        let processedText = text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
-
-        // Step 2: Handle custom div/span alignments (which rely on raw HTML-like syntax).
-        // These specific patterns are parsed before general markdown links.
-        processedText = processedText
+        return text
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/&lt;div align="(.*?)"&gt;([\s\S]*?)&lt;\/div&gt;/g, '<div style="text-align: $1">$2</div>')
-            .replace(/&lt;span style="(.*?)"&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="$1">$2</span>'); // Corrected closing tag from </div> to </span>
-
-        // Step 3: Process markdown links. This must happen before bold/italic to prevent internal formatting in URLs.
-        // `linkText` and `url` here are already HTML-escaped from Step 1.
-        processedText = processedText.replace(/\[(.*?)\]\((.*?)\)/g, (match, linkText, url) => {
-            const safeUrl = encodeUrlForHref(url); // `encodeUrlForHref` will handle the full HTML-decode and then URI-encode
-            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
-        });
-
-        // Step 4: Process bold and italic formatting. This happens after link processing.
-        processedText = processedText
+            .replace(/&lt;span style="(.*?)"&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="$1">$2</span>')
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/_(.*?)_/g, '<em>$1</em>');
-            
-        // Step 5: Process other markdown elements
-        processedText = processedText
+            .replace(/_(.*?)_/g, '<em>$1</em>')
+            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>') // Added this line for links
             .replace(/^# (.*$)/gm, '<h1 style="font-size: 2em; font-weight: 900; margin: 0.5em 0;">$1</h1>')
             .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$1</h2>')
             .replace(/^&gt; (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500">$1</blockquote>')
             .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
             .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 list-decimal">$1</li>')
             .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="w-full my-4 rounded shadow-lg" />');
-
-        return processedText;
     };
 
     useEffect(() => {
@@ -313,12 +269,24 @@ const HomeTab: React.FC<HomeTabProps> = ({
                     </div>
                 </div>
 
-                {/* Banner Ads Section */}
+                {/* Banner Ads Section (Sidebar Ad) */}
                 <div className="w-full">
-                    <div className="h-[250px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
-                        <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
-                        <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
-                    </div>
+                    {sidebarAd?.image_url ? (
+                      <a href={sidebarAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full">
+                         <img src={sidebarAd.image_url} alt="Promo" className="w-full h-auto rounded shadow-md" />
+                         {(sidebarAd.title || sidebarAd.subtitle) && (
+                           <div className="mt-2 text-center">
+                             <h4 className="text-[10px] font-black text-zinc-800 uppercase">{sidebarAd.title}</h4>
+                             <p className="text-[8px] font-bold text-zinc-400 uppercase">{sidebarAd.subtitle}</p>
+                           </div>
+                         )}
+                      </a>
+                    ) : (
+                      <div className="h-[250px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
+                          <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
+                          <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
+                      </div>
+                    )}
                 </div>
             </aside>
 
@@ -358,12 +326,34 @@ const HomeTab: React.FC<HomeTabProps> = ({
                             </div>
                         )}
 
-                        {/* Banner Ads Section for Article Detail */}
+                        {/* Banner Ads Section for Article Detail (Article Content Ad) */}
                         <div className="w-full my-10">
-                          <div className="h-[120px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
-                            <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
-                            <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
-                          </div>
+                          {articleAd?.image_url ? (
+                            <a href={articleAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full">
+                               <img src={articleAd.image_url} alt="Promo" className="w-full h-auto rounded shadow-lg" />
+                            </a>
+                          ) : (
+                            <div className="h-[120px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
+                              <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
+                              <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Tombol Bagikan Baru */}
+                        <div className="flex flex-col items-center py-10 border-t border-zinc-100 mt-10">
+                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-4">SHARE THIS NEWS</span>
+                            <button 
+                                onClick={() => {
+                                    const url = window.location.origin + '/#' + viewArticle.permalink;
+                                    navigator.clipboard.writeText(url);
+                                    alert("LINK ARTIKEL BERHASIL DISALIN!");
+                                }}
+                                className="flex items-center gap-3 px-10 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-red-600 transition-all shadow-xl active:scale-95"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                                SALIN LINK ARTIKEL
+                            </button>
                         </div>
 
                         <div className="border-t border-zinc-200 pt-12 mb-20">
@@ -417,6 +407,20 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                         ))}
                                     </div>
                                 )}
+
+                                {/* Article Ad Section on Home Feed */}
+                                <div className="w-full py-4">
+                                  {articleAd?.image_url ? (
+                                    <a href={articleAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full overflow-hidden border border-zinc-100 rounded shadow-sm hover:shadow-md transition-shadow">
+                                       <img src={articleAd.image_url} alt="Promo" className="w-full h-auto max-h-[120px] object-cover" />
+                                    </a>
+                                  ) : (
+                                    <div className="h-[120px] bg-zinc-50 border border-zinc-100 flex flex-col items-center justify-center shadow-inner rounded-sm">
+                                      <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
+                                      <span className="text-zinc-300 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
+                                    </div>
+                                  )}
+                                </div>
 
                                 {/* Combined Recent and Past Articles */}
                                 {articlesAfterHero.length > 0 && (

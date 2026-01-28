@@ -22,12 +22,32 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  *   created_at TIMESTAMPTZ DEFAULT NOW()
  * );
  * 
- * -- 2. TABEL SMARTPHONE (KATALOG LENGKAP DENGAN FIELD TEKNIS)
+ * -- 2. TABEL IKLAN (ADS BANNERS)
+ * CREATE TABLE IF NOT EXISTS ads_banners (
+ *   id TEXT PRIMARY KEY, -- 'header', 'article', 'sidebar'
+ *   image_url TEXT,
+ *   target_url TEXT,
+ *   title TEXT,
+ *   subtitle TEXT,
+ *   updated_at TIMESTAMPTZ DEFAULT NOW()
+ * );
+ * 
+ * -- RLS UNTUK IKLAN
+ * ALTER TABLE ads_banners ENABLE ROW LEVEL SECURITY;
+ * CREATE POLICY "Public view ads" ON ads_banners FOR SELECT USING (true);
+ * CREATE POLICY "Admin manage ads" ON ads_banners FOR ALL USING (auth.jwt() ->> 'email' IN ('admin@1aix.com', 'rifki.mau@gmail.com'));
+ * 
+ * -- INSERT DEFAULT VALUES
+ * INSERT INTO ads_banners (id, image_url, target_url) 
+ * VALUES ('header', '', '#'), ('article', '', '#'), ('sidebar', '', '#') 
+ * ON CONFLICT (id) DO NOTHING;
+ *
+ * -- 3. TABEL SMARTPHONE (KATALOG LENGKAP DENGAN FIELD TEKNIS)
  * CREATE TABLE smartphones (
  *   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
  *   brand TEXT NOT NULL,
  *   model_name TEXT NOT NULL,
- *   market_category TEXT, -- Entry-level, Mid-range, Flagship
+ *   market_category TEXT, 
  *   release_status TEXT CHECK (release_status IN ('Tersedia', 'Pre-Order', 'Segera Rilis')),
  *   release_month TEXT,
  *   release_year TEXT,
@@ -39,8 +59,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  *   image_url TEXT,
  *   official_store_link TEXT,
  *   order_rank INTEGER DEFAULT 0,
- *   
- *   -- Spesifikasi Mendetail (Sesuai Layout Tabel Output)
  *   dimensions_weight TEXT,
  *   material TEXT,
  *   colors TEXT,
@@ -60,11 +78,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  *   usb_type TEXT DEFAULT 'USB Type-C 2.0',
  *   audio TEXT DEFAULT 'Loudspeaker, 3.5mm jack',
  *   features_extra TEXT,
- *   
  *   created_at TIMESTAMPTZ DEFAULT NOW()
  * );
  * 
- * -- 3. TABEL ARTIKEL (BERITA & REVIEW)
+ * -- 4. TABEL ARTIKEL (BERITA & REVIEW)
  * CREATE TABLE articles (
  *   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
  *   title TEXT NOT NULL,
@@ -77,10 +94,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  *   categories TEXT[], 
  *   status TEXT CHECK (status IN ('DRAFT', 'PUBLISHED', 'TRASH')) DEFAULT 'DRAFT',
  *   author_name TEXT DEFAULT 'Redaksi 1AIX',
+ *   author_id UUID REFERENCES authors(id),
  *   created_at TIMESTAMPTZ DEFAULT NOW()
  * );
  * 
- * -- 4. TABEL PROFIL PENGGUNA (MEMBER)
+ * -- 5. TABEL PROFIL PENGGUNA (MEMBER)
  * CREATE TABLE profiles (
  *   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
  *   display_name TEXT,
@@ -89,7 +107,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  *   created_at TIMESTAMPTZ DEFAULT NOW()
  * );
  * 
- * -- 5. TABEL TKDN MONITOR (EXTENDED)
+ * -- 6. TABEL TKDN MONITOR
  * CREATE TABLE tkdn_monitor (
  *   cert_number TEXT PRIMARY KEY,
  *   brand TEXT,
@@ -98,14 +116,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  *   tkdn_score NUMERIC,
  *   cert_date DATE,
  *   status TEXT CHECK (status IN ('UPCOMING', 'RELEASED')) DEFAULT 'UPCOMING',
+ *   is_visible BOOLEAN DEFAULT TRUE,
  *   created_at TIMESTAMPTZ DEFAULT NOW()
- * );
- * 
- * -- 6. TABEL TKDN MONITOR ORDER (Untuk menyimpan urutan TKDN item)
- * -- Kolom cert_number REFERENSI ke tkdn_monitor, order_rank untuk posisi di UI.
- * CREATE TABLE tkdn_monitor_order (
- *   cert_number TEXT REFERENCES tkdn_monitor(cert_number) ON DELETE CASCADE PRIMARY KEY,
- *   order_rank INTEGER DEFAULT 0
  * );
  * 
  * -- 7. TABEL KOMENTAR
@@ -133,6 +145,4 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  *   value NUMERIC DEFAULT 1,
  *   created_at TIMESTAMPTZ DEFAULT NOW()
  * );
- * 
- * -- KEBIJAKAN AKSES (RLS): Pastikan RLS diatur agar Admin bisa menulis, Publik bisa membaca.
  */

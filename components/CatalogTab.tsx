@@ -1,7 +1,6 @@
 
-
 import React, { useState, useEffect } from 'react';
-import type { Smartphone, Brand, Article } from '../types';
+import type { Smartphone, Brand, Article, AdConfig } from '../types';
 import { TOP_BRANDS } from '../constants';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -22,6 +21,7 @@ interface CatalogTabProps {
     session?: Session | null;
     initialProduct?: Smartphone | null;
     onClearTarget?: () => void;
+    sidebarAd?: AdConfig; // New: Sidebar ad prop
 }
 
 const SpecRow = ({ label, value }: { label: string; value?: string | number }) => {
@@ -64,7 +64,7 @@ const extractValue = (text: string | undefined, regex: RegExp, defaultValue: str
 };
 
 const CatalogTab: React.FC<CatalogTabProps> = ({ 
-    items, selectedBrand, minPrice, setMinPrice, maxPrice, setMaxPrice, searchQuery, setSearchQuery, onOpenLogin, onLogout, session, initialProduct, onClearTarget
+    items, selectedBrand, minPrice, setMinPrice, maxPrice, setMaxPrice, searchQuery, setSearchQuery, onOpenLogin, onLogout, session, initialProduct, onClearTarget, sidebarAd
 }) => {
     const [selectedProduct, setSelectedProduct] = useState<Smartphone | null>(null);
     const [ratings, setRatings] = useState<Record<string, { likes: number, dislikes: number }>>({});
@@ -209,7 +209,33 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                     </div>
                 </div>
 
-                <div><h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#ef4444] mb-8">RENTANG HARGA</h3><div className="space-y-6"><div><label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">MINIMAL</label><input type="number" value={minPrice || ''} onChange={(e) => setMinPrice(Number(e.target.value))} className="w-full bg-[#f1f5f9] border border-zinc-100 p-4 rounded-sm text-sm font-black focus:outline-none" placeholder="0"/></div><div><label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">MAKSIMAL</label><input type="number" value={maxPrice || ''} onChange={(e) => setMaxPrice(Number(e.target.value))} className="w-full bg-[#f1f5f9] border border-zinc-100 p-4 rounded-sm text-sm font-black focus:outline-none" placeholder="0"/></div></div></div>
+                <div>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#ef4444] mb-8">RENTANG HARGA</h3>
+                    <div className="space-y-6">
+                        <div><label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">MINIMAL</label><input type="number" value={minPrice || ''} onChange={(e) => setMinPrice(Number(e.target.value))} className="w-full bg-[#f1f5f9] border border-zinc-100 p-4 rounded-sm text-sm font-black focus:outline-none" placeholder="0"/></div>
+                        <div><label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">MAKSIMAL</label><input type="number" value={maxPrice || ''} onChange={(e) => setMaxPrice(Number(e.target.value))} className="w-full bg-[#f1f5f9] border border-zinc-100 p-4 rounded-sm text-sm font-black focus:outline-none" placeholder="0"/></div>
+                    </div>
+                </div>
+
+                {/* New: Sidebar Ad slot in Catalog */}
+                <div className="w-full">
+                    {sidebarAd?.image_url ? (
+                      <a href={sidebarAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full">
+                         <img src={sidebarAd.image_url} alt="Promo" className="w-full h-auto rounded shadow-md" />
+                         {(sidebarAd.title || sidebarAd.subtitle) && (
+                           <div className="mt-2 text-center">
+                             <h4 className="text-[10px] font-black text-zinc-800 uppercase">{sidebarAd.title}</h4>
+                             <p className="text-[8px] font-bold text-zinc-400 uppercase">{sidebarAd.subtitle}</p>
+                           </div>
+                         )}
+                      </a>
+                    ) : (
+                      <div className="h-[250px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
+                          <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
+                          <span className="text-zinc-300 font-black uppercase tracking-widest text-lg">PARTNER SPACE</span>
+                      </div>
+                    )}
+                </div>
             </aside>
 
             <div className="flex-grow">
@@ -344,6 +370,23 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                 <SpecRow label="FITUR LAIN" value={selectedProduct.features_extra} />
                             </SpecSection>
                         </div>
+
+                        {/* Tombol Bagikan Baru */}
+                        <div className="flex flex-col items-center py-10 border-t border-zinc-100">
+                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-4">SHARE THIS DEVICE</span>
+                            <button 
+                                onClick={() => {
+                                    const url = window.location.href; // Single Page App hash will include catalog/search state
+                                    navigator.clipboard.writeText(url);
+                                    alert("LINK PRODUK BERHASIL DISALIN!");
+                                }}
+                                className="flex items-center gap-3 px-10 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-blue-600 transition-all shadow-xl active:scale-95"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                                SALIN LINK PRODUK
+                            </button>
+                        </div>
+
                         <div className="flex flex-col items-center py-12 bg-white border-t border-zinc-100">
                             <h3 className="text-[12px] font-black text-zinc-900 uppercase tracking-[0.4em] mb-12">BERI PENILAIAN</h3>
                             <div className="flex gap-16">
