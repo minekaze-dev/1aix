@@ -117,7 +117,7 @@ const Header: React.FC<HeaderProps> = ({
                             onClick={onLogout}
                             className="flex items-center gap-2 px-3 py-1.5 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white border border-red-600/20 rounded-sm transition-all group"
                         >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 16l4-4m0 0l4-4m4 4H7"></path></svg>
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 16l4-4m0 0l-4-4m4 4H7"></path></svg>
                             <span className="text-[9px] font-black uppercase tracking-[0.2em]">LOGOUT</span>
                         </button>
                     ) : (
@@ -131,7 +131,7 @@ const Header: React.FC<HeaderProps> = ({
                 </nav>
             </div>
 
-            {/* Brand Bar */}
+            {/* Brand Bar - Updated for Center & Compact Layout */}
             <div className="w-full flex items-stretch h-14 border-b border-zinc-200">
                 <div className="bg-[#a3a3a3] px-4 flex items-center gap-2 text-white font-black uppercase text-[10px] tracking-widest flex-shrink-0">
                     <svg className="w-3.5 h-3.5 text-[#ef4444]" viewBox="0 0 24 24" fill="currentColor">
@@ -143,26 +143,28 @@ const Header: React.FC<HeaderProps> = ({
                     OFFICIAL BRAND
                 </div>
                 
-                <div className="flex-1 bg-[#f1f5f9] grid grid-cols-8 grid-rows-2 items-center px-1">
-                    {brands.map(brand => {
-                        const isActive = selectedBrand === brand;
-                        return (
-                            <button 
-                                key={brand} 
-                                onClick={() => onSelectBrand && onSelectBrand(brand)}
-                                className={`text-[10px] font-black uppercase tracking-tighter transition-colors text-center px-0.5 truncate h-full flex items-center justify-center ${isActive ? 'text-red-600' : 'text-zinc-500 hover:text-zinc-800'}`}
-                            >
-                                {brand}
-                            </button>
-                        );
-                    })}
+                <div className="flex-1 bg-[#f1f5f9] flex justify-center items-center px-4 overflow-hidden">
+                    <div className="grid grid-cols-8 gap-x-6 gap-y-1 content-center">
+                        {brands.map(brand => {
+                            const isActive = selectedBrand === brand;
+                            return (
+                                <button 
+                                    key={brand} 
+                                    onClick={() => onSelectBrand && onSelectBrand(brand)}
+                                    className={`text-[10px] font-black uppercase tracking-tighter transition-colors text-center px-0.5 truncate flex items-center justify-center h-5 ${isActive ? 'text-red-600' : 'text-zinc-500 hover:text-zinc-800'}`}
+                                >
+                                    {brand}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 <button 
                     onClick={() => onGoToCatalog ? onGoToCatalog() : (window.location.hash = '#/katalog')}
                     className="bg-[#3b82f6] px-4 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-blue-600 transition-colors flex-shrink-0"
                 >
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                         <path d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                     ALL BRAND
