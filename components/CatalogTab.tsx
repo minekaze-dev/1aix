@@ -142,31 +142,66 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
         <div className="flex flex-col lg:flex-row gap-8">
             <aside className="hidden lg:block w-[240px] flex-shrink-0 space-y-10">
                 <div>
-                    <div className="flex items-center gap-3 mb-1">
-                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900 leading-tight">TOP BRAND AWARD</h3>
-                    </div>
-                    <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-6 border-l-2 border-zinc-100 pl-2">sumber: www.topbrand-award.com</div>
-                    <div className="space-y-1 mb-8">{TOP_BRANDS.map((brand, idx) => (<div key={brand.name} className="px-1 py-1.5 flex items-center justify-between border-b border-zinc-50 group cursor-pointer hover:bg-zinc-50 transition-colors"><div className="flex items-center gap-4"><span className="text-[10px] font-black text-zinc-300 w-4">#{idx + 1}</span><span className="text-[11px] font-black text-zinc-700 tracking-wide uppercase group-hover:text-blue-600">{brand.name}</span></div><span className="text-[10px] font-black text-blue-500/60">{brand.share}</span></div>))}</div>
-                </div>
-                <div>
                     <div className="flex items-center gap-3 mb-6">
                         <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">TRENDING NEWS</h3>
+                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">TRENDING ARTIKEL</h3>
                     </div>
                     <div className="space-y-4">
-                        {sidebarArticles.map((art, idx) => (
-                            <div key={art.id} onClick={() => window.location.hash = '#/home'} className="group cursor-pointer border-b border-zinc-50 pb-4 last:border-0"><div className="flex gap-3"><span className="text-xl font-black text-zinc-100 group-hover:text-blue-100 transition-colors leading-none">{idx + 1}</span><h4 className="text-[11px] font-black text-zinc-700 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors line-clamp-2 italic">{art.title}</h4></div></div>
+                        {sidebarArticles.map((art) => (
+                            <div 
+                                key={art.id} 
+                                onClick={() => {
+                                    const slug = art.permalink.replace(/^\//, '');
+                                    window.location.hash = `#${slug}`;
+                                }} 
+                                className="relative group cursor-pointer overflow-hidden rounded-sm bg-zinc-100"
+                            >
+                                <div className="aspect-[16/9] w-full">
+                                    <img 
+                                        src={art.cover_image_url} 
+                                        alt="" 
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                                </div>
+                                <div className="absolute bottom-1.5 left-1.5 right-1.5 flex">
+                                    <div className="w-1 bg-black flex-shrink-0"></div>
+                                    <div className="bg-white/95 backdrop-blur-sm p-1.5 flex-grow">
+                                        <h4 className="text-[10px] font-black text-zinc-900 uppercase tracking-tighter leading-[1.1] line-clamp-2">
+                                            {art.title}
+                                        </h4>
+                                    </div>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 </div>
+                
+                {/* Perangkat Terbaru Section */}
                 <div>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#ef4444] mb-8">RENTANG HARGA</h3>
-                    <div className="space-y-6">
-                        <div><label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">MINIMAL</label><input type="number" value={minPrice || ''} onChange={(e) => setMinPrice(Number(e.target.value))} className="w-full bg-[#f1f5f9] border border-zinc-100 p-4 rounded-sm text-sm font-black focus:outline-none" placeholder="0"/></div>
-                        <div><label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">MAKSIMAL</label><input type="number" value={maxPrice || ''} onChange={(e) => setMaxPrice(Number(e.target.value))} className="w-full bg-[#f1f5f9] border border-zinc-100 p-4 rounded-sm text-sm font-black focus:outline-none" placeholder="0"/></div>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#ef4444] mb-8">PERANGKAT TERBARU</h3>
+                    <div className="space-y-4">
+                        {items.slice(0, 4).map(phone => (
+                            <div 
+                                key={phone.id} 
+                                onClick={() => {
+                                    setSelectedProduct(phone);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                className="flex items-center gap-3 group cursor-pointer border-b border-zinc-50 pb-3 last:border-0"
+                            >
+                                <div className="w-12 h-12 bg-white border border-zinc-100 p-1 flex items-center justify-center rounded-sm flex-shrink-0 group-hover:border-red-600 transition-colors shadow-sm">
+                                    <img src={phone.image_url} alt="" className="max-w-full max-h-full object-contain mix-blend-multiply" />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.2em] leading-none mb-1">{phone.brand}</span>
+                                    <h4 className="text-[10px] font-black text-zinc-800 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors truncate">{phone.model_name}</h4>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
+
                 <div className="w-full">
                     {sidebarAd?.image_url && (
                       <a href={sidebarAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full">
