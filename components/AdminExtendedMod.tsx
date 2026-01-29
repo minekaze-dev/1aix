@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { BRANDS } from '../constants';
@@ -323,34 +322,33 @@ const AdminExtendedMod: React.FC<AdminExtendedModProps> = ({ onDataChange }) => 
   };
 
   const publishButtonText = useMemo(() => {
-    if (isPublishing) return 'SYNCING...';
-    if (selectedItems.size === 0) return 'PUBLISH/UPDATE LIVE DB (0 PILIHAN)';
-    return `PUBLISH/UPDATE LIVE DB (${selectedItems.size} PILIHAN)`;
+    if (isPublishing) return '...';
+    return `PUBLISH (${selectedItems.size})`;
   }, [isPublishing, selectedItems.size]);
 
   return (
     <div className="animate-in fade-in duration-500">
-      <header className="flex items-center justify-between mb-8">
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-6">
         <div>
           <h1 className="text-2xl font-black text-[#1e293b] uppercase tracking-tight mb-1 flex items-center gap-3">
             1AIX EXTENDED
             <span className="bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded-sm tracking-widest leading-none">AI POWERED</span>
           </h1>
-          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">DATABASE MONITOR TKDN & SERTIFIKASI</p>
+          <p className="hidden lg:block text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">DATABASE MONITOR TKDN & SERTIFIKASI</p>
         </div>
-        <div className="flex gap-3">
-            <button onClick={fetchDataFromAi} disabled={loading || isPublishing} className="flex items-center gap-3 px-6 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-sm shadow-xl hover:bg-zinc-800 transition-all active:scale-95 disabled:opacity-50">
+        <div className="grid grid-cols-2 md:flex gap-2 lg:gap-3">
+            <button onClick={fetchDataFromAi} disabled={loading || isPublishing} className="col-span-2 md:col-span-1 flex items-center justify-center gap-3 px-4 lg:px-6 py-3.5 lg:py-4 bg-zinc-900 text-white text-[9px] lg:text-[10px] font-black uppercase tracking-widest rounded-sm shadow-xl hover:bg-zinc-800 transition-all active:scale-95 disabled:opacity-50">
                 {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full" /> : <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>}
-                SCAN LIVE KEMENPERIN (AI)
+                <span className="truncate">SCAN (AI)</span>
             </button>
             <button 
                 onClick={() => setShowManualEntryForm(!showManualEntryForm)} 
-                className="flex items-center gap-3 px-6 py-4 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-sm shadow-xl hover:bg-blue-700 transition-all active:scale-95"
+                className="flex items-center justify-center gap-2 px-4 lg:px-6 py-3.5 lg:py-4 bg-blue-600 text-white text-[9px] lg:text-[10px] font-black uppercase tracking-widest rounded-sm shadow-xl hover:bg-blue-700 transition-all active:scale-95"
             >
-                {showManualEntryForm ? 'BATAL INPUT MANUAL' : 'TAMBAH ENTRI MANUAL'}
+                <span className="truncate">TAMBAH</span>
             </button>
-            <button onClick={handlePublish} disabled={isPublishing || loading} className="flex items-center gap-3 px-8 py-4 bg-[#ef4444] text-white text-[10px] font-black uppercase tracking-widest rounded-sm shadow-xl hover:bg-red-600 transition-all active:scale-95 disabled:opacity-50">
-                {publishButtonText}
+            <button onClick={handlePublish} disabled={isPublishing || loading} className="flex items-center justify-center gap-2 px-4 lg:px-8 py-3.5 lg:py-4 bg-[#ef4444] text-white text-[9px] lg:text-[10px] font-black uppercase tracking-widest rounded-sm shadow-xl hover:bg-red-600 transition-all active:scale-95 disabled:opacity-50">
+                <span className="truncate uppercase">{publishButtonText}</span>
             </button>
         </div>
       </header>
@@ -475,10 +473,10 @@ const AdminExtendedMod: React.FC<AdminExtendedModProps> = ({ onDataChange }) => 
       </div>
 
       <div className="bg-white border border-zinc-100 rounded-2xl shadow-sm overflow-hidden min-h-[600px] flex flex-col">
-        <table className="w-full text-left border-collapse flex-grow">
+        <table className="w-full text-left border-collapse flex-grow table-fixed md:table-auto">
           <thead>
             <tr className="bg-zinc-50 border-b border-zinc-100 text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">
-              <th className="px-4 py-4 w-12 text-center">
+              <th className="px-4 py-4 w-10 md:w-12 text-center">
                 <input
                   type="checkbox"
                   className="form-checkbox h-3 w-3 text-blue-600 rounded"
@@ -487,12 +485,12 @@ const AdminExtendedMod: React.FC<AdminExtendedModProps> = ({ onDataChange }) => 
                 />
               </th>
               <th className="px-4 py-4">BRAND & MARKETING NAME</th>
-              <th className="px-4 py-4">CODENAME</th>
-              <th className="px-4 py-4">NO. SERTIFIKAT</th>
-              <th className="px-4 py-4">SKOR TKDN</th>
-              <th className="px-4 py-4">STATUS</th> {/* Changed header */}
-              <th className="px-4 py-4">PERKIRAAN RILIS</th> {/* Changed header */}
-              <th className="px-4 py-4 text-right">AKSI</th>
+              <th className="px-4 py-4 w-20 md:w-auto">CODENAME</th>
+              <th className="px-4 py-4 hidden md:table-cell">NO. SERTIFIKAT</th>
+              <th className="px-4 py-4 hidden md:table-cell">SKOR TKDN</th>
+              <th className="px-4 py-4 w-24 md:w-auto">STATUS</th>
+              <th className="px-4 py-4 hidden md:table-cell">PERKIRAAN RILIS</th>
+              <th className="px-4 py-4 text-right w-16 md:w-auto">AKSI</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-50">
@@ -500,7 +498,7 @@ const AdminExtendedMod: React.FC<AdminExtendedModProps> = ({ onDataChange }) => 
               <tr><td colSpan={8} className="px-8 py-32 text-center text-zinc-300 font-black uppercase text-xs tracking-[0.5em] animate-pulse">Scanning feed...</td></tr>
             ) : currentItems.length > 0 ? currentItems.map((item) => (
               <tr key={item.id} className="hover:bg-zinc-50/80 transition-colors">
-                <td className="px-4 py-4 w-12 text-center">
+                <td className="px-4 py-4 w-10 md:w-12 text-center">
                   <input
                     type="checkbox"
                     className="form-checkbox h-3 w-3 text-blue-600 rounded"
@@ -509,44 +507,44 @@ const AdminExtendedMod: React.FC<AdminExtendedModProps> = ({ onDataChange }) => 
                   />
                 </td>
                 <td className="px-4 py-4">
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-1.5 overflow-hidden">
                         <input 
                             type="text" 
                             value={item.brand} 
                             onChange={(e) => handleUpdateItem(item.id, 'brand', e.target.value.toUpperCase())}
-                            className="text-[10px] font-black text-red-600 uppercase tracking-widest bg-transparent border-b border-zinc-100 focus:border-red-300 outline-none w-full"
+                            className="text-[9px] md:text-[10px] font-black text-red-600 uppercase tracking-widest bg-transparent border-b border-zinc-100 focus:border-red-300 outline-none w-full truncate"
                             title="Edit Brand Manual"
                         />
                         <input 
                             type="text" 
                             value={item.marketing_name} 
                             onChange={(e) => handleUpdateItem(item.id, 'marketing_name', e.target.value)}
-                            className="text-[12px] font-black text-zinc-900 uppercase tracking-tight bg-transparent border-b border-zinc-100 focus:border-blue-300 outline-none w-full"
+                            className="text-[11px] md:text-[12px] font-black text-zinc-900 uppercase tracking-tight bg-transparent border-b border-zinc-100 focus:border-blue-300 outline-none w-full truncate md:whitespace-normal"
                             title="Edit Nama Pemasaran"
                         />
                     </div>
                 </td>
-                <td className="px-4 py-4 text-[10px] font-mono text-zinc-400">{item.codename}</td>
-                <td className="px-4 py-4 text-[10px] font-mono text-zinc-400">{item.cert_number}</td>
-                <td className="px-4 py-4"><div className="text-xs font-black text-zinc-800 underline decoration-blue-500 decoration-2 underline-offset-4">{item.tkdn_score}%</div></td>
+                <td className="px-4 py-4 text-[9px] md:text-[10px] font-mono text-zinc-400 truncate">{item.codename}</td>
+                <td className="px-4 py-4 text-[10px] font-mono text-zinc-400 hidden md:table-cell">{item.cert_number}</td>
+                <td className="px-4 py-4 hidden md:table-cell"><div className="text-xs font-black text-zinc-800 underline decoration-blue-500 decoration-2 underline-offset-4">{item.tkdn_score}%</div></td>
                 <td className="px-4 py-4">
                     <select
                         value={item.status}
                         onChange={(e) => handleUpdateItem(item.id, 'status', e.target.value as 'UPCOMING' | 'RELEASED')}
-                        className={`text-[8px] font-black px-2 py-1 rounded-sm uppercase appearance-none cursor-pointer ${item.status === 'RELEASED' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-amber-100 text-amber-600 border border-amber-200'}`}
+                        className={`text-[8px] font-black px-1.5 md:px-2 py-1 rounded-sm uppercase appearance-none cursor-pointer w-full text-center ${item.status === 'RELEASED' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-amber-100 text-amber-600 border border-amber-200'}`}
                         title="Edit Status Rilis"
                     >
                         <option value="UPCOMING">UPCOMING</option>
                         <option value="RELEASED">RELEASED</option>
                     </select>
                 </td>
-                <td className="px-4 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-tight">
+                <td className="px-4 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-tight hidden md:table-cell">
                     {formatReleasePeriod(item.cert_date, item.status)}
                 </td>
                 <td className="px-4 py-4 text-right">
                     <button 
                         onClick={() => handleDeleteItem(item.id)}
-                        className="p-2 text-zinc-300 hover:text-red-500 transition-colors"
+                        className="p-1 md:p-2 text-zinc-300 hover:text-red-500 transition-colors"
                         title="Hapus data ini"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
@@ -560,7 +558,7 @@ const AdminExtendedMod: React.FC<AdminExtendedModProps> = ({ onDataChange }) => 
             )}
           </tbody>
         </table>
-        {totalPages > 1 && (<div className="p-8 border-t border-zinc-100 bg-zinc-50/30 flex items-center justify-between"><div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">PAGE {currentPage} OF {totalPages}</div><div className="flex gap-2"><button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className="px-4 py-2 bg-white border border-zinc-200 text-zinc-900 text-[10px] font-black uppercase rounded disabled:opacity-30">PREV</button><button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className="px-4 py-2 bg-white border border-zinc-200 text-zinc-900 text-[10px] font-black uppercase rounded disabled:opacity-30">NEXT</button></div></div>)}
+        {totalPages > 1 && (<div className="p-4 md:p-8 border-t border-zinc-100 bg-zinc-50/30 flex items-center justify-between"><div className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">PAGE {currentPage} OF {totalPages}</div><div className="flex gap-2"><button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className="px-3 md:px-4 py-2 bg-white border border-zinc-200 text-zinc-900 text-[9px] md:text-[10px] font-black uppercase rounded disabled:opacity-30">PREV</button><button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className="px-3 md:px-4 py-2 bg-white border border-zinc-200 text-zinc-900 text-[9px] md:text-[10px] font-black uppercase rounded disabled:opacity-30">NEXT</button></div></div>)}
       </div>
     </div>
   );
