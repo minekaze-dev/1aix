@@ -70,6 +70,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
     const [guestNotify, setGuestNotify] = useState(false);
 
     const fetchRatings = async () => {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
         const { data, error } = await supabase.from('ratings').select('*');
         if (!error && data) {
             const mapped = data.reduce((acc: any, curr: any) => {
@@ -211,6 +212,9 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                             <div className="md:w-[220px] flex-shrink-0">
                                 <div className="bg-[#f8f9fa] border border-zinc-100 p-4 flex items-center justify-center rounded-sm">
                                     <img src={selectedProduct.image_url} alt={selectedProduct.model_name} className="w-full h-auto max-h-[240px] object-contain mix-blend-multiply drop-shadow-md" />
+                                </div>
+                                <div className="mt-2 text-center">
+                                    <span className="text-[7px] font-bold text-zinc-300 uppercase tracking-widest leading-none">Image: GSMArena</span>
                                 </div>
                             </div>
                             <div className="flex-1 flex flex-col justify-end min-w-0">
