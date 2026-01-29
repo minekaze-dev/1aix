@@ -100,6 +100,26 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
         }
     }, [initialProduct, onClearTarget]);
 
+    const handleProductSelect = (phone: Smartphone) => {
+        setSelectedProduct(phone);
+        const slug = phone.model_name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        window.location.hash = `#/katalog/${slug}`;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleBackToGrid = () => {
+        setSelectedProduct(null);
+        window.location.hash = '#/katalog';
+    };
+
+    const handleCopyLink = () => {
+        if (!selectedProduct) return;
+        const slug = selectedProduct.model_name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const url = `${window.location.origin}/#/katalog/${slug}`;
+        navigator.clipboard.writeText(url);
+        alert("LINK PERANGKAT BERHASIL DISALIN!");
+    };
+
     const handleRating = async (id: string, type: 'like' | 'dislike') => {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         if (!currentSession) { 
@@ -159,10 +179,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                         {items.slice(0, 4).map(phone => (
                             <div 
                                 key={phone.id} 
-                                onClick={() => {
-                                    setSelectedProduct(phone);
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }}
+                                onClick={() => handleProductSelect(phone)}
                                 className="flex items-center gap-4 group cursor-pointer border-b border-zinc-50 pb-2 last:border-0"
                             >
                                 <div className="w-20 h-20 bg-white border border-zinc-100 p-2 flex items-center justify-center rounded-sm flex-shrink-0 group-hover:border-red-600 transition-colors shadow-sm">
@@ -189,7 +206,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
             <div className="flex-grow overflow-hidden">
                 {selectedProduct ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <button onClick={() => setSelectedProduct(null)} className="mb-8 flex items-center gap-2 text-[10px] font-black text-zinc-400 uppercase tracking-widest hover:text-blue-800 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>KEMBALI KE {selectedBrand || 'KATALOG'}</button>
+                        <button onClick={handleBackToGrid} className="mb-8 flex items-center gap-2 text-[10px] font-black text-zinc-400 uppercase tracking-widest hover:text-blue-800 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>KEMBALI KE {selectedBrand || 'KATALOG'}</button>
                         <div className="flex flex-col md:flex-row gap-8 items-end">
                             <div className="md:w-[220px] flex-shrink-0">
                                 <div className="bg-[#f8f9fa] border border-zinc-100 p-4 flex items-center justify-center rounded-sm">
@@ -303,13 +320,25 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                 </div>
                             )}
                         </div>
+
+                        {/* Tombol Bagikan Perangkat */}
+                        <div className="flex flex-col items-center py-10 border-t border-zinc-100 mt-6 mb-20">
+                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-4">BAGIKAN PERANGKAT INI</span>
+                            <button 
+                                onClick={handleCopyLink}
+                                className="flex items-center gap-3 px-10 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-red-600 transition-all shadow-xl active:scale-95"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                                SALIN LINK PERANGKAT
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <div className="space-y-8 animate-in fade-in duration-500">
                         <div className="flex items-end justify-between border-b border-zinc-100 pb-6"><div><div className="text-[9px] font-black text-[#ef4444] uppercase tracking-[0.3em] mb-1">{selectedBrand ? 'BRAND CATALOG' : 'ALL SMARTPHONES'}</div><h2 className="text-xl lg:text-3xl font-black text-zinc-900 uppercase tracking-tighter leading-none">KATALOG <span className="text-zinc-900">{selectedBrand || 'SEMUA BRAND'}</span></h2></div></div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {filtered.map(phone => (
-                                <div key={phone.id} className="group cursor-pointer" onClick={() => setSelectedProduct(phone)}>
+                                <div key={phone.id} className="group cursor-pointer" onClick={() => handleProductSelect(phone)}>
                                     <div className="bg-[#f1f1f1] aspect-square p-4 flex items-center justify-center relative transition-all group-hover:bg-[#e8e8e8] rounded-sm shadow-sm">
                                         <img src={phone.image_url} alt={phone.model_name} className="w-full h-full object-contain mix-blend-multiply transition-transform group-hover:scale-105" />
                                     </div>
