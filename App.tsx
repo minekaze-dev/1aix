@@ -11,6 +11,33 @@ import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 import HomeTab from './components/HomeTab';
 
+const AboutPage = () => (
+    <div className="animate-in fade-in duration-700 py-12 max-w-[900px] mx-auto">
+        <div className="mb-12 text-center">
+            <h1 className="text-4xl font-black uppercase tracking-tighter italic text-zinc-900 leading-none">TENTANG 1AIX</h1>
+            <div className="h-1 w-20 bg-red-600 mx-auto mt-4"></div>
+        </div>
+        <div className="space-y-8">
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed uppercase tracking-tight">
+                    1AIX ADALAH PLATFORM REFERENSI GADGET INDEPENDEN YANG BERFOKUS PADA PASAR SMARTPHONE DI INDONESIA. KAMI HADIR UNTUK MEMBERIKAN INFORMASI AKURAT MENGENAI SPESIFIKASI TEKNIS, HARGA SRP RESMI, SERTA STATUS REGULASI TKDN (TINGKAT KOMPONEN DALAM NEGERI) DARI SETIAP PERANGKAT YANG BEREDAR RESMI DI TANAH AIR.
+                </p>
+            </div>
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">MISI KAMI</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed uppercase tracking-tight">
+                    MISI UTAMA KAMI ADALAH MEMBANTU KONSUMEN INDONESIA DALAM MEMBUAT KEPUTUSAN PEMBELIAN YANG LEBIH CERDAS DENGAN MENYEDIAKAN DATABASE PERBANDINGAN YANG KOMPREHENSIF, TRANSPARAN, DAN MUDAH DIAKSES OLEH SIAPAPUN.
+                </p>
+            </div>
+            <div className="text-center mt-12">
+                <p className="text-[10px] font-black text-zinc-300 uppercase tracking-[0.4em] italic">
+                    POWERED BY 1AIX ENGINE v5.8
+                </p>
+            </div>
+        </div>
+    </div>
+);
+
 const FaqPage = () => {
     const faqs = [
         {
@@ -254,6 +281,7 @@ export default function App() {
       case 'bandingkan': return 'Bandingkan';
       case 'admin': return 'Admin';
       case 'faq': return 'FAQ';
+      case 'tentang': return 'Tentang';
       case 'kebijakan': return 'Kebijakan';
       case 'syarat-ketentuan': return 'Syarat & Ketentuan';
       default: return 'Home';
@@ -432,6 +460,7 @@ export default function App() {
         {activeTab === 'Segera Rilis' && <ComingSoonTab items={smartphones} publishedAiData={tkdnMonitorData} />}
         {activeTab === 'Bandingkan' && <ComparisonTab items={smartphones} selectedIds={comparisonIds} setSelectedIds={setComparisonIds} />}
         {activeTab === 'FAQ' && <FaqPage />}
+        {activeTab === 'Tentang' && <AboutPage />}
         {activeTab === 'Kebijakan' && <PolicyPage />}
         {activeTab === 'Syarat & Ketentuan' && <TermsPage />}
       </main>

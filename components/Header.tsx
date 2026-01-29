@@ -76,8 +76,8 @@ const Header: React.FC<HeaderProps> = ({
 
     return (
         <header className="w-full max-w-[1000px] flex flex-col shadow-xl z-50">
-            {/* Top Header - Black Section */}
-            <div className="bg-[#0b0b0b] text-white h-16 lg:h-20 flex items-center justify-between px-4 lg:px-6 relative transition-all">
+            {/* Top Header - Black Section - Changed px-4 lg:px-6 to pl-4 lg:pl-6 pr-0 */}
+            <div className="bg-[#0b0b0b] text-white h-16 lg:h-20 flex items-center justify-between pl-4 lg:pl-6 pr-0 relative transition-all">
                 {/* Logo Section - Left Aligned */}
                 <div 
                   className="flex items-center cursor-pointer select-none transition-opacity hover:opacity-80 h-full" 
@@ -124,33 +124,33 @@ const Header: React.FC<HeaderProps> = ({
                     )}
                 </div>
 
-                {/* Mobile Right Icons Group */}
-                <div className="flex lg:hidden items-center gap-2">
+                {/* Mobile Right Icons Group - Reordered to put Login at the end */}
+                <div className="flex lg:hidden items-center">
                     {/* Mobile Search Trigger */}
                     <button 
                         onClick={() => setIsSearchFocused(!isSearchFocused)}
-                        className="p-2 text-zinc-400 hover:text-white"
+                        className="p-3 text-zinc-400 hover:text-white"
                         aria-label="Search"
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </button>
 
-                    {/* Mobile Login Icon */}
-                    <button 
-                        onClick={session ? onLogout : onOpenLogin}
-                        className="p-2 text-red-600 hover:text-red-500"
-                        title={session ? "LOGOUT" : "MASUK"}
-                    >
-                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    </button>
-
                     {/* Hamburger Menu Trigger (HP Brands) */}
                     <button 
                         onClick={() => setIsMobileMenuOpen(true)}
-                        className="p-2 text-zinc-400 hover:text-white"
+                        className="p-3 text-zinc-400 hover:text-white"
                         aria-label="Menu"
                     >
                         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+
+                    {/* Mobile Login Icon - Now at the absolute right */}
+                    <button 
+                        onClick={session ? onLogout : onOpenLogin}
+                        className="p-3 text-red-600 hover:text-red-500 border-l border-zinc-800/50"
+                        title={session ? "LOGOUT" : "MASUK"}
+                    >
+                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     </button>
                 </div>
 

@@ -99,6 +99,16 @@ const HomeTab: React.FC<HomeTabProps> = ({
     useEffect(() => {
         fetchArticles();
         fetchCommentCounts(); // Fetch comment counts initially
+
+        // Listener to handle closing article when navigating back to home hash
+        const handleHashChange = () => {
+            const currentHash = window.location.hash.replace(/^#\/?/, '') || 'home';
+            if (currentHash === 'home') {
+                setViewArticle(null);
+            }
+        };
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
 
     useEffect(() => {
@@ -267,7 +277,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
 
     return (
         <div className="flex flex-col lg:flex-row gap-8 animate-in fade-in duration-700">
-            {/* Sidebar sekarang di sisi Kiri pada Desktop dan tersembunyi di Mobile */}
             <Sidebar />
 
             <div className="flex-grow">
@@ -285,7 +294,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                 </div>
                             </div>
                         </div>
-                        <div className="w-full aspect-video rounded-sm overflow-hidden mb-8 shadow-lg border border-zinc-100"><img src={viewArticle.cover_image_url} alt="" className="w-full h-full object-cover"/></div>
+                        <div className="w-full h-80 overflow-hidden rounded-sm mb-10 shadow-lg border border-zinc-100"><img src={viewArticle.cover_image_url} alt="" className="w-full h-full object-cover"/></div>
                         <div className="prose prose-zinc max-w-none text-zinc-800 leading-loose text-base mb-20">
                             <div className="text-zinc-500 font-bold leading-relaxed italic border-l-3 border-red-600 pl-4 bg-zinc-50 py-4 mb-8">"{viewArticle.summary}"</div>
                             <div className="whitespace-pre-wrap article-view-body" dangerouslySetInnerHTML={{ __html: parseMarkdown(viewArticle.content || '') }} />
@@ -301,14 +310,19 @@ const HomeTab: React.FC<HomeTabProps> = ({
                             </div>
                         )}
 
-                        {/* Banner Iklan Artikel - Muncul tepat di bawah hashtag dan di atas komentar */}
-                        {articleAd?.image_url && (
-                            <div className="w-full my-10">
-                                <a href={articleAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full">
-                                    <img src={articleAd.image_url} alt="Promo" className="w-full h-auto rounded shadow-lg" />
-                                </a>
+                        {/* Banner Ads Section for Article Detail (Article Content Ad) */}
+                        <div className="w-full my-10 max-w-[700px] mx-auto">
+                          {articleAd?.image_url ? (
+                            <a href={articleAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full overflow-hidden rounded shadow-lg border border-zinc-100">
+                               <img src={articleAd.image_url} alt="Promo" className="w-full h-[120px] object-cover" />
+                            </a>
+                          ) : (
+                            <div className="h-[120px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
+                              <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
+                              <span className="text-zinc-400 font-black uppercase tracking-widest text-lg">PARTNER SPACE</span>
                             </div>
-                        )}
+                          )}
+                        </div>
 
                         {/* Tombol Bagikan Artikel */}
                         <div className="flex flex-col items-center py-10 border-t border-zinc-100 mt-10">
