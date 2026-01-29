@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Article, Author } from '../types'; // Import Author type
 import { supabase } from '../lib/supabase';
@@ -79,7 +78,6 @@ export default function AdminArticleMod({ onCreateArticle, onEditArticle }: Admi
           art.id === articleId ? { ...art, ...updatePayload } : art
         )
       );
-      // alert("Artikel berhasil diperbarui."); // Removed for smoother inline editing experience
     } catch (err: any) {
       console.error("Gagal memperbarui artikel:", err);
       alert("Gagal memperbarui artikel: " + err.message);
@@ -153,13 +151,13 @@ export default function AdminArticleMod({ onCreateArticle, onEditArticle }: Admi
       <header className="flex items-center justify-between mb-8">
         <div><h1 className="text-2xl font-black text-[#1e293b] uppercase tracking-tight mb-1">MANAJEMEN ARTIKEL</h1><p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">KELOLA BERITA, REVIEW & KONTEN REDAKSI (DB LIVE)</p></div>
         <div className="flex gap-3">
-            <button onClick={() => setShowCategoryModal(true)} className="flex items-center gap-3 px-6 py-3 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-sm shadow-xl hover:bg-zinc-800 transition-all transform active:scale-95 border border-zinc-700"><svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 7h.01M7 3h5a2 2 0 012 2v5a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"></path></svg>KATEGORI</button>
-            <button onClick={onCreateArticle} className="flex items-center gap-3 px-6 py-3 bg-[#ef4444] text-white text-[10px] font-black uppercase tracking-widest rounded-sm shadow-xl hover:bg-red-600 transition-all transform active:scale-95"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4"></path></svg>TULIS ARTIKEL BARU</button>
+            <button onClick={() => setShowCategoryModal(true)} className="flex items-center gap-3 px-4 md:px-6 py-3 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-sm shadow-xl hover:bg-zinc-800 transition-all transform active:scale-95 border border-zinc-700"><svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 7h.01M7 3h5a2 2 0 012 2v5a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"></path></svg><span className="hidden md:inline">KATEGORI</span></button>
+            <button onClick={onCreateArticle} className="flex items-center gap-3 px-4 md:px-6 py-3 bg-[#ef4444] text-white text-[10px] font-black uppercase tracking-widest rounded-sm shadow-xl hover:bg-red-600 transition-all transform active:scale-95"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4"></path></svg><span className="hidden md:inline">TULIS ARTIKEL BARU</span><span className="md:hidden">TULIS</span></button>
         </div>
       </header>
 
       {/* Tabs Filter */}
-      <div className="flex border-b border-zinc-200 mb-6 gap-8">
+      <div className="flex border-b border-zinc-200 mb-6 gap-4 md:gap-8 overflow-x-auto scrollbar-hide whitespace-nowrap">
         {(['ALL', 'PUBLISHED', 'DRAFT', 'TRASH'] as FilterStatus[]).map(f => (
             <button 
                 key={f}
@@ -173,69 +171,71 @@ export default function AdminArticleMod({ onCreateArticle, onEditArticle }: Admi
       </div>
 
       <div className="bg-white border border-zinc-100 rounded-2xl shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse table-fixed md:table-auto">
           <thead><tr className="bg-zinc-50 border-b border-zinc-100 text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">
-            <th className="px-8 py-5">JUDUL BERITA</th>
-            <th className="px-8 py-5">KATEGORI</th>
-            <th className="px-8 py-5">PENULIS</th> {/* New column header */}
-            <th className="px-8 py-5">STATUS</th>
-            <th className="px-8 py-5">TANGGAL</th>
-            <th className="px-8 py-5 text-right">AKSI</th></tr>
+            <th className="px-4 md:px-8 py-5">JUDUL BERITA</th>
+            <th className="px-8 py-5 hidden md:table-cell">KATEGORI</th>
+            <th className="px-8 py-5 hidden md:table-cell">PENULIS</th>
+            <th className="px-8 py-5 hidden md:table-cell">STATUS</th>
+            <th className="px-8 py-5 hidden md:table-cell">TANGGAL</th>
+            <th className="px-4 md:px-8 py-5 text-right w-24 md:w-auto">AKSI</th></tr>
           </thead>
           <tbody className="divide-y divide-zinc-50">
-            {loading ? (<tr><td colSpan={6} className="px-8 py-10 text-center animate-pulse">Memuat Artikel Database...</td></tr>) : filteredArticles.length > 0 ? filteredArticles.map(article => (
+            {loading ? (<tr><td colSpan={6} className="px-8 py-10 text-center animate-pulse">Memuat Artikel...</td></tr>) : filteredArticles.length > 0 ? filteredArticles.map(article => (
               <tr key={article.id} className="hover:bg-zinc-50 transition-colors">
-                <td className="px-8 py-5">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-8 bg-zinc-100 rounded overflow-hidden shadow-sm">
+                <td className="px-4 md:px-8 py-5">
+                    <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
+                        <div className="w-10 h-7 md:w-12 md:h-8 bg-zinc-100 rounded overflow-hidden shadow-sm flex-shrink-0">
                             <img src={article.cover_image_url} alt="" className="w-full h-full object-cover" />
                         </div>
-                        <div className="text-[11px] font-black text-zinc-900 uppercase truncate max-w-xs">{article.title}</div>
+                        <div className="text-[11px] font-black text-zinc-900 uppercase truncate md:whitespace-normal md:line-clamp-2">
+                            {article.title}
+                        </div>
                     </div>
                 </td>
-                <td className="px-8 py-5">
+                <td className="px-8 py-5 hidden md:table-cell">
                     <div className="flex flex-wrap gap-1">
                         {(article.categories || []).map(cat => (
                             <span key={cat} className="text-[8px] font-black text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded-sm border border-blue-100">{cat}</span>
                         ))}
                     </div>
                 </td>
-                <td className="px-8 py-5"> {/* New: Author select dropdown */}
+                <td className="px-8 py-5 hidden md:table-cell">
                     <select
-                        value={article.author_id || ''} // Bind to author_id, or empty string for default
+                        value={article.author_id || ''}
                         onChange={(e) => handleUpdateArticleField(article.id, 'author_id', e.target.value)}
                         className="bg-zinc-50 border border-zinc-100 p-2 rounded text-[10px] font-black uppercase outline-none focus:border-blue-500"
                         title="Pilih Penulis"
                     >
-                        <option value="">REDAKSI 1AIX</option> {/* Option for default 'Redaksi 1AIX' */}
+                        <option value="">REDAKSI 1AIX</option>
                         {authors.map(author => (
                             <option key={author.id} value={author.id}>{author.name.toUpperCase()}</option>
                         ))}
                     </select>
                 </td>
-                <td className="px-8 py-5">
+                <td className="px-8 py-5 hidden md:table-cell">
                     <span className={`text-[8px] font-black px-2 py-1 rounded-sm uppercase ${article.status === 'PUBLISHED' ? 'bg-emerald-100 text-emerald-600' : article.status === 'DRAFT' ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'}`}>
                         {article.status}
                     </span>
                 </td>
-                <td className="px-8 py-5 text-[10px] font-black text-zinc-400">{article.publish_date}</td>
-                <td className="px-8 py-5 text-right">
-                  <div className="flex justify-end gap-2">
+                <td className="px-8 py-5 text-[10px] font-black text-zinc-400 hidden md:table-cell">{article.publish_date}</td>
+                <td className="px-4 md:px-8 py-5 text-right">
+                  <div className="flex justify-end gap-1 md:gap-2">
                     {article.status === 'TRASH' ? (
                         <>
-                            <button onClick={() => handleRestore(article.id)} className="p-2 text-zinc-400 hover:text-emerald-600 transition-colors" title="Restore Artikel"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></button>
-                            <button onClick={() => handlePermanentDelete(article.id)} className="p-2 text-zinc-400 hover:text-red-600 transition-colors" title="Hapus Permanen"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            <button onClick={() => handleRestore(article.id)} className="p-1 md:p-2 text-zinc-400 hover:text-emerald-600 transition-colors" title="Restore Artikel"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></button>
+                            <button onClick={() => handlePermanentDelete(article.id)} className="p-1 md:p-2 text-zinc-400 hover:text-red-600 transition-colors" title="Hapus Permanen"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                         </>
                     ) : (
                         <>
-                            <button onClick={() => onEditArticle(article)} className="p-2 text-zinc-400 hover:text-blue-600 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z"></path></svg></button>
-                            <button onClick={() => handleSoftDelete(article.id)} className="p-2 text-zinc-400 hover:text-red-600 transition-colors" title="Pindahkan ke Sampah"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            <button onClick={() => onEditArticle(article)} className="p-1 md:p-2 text-zinc-400 hover:text-blue-600 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z"></path></svg></button>
+                            <button onClick={() => handleSoftDelete(article.id)} className="p-1 md:p-2 text-zinc-400 hover:text-red-600 transition-colors" title="Pindahkan ke Sampah"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                         </>
                     )}
                   </div>
                 </td>
               </tr>
-            )) : (<tr><td colSpan={6} className="px-8 py-20 text-center text-zinc-300 font-black uppercase text-[10px] tracking-widest italic">Tidak ada artikel di filter ini.</td></tr>)}
+            )) : (<tr><td colSpan={6} className="px-8 py-20 text-center text-zinc-300 font-black uppercase text-[10px] tracking-widest italic">Tidak ada artikel.</td></tr>)}
           </tbody>
         </table>
       </div>
