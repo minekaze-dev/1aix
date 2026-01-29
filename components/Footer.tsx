@@ -41,7 +41,7 @@ const Footer: React.FC = () => {
                         </svg>
                     </div>
                     <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-                        <span className="text-[12px] lg:text-[11px] font-black uppercase tracking-[0.3em] lg:tracking-widest text-white leading-none mb-2 lg:mb-1">1AIX</span>
+                        <span className="text-[12px] lg:text-[11px] font-black uppercase tracking-[0.3em] lg:tracking-widest text-white leading-none mb-2 lg:mb-1">1AIX TEKNOLOGI</span>
                         <span className="text-[9px] font-bold text-zinc-600 tracking-widest leading-relaxed lg:leading-none max-w-[280px] lg:max-w-none">
                             &copy; {new Date().getFullYear()} 1AIX | Referensi Smartphone Resmi Indonesia
                         </span>
