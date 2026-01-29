@@ -76,8 +76,8 @@ const Header: React.FC<HeaderProps> = ({
 
     return (
         <header className="w-full max-w-[1000px] flex flex-col shadow-xl z-50">
-            {/* Top Header - Black Section - Changed px-4 lg:px-6 to pl-4 lg:pl-6 pr-0 */}
-            <div className="bg-[#0b0b0b] text-white h-16 lg:h-20 flex items-center justify-between pl-4 lg:pl-6 pr-0 relative transition-all">
+            {/* Top Header - Black Section */}
+            <div className="bg-[#0b0b0b] text-white h-12 lg:h-16 flex items-center justify-between pl-4 lg:pl-6 pr-0 relative transition-all">
                 {/* Logo Section - Left Aligned */}
                 <div 
                   className="flex items-center cursor-pointer select-none transition-opacity hover:opacity-80 h-full" 
@@ -107,12 +107,12 @@ const Header: React.FC<HeaderProps> = ({
                             value={searchQuery}
                             onChange={(e) => onSearchChange?.(e.target.value)}
                             onFocus={() => setIsSearchFocused(true)}
-                            className="w-full bg-[#1a1a1a] border border-zinc-800 rounded-sm py-2.5 pl-10 pr-4 text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-zinc-600 focus:bg-black transition-all"
+                            className="w-full bg-[#1a1a1a] border border-zinc-800 rounded-sm py-1.5 pl-10 pr-4 text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-zinc-600 focus:bg-black transition-all"
                         />
                     </div>
 
                     {showDropdown && (
-                        <div className="absolute top-[calc(100%-8px)] left-0 right-0 bg-white shadow-2xl border border-zinc-200 rounded-sm overflow-hidden z-[100]">
+                        <div className="absolute top-[calc(100%-4px)] left-0 right-0 bg-white shadow-2xl border border-zinc-200 rounded-sm overflow-hidden z-[100]">
                             <SearchDropdownContent 
                                 filteredPhones={filteredPhones} 
                                 filteredArticles={filteredArticles} 
@@ -124,9 +124,8 @@ const Header: React.FC<HeaderProps> = ({
                     )}
                 </div>
 
-                {/* Mobile Right Icons Group - Reordered to put Login at the end */}
+                {/* Mobile Right Icons Group */}
                 <div className="flex lg:hidden items-center">
-                    {/* Mobile Search Trigger */}
                     <button 
                         onClick={() => setIsSearchFocused(!isSearchFocused)}
                         className="p-3 text-zinc-400 hover:text-white"
@@ -135,7 +134,6 @@ const Header: React.FC<HeaderProps> = ({
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </button>
 
-                    {/* Hamburger Menu Trigger (HP Brands) */}
                     <button 
                         onClick={() => setIsMobileMenuOpen(true)}
                         className="p-3 text-zinc-400 hover:text-white"
@@ -144,7 +142,6 @@ const Header: React.FC<HeaderProps> = ({
                         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
                     </button>
 
-                    {/* Mobile Login Icon - Now at the absolute right */}
                     <button 
                         onClick={session ? onLogout : onOpenLogin}
                         className="p-3 text-red-600 hover:text-red-500 border-l border-zinc-800/50"
@@ -154,7 +151,7 @@ const Header: React.FC<HeaderProps> = ({
                     </button>
                 </div>
 
-                {/* Desktop Navigation Links (Hidden on Mobile) */}
+                {/* Desktop Navigation Links */}
                 <nav className="hidden lg:flex items-center h-full">
                     <button 
                         onClick={() => onGoToCompare ? onGoToCompare() : (window.location.hash = '#/bandingkan')}
@@ -284,26 +281,26 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
             )}
 
-            {/* Desktop Brand Bar */}
-            <div className="w-full hidden lg:flex items-stretch h-14 border-b border-zinc-200">
-                <div className="bg-[#a3a3a3] px-4 flex items-center gap-2 text-white font-black uppercase text-[10px] tracking-widest flex-shrink-0">
+            {/* Desktop Brand Bar - h-12 for better vertical spacing while backgrounds stretch fully */}
+            <div className="w-full hidden lg:flex items-stretch h-12 border-b border-zinc-200">
+                <div className="bg-[#a3a3a3] px-5 flex items-center gap-2 text-white font-black uppercase text-[10px] tracking-widest flex-shrink-0 self-stretch">
                     <svg className="w-3.5 h-3.5 text-[#ef4444]" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
                     OFFICIAL BRAND
                 </div>
-                <div className="flex-1 bg-[#f1f5f9] flex justify-center items-center px-4 overflow-hidden">
+                <div className="flex-1 bg-[#f1f5f9] flex justify-center items-center px-4 overflow-hidden self-stretch">
                     <div className="grid grid-cols-8 gap-x-6 gap-y-1 content-center">
                         {brands.map(brand => (
                             <button 
                                 key={brand} 
                                 onClick={() => onSelectBrand && onSelectBrand(brand)}
-                                className={`text-[10px] font-black uppercase tracking-tighter transition-colors text-center px-0.5 truncate flex items-center justify-center h-5 ${selectedBrand === brand ? 'text-red-600' : 'text-zinc-500 hover:text-zinc-800'}`}
+                                className={`text-[10px] font-black uppercase tracking-tighter transition-colors text-center px-0.5 truncate flex items-center justify-center h-4 ${selectedBrand === brand ? 'text-red-600' : 'text-zinc-500 hover:text-zinc-800'}`}
                             >
                                 {brand}
                             </button>
                         ))}
                     </div>
                 </div>
-                <button onClick={() => onGoToCatalog ? onGoToCatalog() : (window.location.hash = '#/katalog')} className="bg-[#3b82f6] px-4 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-blue-600 transition-colors flex-shrink-0">
+                <button onClick={() => onGoToCatalog ? onGoToCatalog() : (window.location.hash = '#/katalog')} className="bg-[#3b82f6] px-5 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-blue-600 transition-colors flex-shrink-0 self-stretch">
                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
                     ALL BRAND
                 </button>

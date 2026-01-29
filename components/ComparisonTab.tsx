@@ -97,7 +97,8 @@ const ComparisonTab: React.FC<ComparisonTabProps> = ({ items, selectedIds, setSe
         ]}
     ];
 
-    const DesktopHeader = ({ title, icon }: { title: string, icon: React.ReactNode }) => (
+    // Fix: Explicitly type sub-components as React.FC to resolve key prop type errors
+    const DesktopHeader: React.FC<{ title: string, icon: React.ReactNode }> = ({ title, icon }) => (
         <tr className="bg-[#f8fafc] border-y border-zinc-200">
             <td colSpan={showThirdDevice ? 4 : 3} className="px-6 py-5">
                 <div className="flex items-center gap-4">
@@ -108,7 +109,8 @@ const ComparisonTab: React.FC<ComparisonTabProps> = ({ items, selectedIds, setSe
         </tr>
     );
 
-    const DesktopRow = ({ label, field }: { label: string, field: keyof Smartphone }) => {
+    // Fix: Explicitly type sub-components as React.FC to resolve key prop type errors
+    const DesktopRow: React.FC<{ label: string, field: keyof Smartphone }> = ({ label, field }) => {
         return (
             <tr className="border-b border-zinc-100 hover:bg-zinc-50/50 transition-colors group">
                 <td className="px-6 py-4 text-[9px] font-black text-zinc-400 uppercase tracking-widest w-[200px] align-top bg-white border-r border-zinc-100 group-hover:text-blue-600 break-words leading-tight">

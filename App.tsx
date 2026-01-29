@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import type { Smartphone, Brand, Article, AdConfig } from './types';
 import Header from './components/Header';
@@ -435,6 +436,8 @@ export default function App() {
                 onClearTarget={() => setTargetArticle(null)}
                 articleAd={ads['article']}
                 sidebarAd={ads['sidebar']}
+                smartphones={smartphones}
+                onProductSelect={handleProductSelect}
             />
         )}
         {activeTab === 'Katalog' && (

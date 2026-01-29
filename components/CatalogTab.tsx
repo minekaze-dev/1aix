@@ -120,7 +120,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
             localStorage.setItem('1AIX_USER_VOTES', JSON.stringify(newUserVotes));
         } else {
             if (currentUserVote) {
-                if (type === 'like') { newLikes += 1; newDislikes = Math.max(0, newDislikes - 1); } else { newDislikes += 1; newLikes = Math.max(0, newLikes - 1); }
+                if (type === 'like') { newLikes += 1; newDislikes = Math.max(0, newDislikes - 1); } else { newDislikes += 1; newLikes = Math.max(0, newDislikes - 1); }
             } else { if (type === 'like') newLikes += 1; else newDislikes += 1; }
             const updatedUser = { ...userVotes, [id]: type };
             setUserVotes(updatedUser);
@@ -141,14 +141,8 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
     return (
         <div className="flex flex-col lg:flex-row gap-8">
             <aside className="hidden lg:block w-[240px] flex-shrink-0 space-y-10">
-                <div>
-                    <div className="flex items-center gap-3 mb-1">
-                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900 leading-tight">TOP BRAND AWARD</h3>
-                    </div>
-                    <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-6 border-l-2 border-zinc-100 pl-2">sumber: www.topbrand-award.com</div>
-                    <div className="space-y-1 mb-8">{TOP_BRANDS.map((brand, idx) => (<div key={brand.name} className="px-1 py-1.5 flex items-center justify-between border-b border-zinc-50 group cursor-pointer hover:bg-zinc-50 transition-colors"><div className="flex items-center gap-4"><span className="text-[10px] font-black text-zinc-300 w-4">#{idx + 1}</span><span className="text-[11px] font-black text-zinc-700 tracking-wide uppercase group-hover:text-blue-600">{brand.name}</span></div><span className="text-[10px] font-black text-blue-500/60">{brand.share}</span></div>))}</div>
-                </div>
+                {/* TOP BRAND AWARD DIHAPUS DARI KATALOG BERDASARKAN REQUEST */}
+                
                 <div>
                     <div className="flex items-center gap-3 mb-6">
                         <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
@@ -161,10 +155,9 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                     </div>
                 </div>
                 
-                {/* Perangkat Terbaru Section - Replaced Rentang Harga */}
                 <div>
                     <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#ef4444] mb-8">PERANGKAT TERBARU</h3>
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                         {items.slice(0, 4).map(phone => (
                             <div 
                                 key={phone.id} 
@@ -172,9 +165,9 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                     setSelectedProduct(phone);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
-                                className="flex items-center gap-3 group cursor-pointer border-b border-zinc-50 pb-3 last:border-0"
+                                className="flex items-center gap-4 group cursor-pointer border-b border-zinc-50 pb-2 last:border-0"
                             >
-                                <div className="w-12 h-12 bg-white border border-zinc-100 p-1 flex items-center justify-center rounded-sm flex-shrink-0 group-hover:border-red-600 transition-colors shadow-sm">
+                                <div className="w-14 h-14 bg-white border border-zinc-100 p-1 flex items-center justify-center rounded-sm flex-shrink-0 group-hover:border-red-600 transition-colors shadow-sm">
                                     <img src={phone.image_url} alt="" className="max-w-full max-h-full object-contain mix-blend-multiply" />
                                 </div>
                                 <div className="flex flex-col min-w-0">
@@ -209,7 +202,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                 <div className="mb-6">
                                     <div className="flex items-center gap-3 mb-2">
                                         <div className="text-[10px] font-black text-red-600 uppercase tracking-[0.2em] leading-none">{selectedProduct.brand} Official</div>
-                                        <div className="bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter leading-none">{selectedProduct.release_status}</div>
+                                        <div className="bg-emerald-50 text-white text-[8px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter leading-none">{selectedProduct.release_status}</div>
                                     </div>
                                     <h1 className="text-2xl lg:text-4xl font-black text-zinc-900 uppercase tracking-tighter leading-none mb-3 truncate">{selectedProduct.model_name}</h1>
                                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 py-4 mb-6 border-y border-zinc-100">
