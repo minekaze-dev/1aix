@@ -89,7 +89,7 @@ const Header: React.FC<HeaderProps> = ({
                     <img 
                         src="https://i.imgur.com/8LtVd3P.jpg" 
                         alt="1AIX Logo" 
-                        className="h-[36px] lg:h-16 w-auto object-contain brightness-110"
+                        className="h-8 lg:h-12 w-auto object-contain brightness-110"
                     />
                 </div>
 

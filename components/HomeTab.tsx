@@ -269,20 +269,20 @@ const HomeTab: React.FC<HomeTabProps> = ({
 
             {/* Perangkat Terbaru Section */}
             <div>
-                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#ef4444] mb-8">PERANGKAT TERBARU</h3>
-                <div className="space-y-2">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#ef4444] mb-6">PERANGKAT BARU MASUK</h3>
+                <div className="space-y-1.5">
                     {smartphones.slice(0, 4).map(phone => (
                         <div 
                             key={phone.id} 
                             onClick={() => onProductSelect?.(phone)}
                             className="flex items-center gap-4 group cursor-pointer border-b border-zinc-50 pb-2 last:border-0"
                         >
-                            <div className="w-14 h-14 bg-white border border-zinc-100 p-1 flex items-center justify-center rounded-sm flex-shrink-0 group-hover:border-red-600 transition-colors shadow-sm">
+                            <div className="w-20 h-20 bg-white border border-zinc-100 p-2 flex items-center justify-center rounded-sm flex-shrink-0 group-hover:border-red-600 transition-colors shadow-sm">
                                 <img src={phone.image_url} alt="" className="max-w-full max-h-full object-contain mix-blend-multiply" />
                             </div>
                             <div className="flex flex-col min-w-0">
-                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.2em] leading-none mb-1">{phone.brand}</span>
-                                <h4 className="text-[10px] font-black text-zinc-800 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors truncate">{phone.model_name}</h4>
+                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] leading-none mb-1">{phone.brand}</span>
+                                <h4 className="text-[12px] font-black text-zinc-800 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">{phone.model_name}</h4>
                             </div>
                         </div>
                     ))}

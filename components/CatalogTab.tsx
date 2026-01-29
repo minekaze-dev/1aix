@@ -141,8 +141,6 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
     return (
         <div className="flex flex-col lg:flex-row gap-8">
             <aside className="hidden lg:block w-[240px] flex-shrink-0 space-y-10">
-                {/* TOP BRAND AWARD DIHAPUS DARI KATALOG BERDASARKAN REQUEST */}
-                
                 <div>
                     <div className="flex items-center gap-3 mb-6">
                         <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
@@ -156,8 +154,8 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                 </div>
                 
                 <div>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#ef4444] mb-8">PERANGKAT TERBARU</h3>
-                    <div className="space-y-2">
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#ef4444] mb-6">PERANGKAT BARU MASUK</h3>
+                    <div className="space-y-1.5">
                         {items.slice(0, 4).map(phone => (
                             <div 
                                 key={phone.id} 
@@ -167,12 +165,12 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                 }}
                                 className="flex items-center gap-4 group cursor-pointer border-b border-zinc-50 pb-2 last:border-0"
                             >
-                                <div className="w-14 h-14 bg-white border border-zinc-100 p-1 flex items-center justify-center rounded-sm flex-shrink-0 group-hover:border-red-600 transition-colors shadow-sm">
+                                <div className="w-20 h-20 bg-white border border-zinc-100 p-2 flex items-center justify-center rounded-sm flex-shrink-0 group-hover:border-red-600 transition-colors shadow-sm">
                                     <img src={phone.image_url} alt="" className="max-w-full max-h-full object-contain mix-blend-multiply" />
                                 </div>
                                 <div className="flex flex-col min-w-0">
-                                    <span className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.2em] leading-none mb-1">{phone.brand}</span>
-                                    <h4 className="text-[10px] font-black text-zinc-800 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors truncate">{phone.model_name}</h4>
+                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] leading-none mb-1">{phone.brand}</span>
+                                    <h4 className="text-[12px] font-black text-zinc-800 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">{phone.model_name}</h4>
                                 </div>
                             </div>
                         ))}
