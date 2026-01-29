@@ -120,13 +120,21 @@ const HomeTab: React.FC<HomeTabProps> = ({
             const slug = viewArticle.permalink.replace(/^\//, '');
             window.location.hash = `#${slug}`;
             const startTime = Date.now();
+            const articleId = viewArticle.id; // Capture ID for closure consistency
+
             return () => {
                 const duration = (Date.now() - startTime) / 1000;
                 if (duration > 3) {
-                    supabase.from('site_analytics').insert([{
-                        event_type: 'reading_time',
-                        value: Math.min(duration / 60, 15)
-                    }]).then();
+                    // Logic: Only log reading_time once per article per device per day
+                    const today = new Date().toDateString();
+                    const logKey = `1AIX_ART_LOG_${articleId}`;
+                    if (localStorage.getItem(logKey) !== today) {
+                        supabase.from('site_analytics').insert([{
+                            event_type: 'reading_time',
+                            value: Math.min(duration / 60, 15)
+                        }]).then();
+                        localStorage.setItem(logKey, today);
+                    }
                 }
             };
         }

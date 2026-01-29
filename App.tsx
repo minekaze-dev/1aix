@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import type { Smartphone, Brand, Article, AdConfig } from './types';
 import Header from './components/Header';
@@ -194,7 +193,13 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    supabase.from('site_analytics').insert([{ event_type: 'page_view', value: 1 }]).then();
+    // Logic: Only count page_view once per device per day
+    const today = new Date().toDateString();
+    const lastVisitLog = localStorage.getItem('1AIX_LAST_VISIT_LOG');
+    if (lastVisitLog !== today) {
+      supabase.from('site_analytics').insert([{ event_type: 'page_view', value: 1 }]).then();
+      localStorage.setItem('1AIX_LAST_VISIT_LOG', today);
+    }
   }, []);
 
   useEffect(() => {
