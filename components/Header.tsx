@@ -75,7 +75,7 @@ const Header: React.FC<HeaderProps> = ({
     const showDropdown = isSearchFocused && (filteredPhones.length > 0 || filteredArticles.length > 0);
 
     return (
-        <header className="w-full max-w-[1000px] flex flex-col shadow-xl z-50">
+        <header className="w-full max-w-[1000px] flex flex-col shadow-xl z-50 sticky top-0 lg:relative">
             {/* Top Header - Black Section */}
             <div className="bg-[#0b0b0b] text-white h-12 lg:h-16 flex items-center justify-between pl-4 lg:pl-6 pr-0 relative transition-all">
                 {/* Logo Section - Left Aligned */}
