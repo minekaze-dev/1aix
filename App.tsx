@@ -415,7 +415,7 @@ export default function App() {
         </div>
       </div>
 
-      <div className="w-full max-w-[1000px] mt-px">
+      <div className="w-full max-w-[1000px] mt-px hidden lg:block">
         {headerAd?.image_url ? (
           <a href={headerAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full overflow-hidden">
             <img src={headerAd.image_url} alt="Promo" className="w-full h-auto max-h-[120px] object-cover" />
