@@ -92,7 +92,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
   ];
 
   const handleExitPanel = () => {
-    window.location.hash = '#/home';
+    window.location.hash = ''; // Navigates to root URL
   };
 
   const handleCreateArticle = () => { setEditingArticle(null); setIsEditingArticle(true); };
