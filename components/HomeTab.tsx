@@ -3,7 +3,7 @@ import { TOP_BRANDS } from '../constants';
 import type { Session } from '@supabase/supabase-js';
 import type { Article, Comment, AdConfig, Smartphone } from '../types';
 import { supabase } from '../lib/supabase';
-import { HashtagIcon, ChatAlt2Icon } from './icons'; // Import ChatAlt2Icon
+import { ChatAlt2Icon } from './icons'; // Removed HashtagIcon as it's no longer used
 
 interface HomeTabProps {
     onOpenLogin?: () => void;
@@ -184,26 +184,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
     
     const trendingArticles = articles.slice(0, 3); // Already set to 3, no change needed for count.
 
-    const popularTags = useMemo(() => {
-        const tagCounts: { [key: string]: number } = {};
-        articles.forEach(article => {
-            if (article.tags) {
-                // Split by spaces, filter out empty strings, remove '#'
-                const tags = article.tags.split(/\s+/)
-                                    .filter(tag => tag.trim() !== '')
-                                    .map(tag => tag.replace(/^#/, '').toLowerCase());
-                tags.forEach(tag => {
-                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-                });
-            }
-        });
-
-        return Object.entries(tagCounts)
-                     .map(([tag, count]) => ({ tag, count }))
-                     .sort((a, b) => b.count - a.count)
-                     .slice(0, 6); // Top 6 popular tags
-    }, [articles]);
-
     const handleBackToHome = () => {
         setViewArticle(null);
         window.location.hash = '#/home';
@@ -316,28 +296,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                 </div>
                             </div>
                         ))}
-                    </div>
-                </div>
-
-                {/* Populer Tag Section */}
-                <div>
-                    <div className="flex items-center gap-3 mb-6">
-                        <HashtagIcon className="w-5 h-5 text-blue-600" strokeWidth="2.5" /> {/* Updated Icon color */}
-                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">POPULER TAG</h3>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {popularTags.map(({ tag }) => (
-                            <button
-                                key={tag}
-                                onClick={() => onSetArticleFilterQuery?.(tag)} // Use local setter
-                                className="px-3 py-1.5 bg-blue-500/10 text-blue-600 text-[10px] font-black uppercase tracking-wider rounded-full hover:bg-blue-500/30 transition-colors border border-blue-500/20"
-                            >
-                                #{tag}
-                            </button>
-                        ))}
-                        {popularTags.length === 0 && (
-                            <p className="text-[10px] font-bold text-zinc-400 uppercase italic">Tidak ada tag populer.</p>
-                        )}
                     </div>
                 </div>
 
