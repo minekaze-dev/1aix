@@ -40,7 +40,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                     }
                 });
                 if (error) throw error;
-                setMessage('Pendaftaran berhasil! Silakan cek email Anda untuk konfirmasi.');
+                setMessage('Pendaftaran berhasil! Silahkan cek email Anda untuk konfirmasi.');
                 setView('message');
             } else if (view === 'forgot_password') {
                 const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -172,7 +172,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                                 </div>
                             </form>
 
-                             <div className="mt-10 text-[9px] font-black text-center text-zinc-400 uppercase tracking-widest space-y-2">
+                             <div className="mt-10 text-[10px] font-black text-center text-zinc-400 uppercase tracking-widest space-y-2">
                                 {isLogin && (
                                     <p>BELUM PUNYA AKUN? <button onClick={() => setView('register')} className="text-red-600 hover:underline">DAFTAR SEKARANG</button></p>
                                 )}
