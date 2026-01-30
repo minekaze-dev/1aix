@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { TOP_BRANDS } from '../constants';
 import type { Session } from '@supabase/supabase-js';
-import type { Article, Comment, AdConfig } from '../types';
+import type { Article, Comment, AdConfig, Smartphone } from '../types';
 import { supabase } from '../lib/supabase';
 import { HashtagIcon, ChatAlt2Icon } from './icons'; // Import ChatAlt2Icon
 
@@ -16,6 +16,8 @@ interface HomeTabProps {
     onClearTarget?: () => void;
     articleAd?: AdConfig; // Ad inside article content
     sidebarAd?: AdConfig; // Ad for global sidebar
+    smartphones?: Smartphone[];
+    onProductSelect?: (phone: Smartphone) => void;
 }
 
 const HomeTab: React.FC<HomeTabProps> = ({ 
@@ -28,7 +30,9 @@ const HomeTab: React.FC<HomeTabProps> = ({
     initialArticle, 
     onClearTarget,
     articleAd,
-    sidebarAd
+    sidebarAd,
+    smartphones = [],
+    onProductSelect
 }) => {
     const [viewArticle, setViewArticle] = useState<Article | null>(null);
     const [articles, setArticles] = useState<Article[]>([]);
@@ -175,8 +179,8 @@ const HomeTab: React.FC<HomeTabProps> = ({
         );
     }, [articles, articleFilterQuery, globalSearchQuery]);
 
-    const heroArticles = filteredArticles.slice(0, 2);
-    const articlesAfterHero = filteredArticles.slice(2); // All articles after the first two hero articles
+    const heroArticles = filteredArticles.slice(0, 3);
+    const articlesAfterHero = filteredArticles.slice(3); // All articles after the first three hero articles
     
     const trendingArticles = articles.slice(0, 3); // Already set to 3, no change needed for count.
 
@@ -202,13 +206,54 @@ const HomeTab: React.FC<HomeTabProps> = ({
 
     const handleBackToHome = () => {
         setViewArticle(null);
-        window.location.hash = ''; // Navigates to root URL
+        window.location.hash = '#/home';
         onSetArticleFilterQuery?.(""); // Clear article filter when going back to main list
     };
 
+    // Helper component for Hero Article Items to maintain visual consistency
+    const HeroItem = ({ art, isLarge }: { art: Article, isLarge: boolean }) => {
+        const commentCount = articleCommentCounts[art.id] || 0;
+        return (
+            <div 
+                className={`relative overflow-hidden group cursor-pointer h-full`} 
+                onClick={() => setViewArticle(art)}
+            >
+                <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
+                
+                {/* Image Overlay Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+                
+                {/* Top Info Bar */}
+                <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
+                    <div className="flex items-center gap-1.5 text-white text-[10px] font-black uppercase tracking-widest drop-shadow-md">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                        <span>{art.publish_date}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-white text-[10px] font-black drop-shadow-md">
+                        <ChatAlt2Icon className="w-4 h-4" strokeWidth={2.5} />
+                        <span>{commentCount}</span>
+                    </div>
+                </div>
+
+                {/* Bottom Content */}
+                <div className="absolute bottom-6 left-6 right-6">
+                    <div className="flex gap-2 mb-2">
+                        {(art.categories || []).slice(0, 2).map(cat => (
+                            <span key={cat} className="text-[9px] font-black bg-red-600 text-white px-1.5 py-0.5 uppercase tracking-widest rounded-sm">{cat}</span>
+                        ))}
+                    </div>
+                    <h2 className={`${isLarge ? 'text-2xl md:text-3xl' : 'text-base md:text-lg'} font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors drop-shadow-lg`}>
+                        {art.title}
+                    </h2>
+                </div>
+            </div>
+        );
+    };
+
     return (
-        <div className="flex gap-8 animate-in fade-in duration-700">
-            <aside className="w-[240px] flex-shrink-0 space-y-10">
+        <div className="flex lg:gap-8 gap-0 animate-in fade-in duration-700">
+            {/* Sidebar disembunyikan di mobile (hidden) dan hanya tampil di desktop (lg:block) */}
+            <aside className="hidden lg:block w-[240px] flex-shrink-0 space-y-10">
                 <div>
                     <div className="flex items-center gap-3 mb-1">
                         <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
@@ -229,7 +274,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
                 <div>
                     <div className="flex items-center gap-3 mb-6">
                         <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">TRENDING NEWS</h3>
+                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">TRENDING ARTIKEL</h3>
                     </div>
                     <div className="space-y-4">
                         {trendingArticles.map((art, idx) => (
@@ -243,6 +288,31 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                     <h4 className="text-[11px] font-black text-zinc-700 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors line-clamp-2 italic">
                                         {art.title}
                                     </h4>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Perangkat Baru Masuk Section */}
+                <div>
+                    <div className="flex items-center gap-3 mb-6">
+                         <svg className="w-5 h-5 text-[#ef4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><rect x="4" y="4" width="6" height="6" /><rect x="14" y="4" width="6" height="6" /><rect x="4" y="14" width="6" height="6" /><rect x="14" y="14" width="6" height="6" /></svg>
+                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">PERANGKAT BARU</h3>
+                    </div>
+                    <div className="space-y-3">
+                        {smartphones.slice(0, 4).map(phone => (
+                            <div 
+                                key={phone.id} 
+                                onClick={() => onProductSelect?.(phone)}
+                                className="flex items-center gap-4 group cursor-pointer border-b border-zinc-50 pb-2 last:border-0"
+                            >
+                                <div className="w-16 h-16 bg-white border border-zinc-100 p-2 flex items-center justify-center rounded-sm flex-shrink-0 group-hover:border-red-600 transition-colors shadow-sm">
+                                    <img src={phone.image_url} alt="" className="max-w-full max-h-full object-contain mix-blend-multiply" />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.2em] leading-none mb-1">{phone.brand}</span>
+                                    <h4 className="text-[11px] font-black text-zinc-800 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">{phone.model_name}</h4>
                                 </div>
                             </div>
                         ))}
@@ -292,7 +362,8 @@ const HomeTab: React.FC<HomeTabProps> = ({
                 </div>
             </aside>
 
-            <div className="flex-grow">
+            {/* Kolom Artikel - Mengambil lebar penuh di mobile karena aside di-hidden */}
+            <div className="flex-grow w-full">
                 {viewArticle ? (
                     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                         <button onClick={handleBackToHome} className="mb-8 flex items-center gap-2 text-[10px] font-black text-zinc-400 uppercase tracking-widest hover:text-red-600 transition-colors group"><svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>KEMBALI KE BERANDA</button>
@@ -385,39 +456,44 @@ const HomeTab: React.FC<HomeTabProps> = ({
                     <div className="space-y-8 animate-in fade-in duration-700">
                         {loading ? <div className="text-center py-20 font-black text-zinc-200 animate-pulse uppercase tracking-[0.5em]">Loading News...</div> : (
                             <>
-                                {/* Hero Articles */}
-                                {heroArticles.length > 0 && (
-                                    <div className="grid grid-cols-2 gap-px border border-zinc-200 rounded overflow-hidden shadow-sm">
-                                        {heroArticles.map((art) => (
-                                            <div key={art.id} className="relative h-[360px] overflow-hidden group cursor-pointer border-l border-zinc-200" onClick={() => setViewArticle(art)}>
-                                                <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                                                <div className="absolute bottom-6 left-6 right-6">
-                                                    <div className="flex gap-2 mb-2">
-                                                        {(art.categories || []).map(cat => (
-                                                            <span key={cat} className="text-[8px] font-black bg-red-600 text-white px-1.5 py-0.5 uppercase tracking-widest rounded-sm">{cat}</span>
-                                                        ))}
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-zinc-400 text-[9px] font-bold uppercase mb-1">
-                                                        <span>{art.publish_date}</span>
-                                                        <span className="text-white/30">•</span>
-                                                        <ChatAlt2Icon className="w-3 h-3 text-zinc-400" strokeWidth={2} />
-                                                        <span>{articleCommentCounts[art.id] || 0}</span>
-                                                    </div>
-                                                    <h2 className="text-2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors">{art.title}</h2>
-                                                </div>
+                                {/* New 3-Item Hero Grid Layout (1 Besar + 2 Kecil) */}
+                                {heroArticles.length >= 3 && (
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-px border border-zinc-200 rounded overflow-hidden shadow-sm">
+                                        {/* Main Featured Article (Left - spans 2 cols on desktop) */}
+                                        <div className="lg:col-span-2 h-[450px] border-r border-zinc-200">
+                                            <HeroItem art={heroArticles[0]} isLarge={true} />
+                                        </div>
+                                        
+                                        {/* Secondary Articles (Right column - 2 stacked) */}
+                                        <div className="flex flex-col h-[450px]">
+                                            <div className="flex-1 border-b border-zinc-200">
+                                                <HeroItem art={heroArticles[1]} isLarge={false} />
+                                            </div>
+                                            <div className="flex-1">
+                                                <HeroItem art={heroArticles[2]} isLarge={false} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Fallback for fewer than 3 items (original grid) */}
+                                {heroArticles.length > 0 && heroArticles.length < 3 && (
+                                    <div className={`grid grid-cols-${heroArticles.length} gap-px border border-zinc-200 rounded overflow-hidden shadow-sm`}>
+                                        {heroArticles.map(art => (
+                                            <div key={art.id} className="h-[360px]">
+                                                <HeroItem art={art} isLarge={heroArticles.length === 1} />
                                             </div>
                                         ))}
                                     </div>
                                 )}
 
-                                {/* Combined Recent and Past Articles */}
+                                {/* Combined Recent and Past Articles - MERAPATKAN JARAK */}
                                 {articlesAfterHero.length > 0 && (
                                     <div className="pt-4">
-                                        <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-6 italic">Rekomendasi Lainnya</h3> {/* Single heading for combined list */}
-                                        <div className="grid grid-cols-1 gap-4">
+                                        <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-4 italic">Rekomendasi Lainnya</h3>
+                                        <div className="grid grid-cols-1 gap-1"> {/* Dikurangi gap-4 jadi gap-1 */}
                                             {articlesAfterHero.slice(0, visibleArticlesAfterHero).map(art => (
-                                                <div key={art.id} className="flex gap-5 group cursor-pointer border-b border-zinc-100 pb-4 last:border-0" onClick={() => setViewArticle(art)}>
+                                                <div key={art.id} className="flex gap-4 group cursor-pointer border-b border-zinc-100 py-3 last:border-0" onClick={() => setViewArticle(art)}>
                                                     <div className="w-40 h-24 flex-shrink-0 overflow-hidden bg-zinc-100 rounded-sm">
                                                         <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="" />
                                                     </div>
@@ -430,13 +506,12 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                                         <h4 className="text-base font-black text-zinc-900 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
                                                             {art.title}
                                                         </h4>
-                                                        {/* Added summary here */}
                                                         {art.summary && (
-                                                            <p className="text-sm font-bold text-zinc-500 leading-relaxed mt-1 line-clamp-1">
+                                                            <p className="text-xs font-bold text-zinc-500 leading-relaxed mt-1 line-clamp-1">
                                                                 {art.summary}
                                                             </p>
                                                         )}
-                                                        <div className="flex items-center gap-2 text-sm font-bold text-zinc-400 uppercase mt-2">
+                                                        <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase mt-2">
                                                             <span>{art.publish_date}</span>
                                                             <span className="text-zinc-300">•</span>
                                                             <ChatAlt2Icon className="w-3.5 h-3.5 text-zinc-400" strokeWidth={2} />

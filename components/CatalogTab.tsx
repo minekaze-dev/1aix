@@ -165,7 +165,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                 <div>
                     <div className="flex items-center gap-3 mb-6">
                         <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">TRENDING NEWS</h3>
+                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">TRENDING ARTIKEL</h3>
                     </div>
                     <div className="space-y-4">
                         {sidebarArticles.map((art, idx) => (
@@ -259,7 +259,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <a href={selectedProduct.official_store_link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center py-3 bg-zinc-900 text-white font-black uppercase text-[9px] tracking-widest hover:bg-red-600 transition-colors rounded-sm shadow-md">OFFICIAL STORE</a>
+                                        <div className="flex items-center justify-center py-3 bg-zinc-900 text-white font-black uppercase text-[9px] tracking-widest rounded-sm shadow-md cursor-default">SPESIFIKASI</div>
                                         <button onClick={() => onCompareProduct?.(selectedProduct.id)} className="flex items-center justify-center py-3 bg-blue-600 text-white font-black uppercase text-[9px] tracking-widest hover:bg-blue-700 transition-colors rounded-sm shadow-md">COMPARE</button>
                                     </div>
                                 </div>
