@@ -182,7 +182,16 @@ const HomeTab: React.FC<HomeTabProps> = ({
     const heroArticles = filteredArticles.slice(0, 3);
     const articlesAfterHero = filteredArticles.slice(3); // All articles after the first three hero articles
     
-    const trendingArticles = articles.slice(0, 3); // Already set to 3, no change needed for count.
+    // LOGIKA TRENDING: Diurutkan berdasarkan jumlah komentar (aktivitas/akses)
+    const trendingArticles = useMemo(() => {
+        return [...articles].sort((a, b) => {
+            const countA = articleCommentCounts[a.id] || 0;
+            const countB = articleCommentCounts[b.id] || 0;
+            if (countB !== countA) return countB - countA;
+            // Jika jumlah komentar sama, urutkan berdasarkan tanggal terbaru
+            return new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime();
+        }).slice(0, 3);
+    }, [articles, articleCommentCounts]);
 
     const handleBackToHome = () => {
         setViewArticle(null);

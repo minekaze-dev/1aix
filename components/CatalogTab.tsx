@@ -70,7 +70,6 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
     const [guestNotify, setGuestNotify] = useState(false);
 
     const fetchRatings = async () => {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
         const { data, error } = await supabase.from('ratings').select('*');
         if (!error && data) {
             const mapped = data.reduce((acc: any, curr: any) => {
@@ -82,8 +81,33 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
     };
 
     const fetchSidebarArticles = async () => {
-        const { data, error } = await supabase.from('articles').select('*').eq('status', 'PUBLISHED').order('publish_date', { ascending: false }).limit(3);
-        if (!error && data) setSidebarArticles(data);
+        // Fetch published articles
+        const { data: articles, error: artError } = await supabase
+            .from('articles')
+            .select('*')
+            .eq('status', 'PUBLISHED');
+
+        // Fetch comment counts for popularity ranking
+        const { data: comments, error: commError } = await supabase
+            .from('comments')
+            .select('target_id');
+
+        if (!artError && articles) {
+            const counts: Record<string, number> = {};
+            if (!commError && comments) {
+                comments.forEach(c => { if (c.target_id) counts[c.target_id] = (counts[c.target_id] || 0) + 1; });
+            }
+
+            // Sort based on interaction (comment count) then date
+            const trending = [...articles].sort((a, b) => {
+                const cA = counts[a.id] || 0;
+                const cB = counts[b.id] || 0;
+                if (cB !== cA) return cB - cA;
+                return new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime();
+            }).slice(0, 3);
+
+            setSidebarArticles(trending);
+        }
     };
 
     useEffect(() => {
