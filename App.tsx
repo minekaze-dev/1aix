@@ -553,6 +553,12 @@ export default function App() {
         .animate-marquee { animation: marquee 40s linear infinite; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Fix for double password reveal icon in browsers like Edge */
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none;
+        }
       `}</style>
     </div>
   );

@@ -415,9 +415,9 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                 {articlesAfterHero.length > 0 && (
                                     <div className="pt-4">
                                         <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-6 italic">Rekomendasi Lainnya</h3> {/* Single heading for combined list */}
-                                        <div className="grid grid-cols-1 gap-6">
+                                        <div className="grid grid-cols-1 gap-4">
                                             {articlesAfterHero.slice(0, visibleArticlesAfterHero).map(art => (
-                                                <div key={art.id} className="flex gap-6 group cursor-pointer border-b border-zinc-100 pb-6 last:border-0" onClick={() => setViewArticle(art)}>
+                                                <div key={art.id} className="flex gap-5 group cursor-pointer border-b border-zinc-100 pb-4 last:border-0" onClick={() => setViewArticle(art)}>
                                                     <div className="w-40 h-24 flex-shrink-0 overflow-hidden bg-zinc-100 rounded-sm">
                                                         <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="" />
                                                     </div>

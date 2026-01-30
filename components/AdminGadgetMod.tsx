@@ -10,13 +10,11 @@ interface AdminGadgetModProps {
 
 const CATEGORIES: MarketCategory[] = ["Entry-level", "Mid-range", "Flagship"];
 
-// FIX: Added explicit interface for FormSectionProps and used React.FC
 interface FormSectionProps {
   title: string;
   children: React.ReactNode;
 }
 
-// FIX: Updated FormSection to be a React.FC
 const FormSection: React.FC<FormSectionProps> = ({ title, children }) => (
   <div className="space-y-6 pt-6 first:pt-0">
       <h3 className="text-[11px] font-black text-red-600 uppercase tracking-[0.3em] border-l-4 border-red-600 pl-4 mb-4">{title}</h3>
@@ -45,14 +43,13 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     release_month: 'Januari',
     release_year: new Date().getFullYear().toString(),
     launch_date_indo: new Date().toISOString().split('T')[0],
-    tkdn_score: 0, // Set default to 0 for number input
-    order_rank: 0, // Set default to 0 for number input
+    tkdn_score: 0,
+    order_rank: 0,
     chipset: '',
     ram_storage: '',
-    price_srp: 0, // Set default to 0 for number input
+    price_srp: 0,
     image_url: '',
     official_store_link: '',
-    // Technical Fields
     dimensions_weight: '',
     material: '',
     colors: '',
@@ -89,10 +86,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
   const fetchSmartphones = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('smartphones')
-        .select('*');
-      
+      const { data, error } = await supabase.from('smartphones').select('*');
       if (error) throw error;
       setSmartphones(sortPhones(data || []));
       setIsDirty(false);
@@ -129,17 +123,59 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     if (!formData.model_name || !formData.brand) { alert("Masukkan Nama Brand dan Model terlebih dahulu!"); return; }
     setIsAiLoading(true);
     try {
-      // FIX: Corrected the prompt and configuration for Gemini API call
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const prompt = `You are a world-class smartphone database expert. Fetch and provide technical specifications for: "${formData.brand} ${formData.model_name}".
+
+DATA SOURCING REQUIREMENTS:
+1. Search across Official Brand Websites and GSMArena (https://www.gsmarena.com).
+2. Information MUST be accurate and current up to January 2026 and beyond.
+3. Focus strictly on the Indonesian Market Variant (chipset, price, launch date).
+
+STRICT INTEGRITY RULES:
+1. NO PLACEHOLDERS: Absolutely NO "TBA", NO "Estimasi", NO "Estimated", NO "N/A", NO empty strings.
+2. REAL DATA ONLY: Every field in the JSON MUST be filled with actual technical values found from verified sources.
+3. ACCURATE RELEASE: "release_month" and "release_year" MUST be the official Indonesian launch dates. Use Indonesian month names (e.g., Januari, Februari, Maret, etc.).
+4. PRICING: "price_srp" must be the official Indonesian Suggested Retail Price (IDR) as an integer.
+5. TKDN: "tkdn_score" must be the official certified score (number).
+
+RETURN ONLY RAW JSON:
+{
+  "market_category": "Flagship" | "Mid-range" | "Entry-level",
+  "release_month": "string (Indonesian name, e.g., 'Januari')",
+  "release_year": "string (e.g., '2026')",
+  "chipset": "string (e.g., 'Snapdragon 8 Elite (3nm)')",
+  "ram_storage": "string (e.g., '12GB LPDDR5X / 256GB UFS 4.0')",
+  "dimensions_weight": "string",
+  "material": "string",
+  "colors": "string",
+  "network": "string",
+  "wifi": "string",
+  "display_type": "string",
+  "os": "string (e.g., 'Android 16, One UI 8')",
+  "cpu": "string",
+  "gpu": "string",
+  "camera_main": "string",
+  "camera_video_main": "string",
+  "camera_selfie": "string",
+  "camera_video_selfie": "string",
+  "battery_capacity": "string",
+  "charging": "string",
+  "sensors": "string",
+  "usb_type": "string",
+  "audio": "string",
+  "features_extra": "string",
+  "tkdn_score": number,
+  "price_srp": number
+}`;
+
       const response = await ai.models.generateContent({ 
-        model: 'gemini-3-flash-preview', // Using a recommended model
-        contents: [{text: `Generate complete technical specifications for the smartphone "${formData.brand} ${formData.model_name}".
-      Prioritize official information from the brand's Indonesian website, then GSM Arena, and finally other reliable tech sources.
-      Ensure all specifications are relevant to the **Indonesian market (official version)**.
-      Return a STRICT JSON object with these keys:
-      market_category (Flagship/Mid-range/Entry-level), release_month (in Indonesian, e.g., 'Januari'), release_year, chipset, ram_storage, dimensions_weight, material, colors, network, wifi, display_type, os, cpu, gpu, camera_main, camera_video_main, camera_selfie, camera_video_selfie, battery_capacity, charging, sensors, usb_type, audio, features_extra, tkdn_score (number, estimate if official data isn't widely available, but prefer actual), price_srp (number, in IDR, prefer official launch price).
-      Double-check the accuracy of specifications, especially for the Indonesian variant.`}], 
-        config: { responseMimeType: "application/json" } 
+        model: 'gemini-3-pro-preview',
+        contents: [{text: prompt}], 
+        config: { 
+          responseMimeType: "application/json",
+          // Fix: Gemini 3 Pro requires thinkingBudget > 0.
+          thinkingConfig: { thinkingBudget: 32768 }
+        } 
       });
       
       const aiData = JSON.parse(response.text || '{}');
@@ -159,7 +195,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
         if (error) throw error;
         fetchSmartphones(true);
         if (onDataChange) onDataChange();
-    } catch (err: any) { // Catching any error type for better message display
+    } catch (err: any) { 
       alert("Gagal menghapus: " + err.message);
     }
   };
@@ -193,12 +229,11 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
             .eq('id', phone.id);
       });
 
-      // Use Promise.allSettled to see individual results, but Promise.all is fine for "all or nothing" logic
       await Promise.all(updates);
       alert("URUTAN BERHASIL DISIMPAN!");
       setIsDirty(false);
       if (onDataChange) onDataChange();
-    } catch (err: any) { // Catching any error type for better message display
+    } catch (err: any) {
       alert("Gagal menyimpan urutan: " + err.message);
     } finally {
       setIsSavingOrder(false);
@@ -209,7 +244,6 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-        // Ensure price_srp and tkdn_score are numbers or 0, not NaN or null
         const submissionData = {
           ...formData,
           price_srp: isNaN(Number(formData.price_srp)) ? 0 : Number(formData.price_srp),
@@ -222,7 +256,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
             if (error) throw error;
             alert("Berhasil diperbarui!");
         } else {
-            const { id, ...payload } = submissionData; // 'id' might be undefined for new items, which is fine as DB generates UUID
+            const { id, ...payload } = submissionData;
             const { error } = await supabase.from('smartphones').insert([payload]);
             if (error) throw error;
             alert("Berhasil ditambahkan ke katalog!");
@@ -237,13 +271,10 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
   };
 
   const FormInput = ({ label, value, onChange, type = "text", placeholder = "", name }: { label: string, value: any, onChange: (val: any) => void, type?: string, placeholder?: string, name: string }) => {
-    // State lokal hanya untuk input numerik agar tidak "loncat"
-    // Inisialisasi dengan string kosong jika nilai adalah 0 atau null, agar placeholder terlihat.
     const [localNumInputValue, setLocalNumInputValue] = useState(
       type === 'number' ? (value === 0 || value === null ? '' : String(value)) : ''
     );
   
-    // Sinkronkan localNumInputValue dengan prop `value` dari parent ketika prop berubah, hanya untuk number
     useEffect(() => {
       if (type === 'number') {
         setLocalNumInputValue(value === 0 || value === null ? '' : String(value));
@@ -252,19 +283,18 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
   
     const handleNumericInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawVal = e.target.value;
-      setLocalNumInputValue(rawVal); // Selalu update state lokal dengan string mentah
+      setLocalNumInputValue(rawVal);
     };
 
     const handleNumericBlur = () => {
       if (localNumInputValue === '') {
-        onChange(0); // Jika input kosong, set ke 0 di parent
+        onChange(0);
       } else {
         const numVal = Number(localNumInputValue);
-        onChange(isNaN(numVal) ? 0 : numVal); // Jika NaN, kirim 0; jika valid, kirim angka
+        onChange(isNaN(numVal) ? 0 : numVal);
       }
     };
 
-    // Untuk input teks, langsung gunakan nilai parent dan update parent pada setiap perubahan
     const handleTextInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       onChange(e.target.value);
     };
@@ -276,23 +306,23 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
             <input 
                 type="number" 
                 name={name}
-                value={localNumInputValue} // Gunakan state lokal untuk input numerik
+                value={localNumInputValue}
                 onChange={handleNumericInputChange}
-                onBlur={handleNumericBlur} // Kirim nilai ke parent saat input kehilangan fokus
+                onBlur={handleNumericBlur}
                 placeholder={placeholder}
                 className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none focus:border-blue-500 transition-colors"
             />
         </label>
       );
-    } else { // type === "text"
+    } else {
       return (
         <label className="block">
             <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">{label}</span>
             <input 
                 type="text" 
                 name={name}
-                value={value || ''} // Langsung gunakan nilai dari parent untuk input teks
-                onChange={handleTextInputChange} // Update parent langsung pada setiap ketikan
+                value={value || ''}
+                onChange={handleTextInputChange}
                 placeholder={placeholder}
                 className="w-full bg-[#f8fafc] border border-zinc-100 p-4 rounded-sm text-sm font-black uppercase outline-none focus:border-blue-500 transition-colors"
             />
@@ -308,7 +338,7 @@ const AdminGadgetMod: React.FC<AdminGadgetModProps> = ({ onDataChange }) => {
     if (!formData.brand || !formData.model_name) {
       return 'Isi Nama Brand dan Model terlebih dahulu untuk mengaktifkan AI Auto-Fill';
     }
-    return 'Gunakan AI untuk mengisi otomatis spesifikasi';
+    return 'Gunakan AI untuk mengisi otomatis spesifikasi (Update Jan 2026)';
   }, [isAiLoading, formData.brand, formData.model_name]);
 
   return (
