@@ -125,7 +125,7 @@ const Header: React.FC<HeaderProps> = ({
                         className={`flex items-center gap-2 px-2.5 h-full group transition-all relative ${activeTab === 'Bandingkan' ? 'bg-white/5 text-blue-500' : 'text-zinc-400 hover:text-white'}`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
-                        <span className="text-[10px] font-black uppercase tracking-widest">COMPARE</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">COMPARE</span>
                     </button>
 
                     <button 
@@ -133,7 +133,7 @@ const Header: React.FC<HeaderProps> = ({
                         className={`flex items-center gap-2 px-2.5 h-full group transition-all relative ${activeTab === 'Katalog' ? 'bg-white/5 text-white' : 'text-zinc-400 hover:text-white'}`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><rect x="4" y="4" width="6" height="6" /><rect x="14" y="4" width="6" height="6" /><rect x="4" y="14" width="6" height="6" /><rect x="14" y="14" width="6" height="6" /></svg>
-                        <span className="text-[10px] font-black uppercase tracking-widest">KATALOG</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">KATALOG</span>
                     </button>
 
                     <button 
@@ -141,7 +141,7 @@ const Header: React.FC<HeaderProps> = ({
                         className={`flex items-center gap-2 px-2.5 h-full group transition-all relative ${activeTab === 'Segera Rilis' ? 'bg-white/5 text-blue-500' : 'text-zinc-400 hover:text-white'}`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <span className="text-[10px] font-black uppercase tracking-widest">TKDN MONITOR</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">TKDN MONITOR</span>
                     </button>
 
                     {/* New Profile Menu - Only for non-admin users */}
@@ -151,7 +151,7 @@ const Header: React.FC<HeaderProps> = ({
                         className={`flex items-center gap-2 px-2.5 h-full group transition-all relative ${activeTab === 'Profil' ? 'bg-white/5 text-red-500' : 'text-blue-400 hover:text-white font-black'}`}
                       >
                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                         <span className="text-[10px] font-black uppercase tracking-widest">HAI, {userName}</span>
+                         <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">HAI, {userName}</span>
                          {activeTab === 'Profil' && <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-red-600"></div>}
                       </button>
                     ) : (
@@ -164,7 +164,7 @@ const Header: React.FC<HeaderProps> = ({
                             className={`flex items-center gap-2 px-2.5 h-full group transition-all relative ${activeTab === 'Admin' ? 'text-red-500' : 'text-zinc-400 hover:text-white'}`}
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                            <span className="text-[10px] font-black uppercase tracking-widest">DASHBOARD</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">DASHBOARD</span>
                         </button>
                     )}
 
@@ -185,9 +185,13 @@ const Header: React.FC<HeaderProps> = ({
                 <div className="flex lg:hidden items-center">
                     <button onClick={() => setIsSearchFocused(!isSearchFocused)} className="p-3 text-zinc-400 hover:text-white"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
                     <button onClick={() => setIsMobileMenuOpen(true)} className="p-3 text-zinc-400 hover:text-white"><svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
-                    {session && (
+                    {session ? (
                         <button onClick={onLogout} className="p-3 text-red-500 hover:text-red-400 active:scale-95 transition-all" title="LOGOUT">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                        </button>
+                    ) : (
+                        <button onClick={onOpenLogin} className="p-3 text-red-500 hover:text-red-400 active:scale-95 transition-all" title="MASUK">
+                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         </button>
                     )}
                 </div>
