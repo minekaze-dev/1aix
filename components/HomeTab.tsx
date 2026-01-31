@@ -292,6 +292,17 @@ const HomeTab: React.FC<HomeTabProps> = ({
         onSetArticleFilterQuery?.("");
     };
 
+    const handleShareArticle = () => {
+        const url = window.location.href;
+        const text = `${viewArticle?.title} - Baca selengkapnya di 1AIX!`;
+        if (navigator.share) {
+            navigator.share({ title: '1AIX News', text, url }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(url);
+            alert("LINK ARTIKEL BERHASIL DISALIN!");
+        }
+    };
+
     const filteredArticles = useMemo(() => {
         const queryToUse = articleFilterQuery || globalSearchQuery;
         if (!queryToUse) return articles;
@@ -409,13 +420,50 @@ const HomeTab: React.FC<HomeTabProps> = ({
                     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                         <button onClick={handleBackToHome} className="mb-8 flex items-center gap-2 text-[10px] font-black text-zinc-400 uppercase tracking-widest hover:text-red-600 transition-colors group"><svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>KEMBALI KE BERANDA</button>
                         <div className="mb-4">
-                            <div className="flex gap-1 mb-3">{viewArticle.categories?.map(cat => <span key={cat} className="text-[10px] font-black text-red-600 border border-red-600 px-2 py-0.5 uppercase tracking-[0.4em]">{cat}</span>)}</div>
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex gap-1">
+                                    {viewArticle.categories?.map(cat => <span key={cat} className="text-[10px] font-black text-red-600 border border-red-600 px-2 py-0.5 uppercase tracking-[0.4em]">{cat}</span>)}
+                                </div>
+                                <button onClick={handleShareArticle} className="p-2 text-zinc-400 hover:text-red-600 transition-colors" title="BAGIKAN ARTIKEL">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                    </svg>
+                                </button>
+                            </div>
                             <h1 className="text-4xl font-black text-zinc-900 uppercase tracking-tighter leading-none mb-6 italic">{viewArticle.title}</h1>
                         </div>
                         <div className="w-full h-80 overflow-hidden rounded-sm mb-10 shadow-lg border border-zinc-100"><img src={viewArticle.cover_image_url} alt="" className="w-full h-full object-cover"/></div>
                         
                         <div className="prose prose-zinc max-w-none text-zinc-800 text-base leading-loose mb-16">
                             <div className="whitespace-pre-wrap article-view-body" dangerouslySetInnerHTML={{ __html: parseMarkdown(viewArticle.content || '') }} />
+                        </div>
+
+                        {/* Social Share Specific Section */}
+                        <div className="flex flex-wrap items-center gap-4 mb-6 pt-6 border-t border-zinc-50">
+                            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">BAGIKAN:</span>
+                            <div className="flex gap-2">
+                                <a 
+                                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} 
+                                    target="_blank" rel="noopener noreferrer" 
+                                    className="px-4 py-2 bg-[#1877f2] text-white text-[9px] font-black uppercase tracking-widest rounded-sm hover:opacity-90 transition-all shadow-sm"
+                                >
+                                    Facebook
+                                </a>
+                                <a 
+                                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(viewArticle.title)}&url=${encodeURIComponent(window.location.href)}`} 
+                                    target="_blank" rel="noopener noreferrer" 
+                                    className="px-4 py-2 bg-[#000000] text-white text-[9px] font-black uppercase tracking-widest rounded-sm hover:opacity-90 transition-all shadow-sm border border-zinc-800"
+                                >
+                                    X (Twitter)
+                                </a>
+                                <a 
+                                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(viewArticle.title + ' ' + window.location.href)}`} 
+                                    target="_blank" rel="noopener noreferrer" 
+                                    className="px-4 py-2 bg-[#25d366] text-white text-[9px] font-black uppercase tracking-widest rounded-sm hover:opacity-90 transition-all shadow-sm"
+                                >
+                                    WhatsApp
+                                </a>
+                            </div>
                         </div>
 
                         {/* Hashtag Section */}
