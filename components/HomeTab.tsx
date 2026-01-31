@@ -277,10 +277,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
     };
 
     const handleOpenReply = (commentId: string) => {
-        if (!session) {
-            onOpenLogin?.();
-            return;
-        }
         setReplyingToId(commentId);
         setReplyText(""); 
         setTimeout(() => replyInputRef.current?.focus(), 100);
@@ -395,6 +391,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                 <div className="flex flex-col min-w-0">
                                     <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] leading-none mb-1.5">{phone.brand}</span>
                                     <h4 className="text-[12px] font-black text-zinc-800 uppercase tracking-tighter leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">{phone.model_name}</h4>
+                                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest mt-1">{phone.release_month} {phone.release_year}</span>
                                 </div>
                             </div>
                         ))}
@@ -478,7 +475,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
                             </div>
                         )}
 
-                        <div className="w-full mb-16">
+                        <div className="hidden lg:block w-full mb-16">
                             {articleAd?.image_url ? (
                                 <a href={articleAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full">
                                     <img src={articleAd.image_url} alt="Promo" className="w-full h-auto rounded shadow-lg border border-zinc-100" />
@@ -500,33 +497,29 @@ const HomeTab: React.FC<HomeTabProps> = ({
                             
                             {/* Kotak Komentar Utama */}
                             <div className="bg-[#f8fafc] border border-zinc-100 p-8 rounded-sm mb-12">
-                                {session ? (
-                                    <div className="flex gap-4">
-                                        <div className="w-12 h-12 rounded-sm bg-red-600 text-white flex items-center justify-center font-black flex-shrink-0 text-xl shadow-lg border border-red-500/20">
-                                            {(session.user.user_metadata?.full_name || session.user.email || 'U').charAt(0).toUpperCase()}
-                                        </div>
-                                        <div className="flex-1 space-y-4">
-                                            <textarea 
-                                                value={newComment} 
-                                                onChange={(e) => setNewComment(e.target.value)} 
-                                                placeholder="Berikan pendapatmu tentang artikel ini..." 
-                                                className="w-full bg-white border border-zinc-100 p-6 rounded-sm text-sm font-bold outline-none focus:border-red-600 transition-all shadow-sm resize-none" 
-                                                rows={3}
-                                            />
-                                            <button 
-                                                onClick={() => handlePostComment(null)} 
-                                                className="px-10 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-600 transition-all rounded-sm shadow-xl active:scale-95"
-                                            >
-                                                KIRIM KOMENTAR
-                                            </button>
-                                        </div>
+                                <div className="flex gap-4">
+                                    <div className="w-12 h-12 rounded-sm bg-red-600 text-white flex items-center justify-center font-black flex-shrink-0 text-xl shadow-lg border border-red-500/20">
+                                        {session 
+                                            ? (session.user.user_metadata?.full_name || session.user.email || 'U').charAt(0).toUpperCase()
+                                            : '?'
+                                        }
                                     </div>
-                                ) : (
-                                    <div className="text-center py-6">
-                                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-6">ANDA HARUS LOGIN TERLEBIH DAHULU UNTUK BERKOMENTAR</p>
-                                        <button onClick={onOpenLogin} className="px-12 py-4 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all rounded-sm shadow-xl">MASUK SEKARANG</button>
+                                    <div className="flex-1 space-y-4">
+                                        <textarea 
+                                            value={newComment} 
+                                            onChange={(e) => setNewComment(e.target.value)} 
+                                            placeholder="Berikan pendapatmu tentang artikel ini..." 
+                                            className="w-full bg-white border border-zinc-100 p-6 rounded-sm text-sm font-bold outline-none focus:border-red-600 transition-all shadow-sm resize-none" 
+                                            rows={3}
+                                        />
+                                        <button 
+                                            onClick={() => handlePostComment(null)} 
+                                            className="px-10 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-600 transition-all rounded-sm shadow-xl active:scale-95"
+                                        >
+                                            KIRIM KOMENTAR
+                                        </button>
                                     </div>
-                                )}
+                                </div>
                             </div>
 
                             {/* Daftar Komentar Threaded */}

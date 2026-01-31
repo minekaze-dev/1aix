@@ -192,6 +192,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                 <div className="flex flex-col min-w-0">
                                     <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] leading-none mb-1.5">{phone.brand}</span>
                                     <h4 className="text-[12px] font-black text-zinc-800 uppercase tracking-tighter leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">{phone.model_name}</h4>
+                                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest mt-1">{phone.release_month} {phone.release_year}</span>
                                 </div>
                             </div>
                         ))}
