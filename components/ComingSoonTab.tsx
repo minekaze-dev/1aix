@@ -64,7 +64,7 @@ const ComingSoonTab: React.FC<ComingSoonTabProps> = ({ items, publishedAiData })
                     <div className="bg-[#0f172a] h-14 flex items-center justify-between px-6">
                         <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">DATABASE PANTAUAN SERTIFIKASI</span>
                         <div className="bg-[#3b82f6] text-white text-[9px] font-black px-3 py-1.5 rounded-sm uppercase tracking-widest shadow-lg">
-                            LIVE FEED V5.8
+                            Updated Desember 2025
                         </div>
                     </div>
 

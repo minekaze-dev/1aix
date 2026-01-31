@@ -144,8 +144,8 @@ const Header: React.FC<HeaderProps> = ({
                         <span className="text-[10px] font-black uppercase tracking-widest">TKDN MONITOR</span>
                     </button>
 
-                    {/* New Profile Menu */}
-                    {session ? (
+                    {/* New Profile Menu - Only for non-admin users */}
+                    {session && !isAdmin ? (
                       <button 
                         onClick={() => window.location.hash = '#/profile'}
                         className={`flex items-center gap-2 px-2.5 h-full group transition-all relative ${activeTab === 'Profil' ? 'bg-white/5 text-red-500' : 'text-blue-400 hover:text-white font-black'}`}
@@ -155,7 +155,7 @@ const Header: React.FC<HeaderProps> = ({
                          {activeTab === 'Profil' && <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-red-600"></div>}
                       </button>
                     ) : (
-                      <div className="h-4 w-px bg-zinc-800 mx-2"></div>
+                      !session && <div className="h-4 w-px bg-zinc-800 mx-2"></div>
                     )}
 
                     {isAdmin && (

@@ -114,21 +114,41 @@ const PolicyPage = () => (
         </div>
         <div className="space-y-6">
             <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
-                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Pengantar</h3>
-                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
-                    Privasi Anda adalah prioritas kami di 1AIX. Dokumen ini menjelaskan bagaimana kami mengumpulkan, menggunakan, dan melindungi informasi Anda saat Anda menggunakan layanan kami. Dengan mengakses atau menggunakan platform kami, Anda menyetujui praktik data yang dijelaskan dalam Kebijakan Privasi ini.
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">1. Pengantar</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed uppercase">
+                    Privasi Anda adalah prioritas utama di 1AIX. Dokumen ini menjelaskan bagaimana kami mengumpulkan, mengelola, dan melindungi data Anda saat menggunakan layanan platform kami, termasuk fitur profil pengguna, sistem diskusi, dan database gadget.
                 </p>
             </div>
+            
             <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
-                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">Informasi yang Kami Kumpulkan</h3>
-                <div className="text-[11px] font-bold text-zinc-500 leading-relaxed space-y-3">
-                    <p>Kami hanya mengumpulkan informasi yang diperlukan untuk menyediakan layanan yang optimal dan meningkatkan pengalaman pengguna:</p>
-                    <ul className="list-disc list-inside space-y-1 pl-4">
-                        <li><b>Data Akun:</b> Saat Anda mendaftar atau login, kami mengumpulkan alamat email dan nama tampilan (display name) Anda. Password Anda disimpan dalam bentuk terenkripsi dan tidak dapat diakses oleh kami.</li>
-                        <li><b>Data Interaksi:</b> Informasi tentang interaksi Anda dengan fitur-fitur platform, seperti komentar yang Anda posting atau artikel yang Anda baca.</li>
-                        <li><b>Data Analitik:</b> Data anonim tentang penggunaan situs web (misalnya, jumlah pengunjung, waktu membaca) untuk analisis kinerja dan peningkatan fitur.</li>
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">2. Informasi yang Kami Kumpulkan</h3>
+                <div className="text-[11px] font-bold text-zinc-500 leading-relaxed space-y-4">
+                    <p className="uppercase">Kami mengumpulkan informasi melalui beberapa cara untuk mengoptimalkan layanan kami:</p>
+                    <ul className="list-disc list-inside space-y-2 pl-4">
+                        <li><b>PROFIL PENGGUNA:</b> Kami menyimpan alamat email, nama tampilan (Display Name), dan preferensi akun Anda. Anda dapat memperbarui nama tampilan Anda kapan saja melalui menu Profil.</li>
+                        <li><b>SISTEM FAVORIT (BOOKMARK):</b> Saat Anda menyimpan gadget atau artikel ke favorit, sistem kami mencatat ID konten tersebut di database kami untuk mempersonalisasi dashboard Profil Anda.</li>
+                        <li><b>DATA INTERAKSI & DISKUSI:</b> Komentar, balasan diskusi, serta penilaian (Like/Dislike) produk yang Anda berikan akan disimpan secara permanen untuk keperluan komunitas dan database referensi.</li>
+                        <li><b>DATA ANALITIK:</b> Informasi anonim seperti jenis perangkat (Mobile/PC), waktu membaca, dan halaman yang dikunjungi dikumpulkan secara berkala untuk meningkatkan performa sistem.</li>
                     </ul>
                 </div>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">3. Keamanan & Penyimpanan Data</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed uppercase">
+                    Seluruh data Anda disimpan menggunakan infrastruktur database terenkripsi yang aman. Kata sandi Anda tidak pernah disimpan dalam bentuk teks biasa dan tidak dapat diakses oleh admin platform. Kami berkomitmen untuk tidak menjual atau menyalahgunakan data pribadi Anda kepada pihak ketiga manapun untuk kepentingan iklan luar.
+                </p>
+            </div>
+
+            <div className="bg-[#f8fafc]/50 p-8 rounded-sm border border-zinc-100 shadow-sm">
+                <h3 className="text-[12px] font-black uppercase tracking-tight text-red-600 leading-tight mb-4">4. Hak Pengguna</h3>
+                <p className="text-[11px] font-bold text-zinc-500 leading-relaxed uppercase">
+                    Anda memiliki kendali penuh atas akun Anda. Anda dapat mengubah profil, menghapus daftar bookmark, atau menghentikan penggunaan layanan kami kapan saja. Untuk permintaan penghapusan akun secara permanen dari database, Anda dapat menghubungi tim redaksi kami.
+                </p>
+            </div>
+            
+            <div className="text-center pt-6">
+                <p className="text-[9px] font-black text-zinc-300 uppercase tracking-widest">Terakhir diperbarui: Januari 2026</p>
             </div>
         </div>
     </div>
@@ -517,7 +537,7 @@ export default function App() {
                 <span className="text-[8px] font-black uppercase tracking-widest">TKDN</span>
             </button>
 
-            {session && (
+            {session && !isAdmin && (
                <button onClick={() => window.location.hash = '#/profile'} className={`flex flex-col items-center gap-1 flex-1 transition-colors ${activeTab === 'Profil' ? 'text-blue-500' : 'text-zinc-500'}`}>
                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                  <span className="text-[8px] font-black uppercase tracking-widest">PROFIL</span>
