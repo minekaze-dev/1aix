@@ -109,19 +109,20 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
         }
     }, [selectedProduct, session]);
 
+    // PENTING: Sinkronisasi state internal dengan prop initialProduct dari parent
     useEffect(() => {
         if (initialProduct) {
             setSelectedProduct(initialProduct);
-            onClearTarget?.();
+            // onClearTarget sengaja tidak dipanggil di sini untuk menghindari loop reset state
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            setSelectedProduct(null);
         }
-    }, [initialProduct, onClearTarget]);
+    }, [initialProduct]);
 
     const handleRating = async (id: string, type: 'like' | 'dislike') => {
         if (!session) {
-            // Tampilkan banner peringatan login alih-alih modal pop-up
             setShowLoginWarning(true);
-            // Sembunyikan otomatis setelah 5 detik jika tidak diklik lagi
             setTimeout(() => setShowLoginWarning(false), 5000);
             return;
         }
@@ -159,10 +160,9 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
     });
 
     const handleProductSelect = (phone: Smartphone) => {
-        setSelectedProduct(phone);
+        // Cukup ubah hash, App.tsx akan mendeteksi perubahan via useEffect
         const slug = phone.model_name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         window.location.hash = `#/katalog/${slug}`;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     return (

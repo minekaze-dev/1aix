@@ -211,6 +211,23 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  // Sync route slug to targetProduct state (Fix for double click)
+  useEffect(() => {
+    if (route.startsWith('katalog/') && smartphones.length > 0) {
+        const parts = route.split('/');
+        if (parts.length > 1) {
+            const modelSlug = parts.slice(1).join('/');
+            const found = smartphones.find(p => p.model_name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === modelSlug);
+            if (found && targetProduct?.id !== found.id) {
+                setTargetProduct(found);
+                setSelectedBrand(found.brand);
+            }
+        }
+    } else if (route === 'katalog' || route === '') {
+        if (targetProduct) setTargetProduct(null);
+    }
+  }, [route, smartphones]);
+
   const isAdmin = useMemo(() => {
     return session?.user?.email === 'admin@1aix.com' || session?.user?.email === 'rifki.mau@gmail.com';
   }, [session]);
@@ -248,23 +265,6 @@ export default function App() {
       if (!adsRes.error && adsRes.data) {
         const adsMap = adsRes.data.reduce((acc, curr) => ({ ...acc, [curr.id.toLowerCase()]: curr }), {});
         setAds(adsMap);
-      }
-
-      const currentHash = window.location.hash.replace(/^#\/?/, '') || '';
-      if (currentHash.startsWith('news/')) {
-        const targetPermalink = '/' + currentHash;
-        const found = allArticles.find(a => a.permalink === targetPermalink);
-        if (found) setTargetArticle(found);
-      } else if (currentHash.startsWith('katalog/')) {
-        const parts = currentHash.split('/');
-        if (parts.length > 1) {
-          const modelSlug = parts.slice(1).join('/');
-          const found = allPhones.find(p => p.model_name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === modelSlug);
-          if (found) {
-            setTargetProduct(found);
-            setSelectedBrand(found.brand);
-          }
-        }
       }
     } catch (err) {
       console.error("Fetch Error:", err);
@@ -339,8 +339,6 @@ export default function App() {
   };
 
   const handleProductSelect = (phone: Smartphone) => {
-    setTargetProduct(phone);
-    setSelectedBrand(phone.brand);
     setSearchQuery(""); 
     setHomeTabArticleFilterQuery(""); 
     const slug = phone.model_name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -388,7 +386,11 @@ export default function App() {
       <Header 
         activeTab={activeTab} 
         selectedBrand={selectedBrand}
-        onSelectBrand={(brand) => { setSelectedBrand(brand); window.location.hash = '#/katalog'; }}
+        onSelectBrand={(brand) => { 
+            setSelectedBrand(brand); 
+            setTargetProduct(null); // PENTING: Reset produk terpilih saat ganti brand
+            window.location.hash = '#/katalog'; 
+        }}
         onGoHome={handleGoHome}
         onGoToCatalog={handleGoToCatalog}
         onGoToCompare={handleGoToCompare}
