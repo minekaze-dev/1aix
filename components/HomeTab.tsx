@@ -317,7 +317,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
 
     return (
         <div className="flex gap-8 animate-in fade-in duration-700">
-            <aside className="w-[240px] flex-shrink-0 space-y-10">
+            <aside className="w-[240px] flex-shrink-0 space-y-10 hidden lg:block">
                 {/* Brand Sidebar */}
                 <div>
                     <div className="flex items-center gap-3 mb-1">
@@ -510,13 +510,29 @@ const HomeTab: React.FC<HomeTabProps> = ({
                         {loading ? <div className="text-center py-20 font-black text-zinc-200 animate-pulse uppercase tracking-[0.5em]">Loading News...</div> : (
                             <>
                                 {heroArticles.length > 0 && (
-                                    <div className="grid grid-cols-2 gap-px border border-zinc-200 rounded overflow-hidden shadow-sm">
+                                    <div className="grid grid-cols-2 gap-px border border-zinc-200 rounded overflow-hidden shadow-sm h-[280px]">
                                         {heroArticles.map((art) => (
-                                            <div key={art.id} className="relative h-[360px] overflow-hidden group cursor-pointer border-l border-zinc-200" onClick={() => setViewArticle(art)}>
+                                            <div key={art.id} className="relative h-full overflow-hidden group cursor-pointer border-l border-zinc-200" onClick={() => setViewArticle(art)}>
                                                 <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                                                
+                                                {/* Kategori di Pojok Atas */}
+                                                <div className="absolute top-4 left-4 flex flex-wrap gap-1">
+                                                    {(art.categories || []).map(cat => (
+                                                        <span key={cat} className="text-[7px] font-black text-white bg-red-600 px-1.5 py-0.5 uppercase tracking-widest rounded-sm shadow-md border border-red-500/20">
+                                                            {cat}
+                                                        </span>
+                                                    ))}
+                                                </div>
+
                                                 <div className="absolute bottom-6 left-6 right-6">
-                                                    <h2 className="text-2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors">{art.title}</h2>
+                                                    {/* Tanggal Rilis Diatas Judul */}
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-[7.5px] font-black text-zinc-300 uppercase tracking-widest bg-black/60 px-1.5 py-0.5 rounded-sm">
+                                                            {art.publish_date}
+                                                        </span>
+                                                    </div>
+                                                    <h2 className="text-2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors drop-shadow-xl">{art.title}</h2>
                                                 </div>
                                             </div>
                                         ))}
@@ -525,7 +541,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
 
                                 {articlesAfterHero.length > 0 && (
                                     <div className="pt-8">
-                                        <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-4 italic">Rekomendasi Lainnya</h3>
+                                        <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-4 italic">Rekomendasi Artikel Lainnya</h3>
                                         <div className="grid grid-cols-1 gap-4">
                                             {articlesAfterHero.slice(0, visibleArticlesAfterHero).map(art => (
                                                 <div key={art.id} className="flex gap-4 group cursor-pointer border-b border-zinc-100 pb-4 last:border-0" onClick={() => setViewArticle(art)}>
