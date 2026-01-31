@@ -64,58 +64,58 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
     items, selectedBrand, minPrice, setMinPrice, maxPrice, setMaxPrice, searchQuery, setSearchQuery, onOpenLogin, onLogout, session, initialProduct, onClearTarget, sidebarAd, onCompareProduct
 }) => {
     const [selectedProduct, setSelectedProduct] = useState<Smartphone | null>(null);
-    const [ratings, setRatings] = useState<Record<string, { likes: number, dislikes: number }>>({});
-    const [userVotes, setUserVotes] = useState<Record<string, 'like' | 'dislike'>>({});
+    const [currentRatings, setCurrentRatings] = useState({ likes: 0, dislikes: 0 });
+    const [userVote, setUserVote] = useState<'like' | 'dislike' | null>(null);
     const [sidebarArticles, setSidebarArticles] = useState<Article[]>([]);
     const [guestNotify, setGuestNotify] = useState(false);
 
-    const fetchRatings = async () => {
-        const { data, error } = await supabase.from('ratings').select('*');
+    // 1. Fungsi Utama: Hitung Real-time akumulasi dari database untuk produk terpilih
+    const fetchAccumulatedRatings = async (productId: string) => {
+        const [{ count: likes }, { count: dislikes }] = await Promise.all([
+            supabase.from('product_votes').select('*', { count: 'exact', head: true }).eq('target_id', productId).eq('vote_type', 'like'),
+            supabase.from('product_votes').select('*', { count: 'exact', head: true }).eq('target_id', productId).eq('vote_type', 'dislike')
+        ]);
+        setCurrentRatings({ likes: likes || 0, dislikes: dislikes || 0 });
+    };
+
+    // 2. Fungsi: Ambil pilihan user yang login (untuk indikator tombol biru/hitam)
+    const fetchUserVote = async (productId: string) => {
+        if (!session?.user) { setUserVote(null); return; }
+        const { data, error } = await supabase
+            .from('product_votes')
+            .select('vote_type')
+            .eq('user_id', session.user.id)
+            .eq('target_id', productId)
+            .single();
+        
         if (!error && data) {
-            const mapped = data.reduce((acc: any, curr: any) => {
-                acc[curr.target_id] = { likes: curr.likes, dislikes: curr.dislikes };
-                return acc;
-            }, {});
-            setRatings(mapped);
+            setUserVote(data.vote_type as 'like' | 'dislike');
+        } else {
+            setUserVote(null);
         }
     };
 
     const fetchSidebarArticles = async () => {
-        // Fetch published articles
         const { data: articles, error: artError } = await supabase
             .from('articles')
             .select('*')
-            .eq('status', 'PUBLISHED');
-
-        // Fetch comment counts for popularity ranking
-        const { data: comments, error: commError } = await supabase
-            .from('comments')
-            .select('target_id');
-
-        if (!artError && articles) {
-            const counts: Record<string, number> = {};
-            if (!commError && comments) {
-                comments.forEach(c => { if (c.target_id) counts[c.target_id] = (counts[c.target_id] || 0) + 1; });
-            }
-
-            // Sort based on interaction (comment count) then date
-            const trending = [...articles].sort((a, b) => {
-                const cA = counts[a.id] || 0;
-                const cB = counts[b.id] || 0;
-                if (cB !== cA) return cB - cA;
-                return new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime();
-            }).slice(0, 3);
-
-            setSidebarArticles(trending);
-        }
+            .eq('status', 'PUBLISHED')
+            .order('publish_date', { ascending: false })
+            .limit(3);
+        if (!artError && articles) setSidebarArticles(articles);
     };
 
     useEffect(() => {
-        fetchRatings();
         fetchSidebarArticles();
-        const localVotes = localStorage.getItem('1AIX_USER_VOTES');
-        if (localVotes) setUserVotes(JSON.parse(localVotes));
     }, []);
+
+    // Setiap kali produk dipilih, ambil data akumulasi (untuk guest & user)
+    useEffect(() => {
+        if (selectedProduct) {
+            fetchAccumulatedRatings(selectedProduct.id);
+            fetchUserVote(selectedProduct.id);
+        }
+    }, [selectedProduct, session]);
 
     useEffect(() => {
         if (initialProduct) {
@@ -146,33 +146,27 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
     };
 
     const handleRating = async (id: string, type: 'like' | 'dislike') => {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        if (!currentSession) { 
+        if (!session) { 
             setGuestNotify(true);
             setTimeout(() => setGuestNotify(false), 3000);
             return; 
         }
-        const currentGlobal = ratings[id] || { likes: 0, dislikes: 0 };
-        const currentUserVote = userVotes[id];
-        let newLikes = currentGlobal.likes;
-        let newDislikes = currentGlobal.dislikes;
-        if (currentUserVote === type) {
-            newLikes = type === 'like' ? Math.max(0, newLikes - 1) : newLikes;
-            newDislikes = type === 'dislike' ? Math.max(0, newDislikes - 1) : newDislikes;
-            const newUserVotes = { ...userVotes };
-            delete newUserVotes[id];
-            setUserVotes(newUserVotes);
-            localStorage.setItem('1AIX_USER_VOTES', JSON.stringify(newUserVotes));
+
+        // Jika klik tombol yang sama (Un-vote)
+        if (userVote === type) {
+            await supabase.from('product_votes').delete().eq('user_id', session.user.id).eq('target_id', id);
         } else {
-            if (currentUserVote) {
-                if (type === 'like') { newLikes += 1; newDislikes = Math.max(0, newDislikes - 1); } else { newDislikes += 1; newLikes = Math.max(0, newDislikes - 1); }
-            } else { if (type === 'like') newLikes += 1; else newDislikes += 1; }
-            const updatedUser = { ...userVotes, [id]: type };
-            setUserVotes(updatedUser);
-            localStorage.setItem('1AIX_USER_VOTES', JSON.stringify(updatedUser));
+            // Ubah vote atau Vote baru
+            await supabase.from('product_votes').upsert({ 
+                user_id: session.user.id, 
+                target_id: id, 
+                vote_type: type 
+            });
         }
-        setRatings(prev => ({ ...prev, [id]: { likes: newLikes, dislikes: newDislikes } }));
-        await supabase.from('ratings').upsert({ target_id: id, likes: newLikes, dislikes: newDislikes }, { onConflict: 'target_id' });
+
+        // Setelah aksi di DB selesai, re-fetch akumulasi terbaru & status user
+        fetchAccumulatedRatings(id);
+        fetchUserVote(id);
     };
 
     const filtered = items.filter(i => {
@@ -202,16 +196,12 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                     <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#ef4444] mb-6">PERANGKAT BARU MASUK</h3>
                     <div className="space-y-1.5">
                         {items.slice(0, 4).map(phone => (
-                            <div 
-                                key={phone.id} 
-                                onClick={() => handleProductSelect(phone)}
-                                className="flex items-center gap-4 group cursor-pointer border-b border-zinc-50 pb-2 last:border-0"
-                            >
+                            <div key={phone.id} onClick={() => handleProductSelect(phone)} className="flex items-center gap-4 group cursor-pointer border-b border-zinc-50 pb-2 last:border-0">
                                 <div className="w-20 h-20 bg-white border border-zinc-100 p-2 flex items-center justify-center rounded-sm flex-shrink-0 group-hover:border-red-600 transition-colors shadow-sm">
                                     <img src={phone.image_url} alt="" className="max-w-full max-h-full object-contain mix-blend-multiply" />
                                 </div>
                                 <div className="flex flex-col min-w-0">
-                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] leading-none mb-1">{phone.brand}</span>
+                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-1">{phone.brand}</span>
                                     <h4 className="text-[12px] font-black text-zinc-800 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">{phone.model_name}</h4>
                                 </div>
                             </div>
@@ -220,10 +210,15 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                 </div>
 
                 <div className="w-full">
-                    {sidebarAd?.image_url && (
+                    {sidebarAd?.image_url ? (
                       <a href={sidebarAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full">
-                         <img src={sidebarAd.image_url} alt="Promo" className="w-full h-auto rounded shadow-md" />
+                         <img src={sidebarAd.image_url} alt="Promo" className="w-full h-auto rounded shadow-md border border-zinc-100" />
                       </a>
+                    ) : (
+                        <div className="aspect-[240/250] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
+                            <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
+                            <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
+                        </div>
                     )}
                 </div>
             </aside>
@@ -251,35 +246,19 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 py-4 mb-6 border-y border-zinc-100">
                                         <div className="flex items-center gap-2 p-3 bg-zinc-50 rounded-sm min-w-0">
                                             <DisplayScreenIcon className="w-5 h-5 text-zinc-500 flex-shrink-0" />
-                                            <div className="min-w-0">
-                                                <div className="text-[10px] font-medium text-zinc-700 leading-tight break-words">
-                                                    {extractValue(selectedProduct.display_type, /(\d+\.?\d*)-inch/)}
-                                                </div>
-                                            </div>
+                                            <div className="min-w-0"><div className="text-[10px] font-medium text-zinc-700 leading-tight break-words">{extractValue(selectedProduct.display_type, /(\d+\.?\d*)-inch/)}</div></div>
                                         </div>
                                         <div className="flex items-center gap-2 p-3 bg-zinc-50 rounded-sm min-w-0">
                                             <CameraShutterIcon className="w-5 h-5 text-zinc-500 flex-shrink-0" />
-                                            <div className="min-w-0">
-                                                <div className="text-[10px] font-medium text-zinc-700 leading-tight break-words">
-                                                    {extractValue(selectedProduct.camera_main, /(\d+\s*MP)/)}
-                                                </div>
-                                            </div>
+                                            <div className="min-w-0"><div className="text-[10px] font-medium text-zinc-700 leading-tight break-words">{extractValue(selectedProduct.camera_main, /(\d+\s*MP)/)}</div></div>
                                         </div>
                                         <div className="flex items-center gap-2 p-3 bg-zinc-50 rounded-sm min-w-0">
                                             <CpuChipIcon className="w-5 h-5 text-zinc-500 flex-shrink-0" />
-                                            <div className="min-w-0">
-                                                <div className="text-[10px] font-medium text-zinc-700 leading-tight break-words">
-                                                    {selectedProduct.chipset}
-                                                </div>
-                                            </div>
+                                            <div className="min-w-0"><div className="text-[10px] font-medium text-zinc-700 leading-tight break-words">{selectedProduct.chipset}</div></div>
                                         </div>
                                         <div className="flex items-center gap-2 p-3 bg-zinc-50 rounded-sm min-w-0">
                                             <BatteryFullIcon className="w-5 h-5 text-zinc-500 flex-shrink-0" />
-                                            <div className="min-w-0">
-                                                <div className="text-[10px] font-medium text-zinc-700 leading-tight break-words">
-                                                    {selectedProduct.battery_capacity}
-                                                </div>
-                                            </div>
+                                            <div className="min-w-0"><div className="text-[10px] font-medium text-zinc-700 leading-tight break-words">{selectedProduct.battery_capacity}</div></div>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
@@ -334,12 +313,12 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                             <h3 className="text-[12px] font-black text-zinc-900 uppercase tracking-[0.4em] mb-12">BERI PENILAIAN ANDA</h3>
                             <div className="flex gap-16">
                                 <div className="flex flex-col items-center gap-3">
-                                    <button onClick={() => handleRating(selectedProduct.id, 'like')} className={`w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center text-blue-500 hover:scale-110 active:scale-95 transition-all border ${userVotes[selectedProduct.id] === 'like' ? 'border-blue-500' : 'border-zinc-50'}`}><ThumbUpIcon className="w-8 h-8" fill={userVotes[selectedProduct.id] === 'like' ? 'currentColor' : 'none'} /></button>
-                                    <span className="text-[16px] font-black text-zinc-600 uppercase tracking-widest">{ratings[selectedProduct.id]?.likes || 0}</span>
+                                    <button onClick={() => handleRating(selectedProduct.id, 'like')} className={`w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center text-blue-500 hover:scale-110 active:scale-95 transition-all border ${userVote === 'like' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-100' : 'border-zinc-50'}`}><ThumbUpIcon className="w-8 h-8" fill={userVote === 'like' ? 'currentColor' : 'none'} /></button>
+                                    <span className={`text-[16px] font-black uppercase tracking-widest ${userVote === 'like' ? 'text-blue-600' : 'text-zinc-600'}`}>{currentRatings.likes}</span>
                                 </div>
                                 <div className="flex flex-col items-center gap-3">
-                                    <button onClick={() => handleRating(selectedProduct.id, 'dislike')} className={`w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center text-zinc-400 hover:scale-110 active:scale-95 transition-all border ${userVotes[selectedProduct.id] === 'dislike' ? 'border-zinc-800' : 'border-zinc-50'}`}><ThumbDownIcon className="w-8 h-8" fill={userVotes[selectedProduct.id] === 'dislike' ? 'currentColor' : 'none'} /></button>
-                                    <span className="text-[16px] font-black text-zinc-600 uppercase tracking-widest">{ratings[selectedProduct.id]?.dislikes || 0}</span>
+                                    <button onClick={() => handleRating(selectedProduct.id, 'dislike')} className={`w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center text-zinc-400 hover:scale-110 active:scale-95 transition-all border ${userVote === 'dislike' ? 'border-zinc-800 bg-zinc-50 ring-2 ring-zinc-100' : 'border-zinc-50'}`}><ThumbDownIcon className="w-8 h-8" fill={userVote === 'dislike' ? 'currentColor' : 'none'} /></button>
+                                    <span className={`text-[16px] font-black uppercase tracking-widest ${userVote === 'dislike' ? 'text-zinc-900' : 'text-zinc-600'}`}>{currentRatings.dislikes}</span>
                                 </div>
                             </div>
                             {guestNotify && (
@@ -349,13 +328,9 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                             )}
                         </div>
 
-                        {/* Tombol Bagikan Perangkat */}
                         <div className="flex flex-col items-center py-10 border-t border-zinc-100 mt-6 mb-20">
                             <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-4">BAGIKAN PERANGKAT INI</span>
-                            <button 
-                                onClick={handleCopyLink}
-                                className="flex items-center gap-3 px-10 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-red-600 transition-all shadow-xl active:scale-95"
-                            >
+                            <button onClick={handleCopyLink} className="flex items-center gap-3 px-10 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-red-600 transition-all shadow-xl active:scale-95">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
                                 SALIN LINK PERANGKAT
                             </button>
