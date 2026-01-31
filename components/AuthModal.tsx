@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { EnvelopeIcon, LockClosedIcon, UserCircleIcon } from './icons';
@@ -28,7 +27,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
         try {
             if (view === 'login') {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) throw error;
+                if (error) {
+                    // Tangkap error kredensial salah dan ubah ke bahasa Indonesia
+                    if (error.message.toLowerCase().includes('invalid login credentials')) {
+                        throw new Error('Maaf, email atau password yang anda masukkan salah.');
+                    }
+                    throw error;
+                }
                 onClose();
             } else if (view === 'register') {
                 const { error } = await supabase.auth.signUp({
@@ -159,7 +164,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                                     </div>
                                 )}
 
-                                {error && <p className="text-[9px] font-black text-red-500 uppercase tracking-widest text-center">{error}</p>}
+                                {error && <p className="text-[9px] font-black text-red-500 uppercase tracking-widest text-center leading-relaxed">{error}</p>}
 
                                 <button type="submit" disabled={loading} className="w-full py-4 bg-zinc-900 text-white font-black uppercase text-[10px] tracking-[0.3em] hover:bg-red-600 transition-all rounded-sm shadow-xl disabled:opacity-50 active:scale-[0.98]">
                                     {loading ? 'MEMPROSES...' : (isLogin ? 'MASUK' : isRegister ? 'BUAT AKUN' : 'KIRIM INSTRUKSI')}

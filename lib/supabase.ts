@@ -8,32 +8,29 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
  * ==============================================================================
- * SALINAN SKRIP SQL (DATABASE SCHEMA) - BALAS KOMENTAR & RLS
- * Jalankan perintah ini di SQL Editor Supabase Anda untuk mengaktifkan fitur balas.
+ * SKEMA DATABASE BARU - PRODUCT VOTES (LIKE/DISLIKE)
+ * Jalankan perintah ini di SQL Editor Supabase Anda.
  * ==============================================================================
  * 
- * -- 1. PASTIKAN TABEL KOMENTAR MEMILIKI KOLOM parent_id
- * ALTER TABLE comments 
- * ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES comments(id) ON DELETE CASCADE;
- * 
- * -- 2. AKTIFKAN RLS
- * ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
- * 
- * -- 3. KEBIJAKAN BACA (PUBLIK)
- * CREATE POLICY "Komentar dapat dilihat publik" ON comments FOR SELECT USING (true);
- * 
- * -- 4. KEBIJAKAN INSERT (HANYA USER LOGIN)
- * CREATE POLICY "Hanya user login yang bisa kirim komentar" ON comments FOR INSERT WITH CHECK (auth.role() = 'authenticated');
- * 
- * -- 5. SKEMA LENGKAP TABEL KOMENTAR (REFERENSI)
- * 
- * CREATE TABLE IF NOT EXISTS comments (
+ * -- 1. Buat tabel untuk menyimpan setiap suara unik
+ * CREATE TABLE IF NOT EXISTS product_votes (
  *   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
- *   target_id UUID NOT NULL, 
- *   parent_id UUID REFERENCES comments(id) ON DELETE CASCADE, -- Field untuk balas komentar
- *   user_id UUID REFERENCES auth.users,
- *   user_name TEXT,
- *   text TEXT NOT NULL,
- *   created_at TIMESTAMPTZ DEFAULT NOW()
+ *   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+ *   target_id UUID NOT NULL,
+ *   vote_type TEXT CHECK (vote_type IN ('like', 'dislike')),
+ *   created_at TIMESTAMPTZ DEFAULT NOW(),
+ *   UNIQUE(user_id, target_id) -- Mencegah 1 user voting berkali-kali pada 1 produk
  * );
+ * 
+ * -- 2. Aktifkan RLS
+ * ALTER TABLE product_votes ENABLE ROW LEVEL SECURITY;
+ * 
+ * -- 3. Kebijakan Baca (Publik/Guest bisa lihat siapa saja yang vote)
+ * CREATE POLICY "Siapa saja bisa melihat data vote" ON product_votes FOR SELECT USING (true);
+ * 
+ * -- 4. Kebijakan Insert/Update/Delete (Hanya user sendiri)
+ * CREATE POLICY "User hanya bisa mengelola vote miliknya sendiri" 
+ * ON product_votes FOR ALL 
+ * USING (auth.uid() = user_id)
+ * WITH CHECK (auth.uid() = user_id);
  */
