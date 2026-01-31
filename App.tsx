@@ -58,7 +58,7 @@ const FaqPage = () => {
             a: "Masuk ke menu 'Katalog', pilih perangkat yang diinginkan, lalu tekan tombol 'Compare'. Anda bisa memilih hingga 2 perangkat secara side-by-side."
         },
         {
-            q: "APA MAKSUD STATUS 'SEGERA RILIS'?",
+            q: "APA MAKSUD STATUS 'UPCOMING'?",
             a: "Status ini berarti perangkat telah terdeteksi masuk database TKDN namun belum diluncurkan secara retail di pasar Indonesia."
         },
         {
