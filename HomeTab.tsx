@@ -1,22 +1,131 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { TOP_BRANDS } from '../constants';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { TOP_BRANDS } from './constants';
 import type { Session } from '@supabase/supabase-js';
-import type { Article, Comment, AdConfig } from '../types';
-import { supabase } from '../lib/supabase';
-import { HashtagIcon, ChatAlt2Icon } from './icons'; // Import ChatAlt2Icon
+import type { Article, Comment, AdConfig, Smartphone } from './types';
+import { supabase } from './lib/supabase';
+import { ChatAlt2Icon } from './components/icons';
+
+// Interface lokal untuk mendukung threading
+interface ThreadedComment extends Comment {
+    parent_id?: string | null;
+}
 
 interface HomeTabProps {
     onOpenLogin?: () => void;
     onLogout?: () => void;
     session?: Session | null;
-    globalSearchQuery?: string; // Global search from Header
-    articleFilterQuery?: string; // Local filter for articles (e.g., from tags)
-    onSetArticleFilterQuery?: (query: string) => void; // Setter for local article filter
+    globalSearchQuery?: string;
+    articleFilterQuery?: string;
+    onSetArticleFilterQuery?: (query: string) => void;
     initialArticle?: Article | null;
     onClearTarget?: () => void;
-    articleAd?: AdConfig; // Ad inside article content
-    sidebarAd?: AdConfig; // Ad for global sidebar
+    articleAd?: AdConfig;
+    sidebarAd?: AdConfig;
+    smartphones?: Smartphone[];
+    onProductSelect?: (phone: Smartphone) => void;
 }
+
+// Komponen Item Komentar dipindah ke luar agar fokus input tidak hilang saat mengetik
+const CommentItem: React.FC<{ 
+    comment: ThreadedComment, 
+    isReply?: boolean,
+    replyingToId: string | null,
+    replyText: string,
+    setReplyText: (val: string) => void,
+    handlePostComment: (parentId: string | null) => void,
+    handleOpenReply: (commentId: string) => void,
+    setReplyingToId: (val: string | null) => void,
+    replyInputRef: React.RefObject<HTMLTextAreaElement | null>,
+    replyComments: ThreadedComment[]
+}> = ({ 
+    comment, 
+    isReply = false, 
+    replyingToId, 
+    replyText, 
+    setReplyText, 
+    handlePostComment, 
+    handleOpenReply, 
+    setReplyingToId, 
+    replyInputRef,
+    replyComments
+}) => (
+    <div className={`flex gap-4 group transition-all ${isReply ? 'ml-14 mt-4 border-l-2 border-zinc-100 pl-6' : 'mt-10'}`}>
+        <div className="w-11 h-11 rounded-sm bg-red-600 text-white flex items-center justify-center font-black flex-shrink-0 uppercase text-lg shadow-md border border-red-500/20">
+            {comment.user_name.charAt(0)}
+        </div>
+        <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                    <span className="text-[11px] font-black text-zinc-900 uppercase tracking-tight">{comment.user_name}</span>
+                    <span className="text-[9px] font-bold text-zinc-300 uppercase tracking-widest bg-zinc-50 px-2 py-0.5 rounded-sm">
+                        {new Date(comment.created_at).toLocaleDateString('id-ID')}
+                    </span>
+                </div>
+                {!isReply && (
+                    <button 
+                        onClick={() => handleOpenReply(comment.id)}
+                        className="text-[9px] font-black text-zinc-400 uppercase hover:text-red-600 transition-colors tracking-widest flex items-center gap-1.5"
+                    >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M3 10h10a8 8 0 018 8v2M3 10l5 5m-5-5l5-5"></path></svg>
+                        REPLY
+                    </button>
+                )}
+            </div>
+            <div className="bg-white border border-zinc-100 p-4 rounded-sm shadow-sm hover:border-zinc-200 transition-colors">
+                <p className="text-[13px] font-bold text-zinc-700 leading-relaxed italic">
+                    {comment.text}
+                </p>
+            </div>
+
+            {/* Inline Reply Form */}
+            {replyingToId === comment.id && (
+                <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
+                    <div className="bg-zinc-50 p-4 rounded-sm border border-zinc-100 shadow-inner">
+                        <textarea 
+                            ref={replyInputRef}
+                            value={replyText} 
+                            onChange={(e) => setReplyText(e.target.value)} 
+                            placeholder="Tulis balasan Anda di sini..." 
+                            className="w-full bg-white border border-zinc-200 p-3 rounded-sm text-sm font-bold outline-none focus:border-red-600 transition-all resize-none shadow-sm" 
+                            rows={2}
+                        />
+                        <div className="flex gap-2 mt-3">
+                            <button 
+                                onClick={() => handlePostComment(comment.id)} 
+                                className="px-6 py-2 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-sm hover:bg-red-700 shadow-lg active:scale-95 transition-all"
+                            >
+                                BALAS SEKARANG
+                            </button>
+                            <button 
+                                onClick={() => setReplyingToId(null)} 
+                                className="px-6 py-2 bg-white text-zinc-400 text-[9px] font-black uppercase tracking-widest rounded-sm hover:text-zinc-900 border border-zinc-200"
+                            >
+                                BATAL
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Render Balasan-Balasan (Recursively) */}
+            {replyComments.filter(r => r.parent_id === comment.id).map(reply => (
+                <CommentItem 
+                    key={reply.id} 
+                    comment={reply} 
+                    isReply={true} 
+                    replyingToId={replyingToId}
+                    replyText={replyText}
+                    setReplyText={setReplyText}
+                    handlePostComment={handlePostComment}
+                    handleOpenReply={handleOpenReply}
+                    setReplyingToId={setReplyingToId}
+                    replyInputRef={replyInputRef}
+                    replyComments={replyComments}
+                />
+            ))}
+        </div>
+    </div>
+);
 
 const HomeTab: React.FC<HomeTabProps> = ({ 
     onOpenLogin, 
@@ -28,15 +137,21 @@ const HomeTab: React.FC<HomeTabProps> = ({
     initialArticle, 
     onClearTarget,
     articleAd,
-    sidebarAd
+    sidebarAd,
+    smartphones = [],
+    onProductSelect
 }) => {
     const [viewArticle, setViewArticle] = useState<Article | null>(null);
     const [articles, setArticles] = useState<Article[]>([]);
-    const [comments, setComments] = useState<Comment[]>([]);
+    const [comments, setComments] = useState<ThreadedComment[]>([]);
     const [newComment, setNewComment] = useState("");
+    const [replyingToId, setReplyingToId] = useState<string | null>(null);
+    const [replyText, setReplyText] = useState("");
     const [loading, setLoading] = useState(true);
-    const [visibleArticlesAfterHero, setVisibleArticlesAfterHero] = useState(10); // Changed from visiblePastArticles to reflect new usage
+    const [visibleArticlesAfterHero, setVisibleArticlesAfterHero] = useState(10);
     const [articleCommentCounts, setArticleCommentCounts] = useState<Record<string, number>>({});
+    
+    const replyInputRef = useRef<HTMLTextAreaElement>(null);
 
     const fetchArticles = async () => {
         setLoading(true);
@@ -63,8 +178,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
                 }
             });
             setArticleCommentCounts(counts);
-        } else if (error) {
-            console.error("Error fetching comment counts:", error);
         }
     };
 
@@ -73,48 +186,43 @@ const HomeTab: React.FC<HomeTabProps> = ({
             .from('comments')
             .select('*')
             .eq('target_id', articleId)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: true });
         
         if (!error && data) setComments(data);
     };
 
-    // Parser markdown sederhana untuk menampilkan format tebal & miring
     const parseMarkdown = (text: string) => {
         if (!text) return '';
-        return text
+        let processed = text
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/&lt;div align="(.*?)"&gt;([\s\S]*?)&lt;\/div&gt;/g, '<div style="text-align: $1">$2</div>')
-            .replace(/&lt;span style="(.*?)"&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="$1">$2</span>')
+            .replace(/&lt;span style="(.*?)"&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="$1">$2</span>');
+
+        processed = processed.replace(/!\[(.*?)\]\s?\((.*?)\)/g, '<img src="$2" alt="$1" class="w-full my-6 rounded shadow-lg block h-auto" />');
+
+        processed = processed
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/_(.*?)_/g, '<em>$1</em>')
-            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>') // Added this line for links
+            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
             .replace(/^# (.*$)/gm, '<h1 style="font-size: 2em; font-weight: 900; margin: 0.5em 0;">$1</h1>')
-            .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$2</h2>')
+            .replace(/^## (.*$)/gm, '<h2 style="font-size: 1.5em; font-weight: 900; margin: 0.5em 0;">$1</h2>')
             .replace(/^&gt; (.*$)/gm, '<blockquote class="border-l-4 border-zinc-200 pl-4 italic text-zinc-500 my-4">$1</blockquote>')
             .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
             .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 list-decimal">$1</li>')
-            .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="w-full my-6 rounded shadow-lg" />');
+            .replace(/\n/g, '<br/>');
+
+        return processed;
     };
 
     useEffect(() => {
         fetchArticles();
-        fetchCommentCounts(); // Fetch comment counts initially
+        fetchCommentCounts();
     }, []);
 
     useEffect(() => {
         if (viewArticle) {
             const slug = viewArticle.permalink.replace(/^\//, '');
             window.location.hash = `#${slug}`;
-            const startTime = Date.now();
-            return () => {
-                const duration = (Date.now() - startTime) / 1000;
-                if (duration > 3) {
-                    supabase.from('site_analytics').insert([{
-                        event_type: 'reading_time',
-                        value: Math.min(duration / 60, 15)
-                    }]).then();
-                }
-            };
         }
     }, [viewArticle]);
 
@@ -132,37 +240,56 @@ const HomeTab: React.FC<HomeTabProps> = ({
         }
     }, [viewArticle]);
 
-    const handlePostComment = async () => {
+    const handlePostComment = async (parentId: string | null = null) => {
         if (!session) {
             onOpenLogin?.();
             return;
         }
-        if (!newComment.trim() || !viewArticle) return;
+        
+        const textToPost = parentId ? replyText : newComment;
+        if (!textToPost.trim() || !viewArticle) return;
 
-        const payload = {
+        const payload: any = {
             target_id: viewArticle.id,
             user_id: session.user.id,
             user_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-            text: newComment
+            text: textToPost
         };
+
+        if (parentId) {
+            payload.parent_id = parentId;
+        }
 
         const { data, error } = await supabase.from('comments').insert([payload]).select();
 
         if (!error && data) {
-            setComments([data[0], ...comments]);
-            setNewComment("");
-            fetchCommentCounts(); // Re-fetch counts after a new comment is posted
+            setComments([...comments, data[0]]);
+            if (parentId) {
+                setReplyText("");
+                setReplyingToId(null);
+            } else {
+                setNewComment("");
+            }
+            fetchCommentCounts();
         } else {
             alert("Gagal mengirim komentar. Pastikan Anda sudah login.");
         }
     };
 
-    const handleShare = (platform: string) => {
-        const url = window.location.origin + '/#' + viewArticle?.permalink.replace(/^\//, '');
-        const text = viewArticle?.title || "Cek berita gadget terbaru di 1AIX!";
-        if (platform === 'wa') window.open(`https://wa.me/?text=${encodeURIComponent(text + " " + url)}`);
-        else if (platform === 'tw') window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`);
-        else { navigator.clipboard.writeText(url); alert("Link disalin!"); }
+    const handleOpenReply = (commentId: string) => {
+        if (!session) {
+            onOpenLogin?.();
+            return;
+        }
+        setReplyingToId(commentId);
+        setReplyText(""); 
+        setTimeout(() => replyInputRef.current?.focus(), 100);
+    };
+
+    const handleBackToHome = () => {
+        setViewArticle(null);
+        window.location.hash = '#/home';
+        onSetArticleFilterQuery?.("");
     };
 
     const filteredArticles = useMemo(() => {
@@ -176,117 +303,101 @@ const HomeTab: React.FC<HomeTabProps> = ({
     }, [articles, articleFilterQuery, globalSearchQuery]);
 
     const heroArticles = filteredArticles.slice(0, 2);
-    const articlesAfterHero = filteredArticles.slice(2); // All articles after the first two hero articles
-    
-    const trendingArticles = articles.slice(0, 3); // Already set to 3, no change needed for count.
+    const articlesAfterHero = filteredArticles.slice(2);
 
-    const popularTags = useMemo(() => {
-        const tagCounts: { [key: string]: number } = {};
-        articles.forEach(article => {
-            if (article.tags) {
-                // Split by spaces, filter out empty strings, remove '#'
-                const tags = article.tags.split(/\s+/)
-                                    .filter(tag => tag.trim() !== '')
-                                    .map(tag => tag.replace(/^#/, '').toLowerCase());
-                tags.forEach(tag => {
-                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-                });
-            }
-        });
+    const parentComments = useMemo(() => comments.filter(c => !c.parent_id), [comments]);
+    const replyComments = useMemo(() => comments.filter(c => c.parent_id), [comments]);
 
-        return Object.entries(tagCounts)
-                     .map(([tag, count]) => ({ tag, count }))
-                     .sort((a, b) => b.count - a.count)
-                     .slice(0, 6); // Top 6 popular tags
-    }, [articles]);
-
-    const handleBackToHome = () => {
-        setViewArticle(null);
-        window.location.hash = '#/home';
-        onSetArticleFilterQuery?.(""); // Clear article filter when going back to main list
-    };
+    // Mengurutkan artikel populer berdasarkan jumlah komentar terbanyak (Top 3)
+    const popularArticles = useMemo(() => {
+        return [...articles]
+            .sort((a, b) => (articleCommentCounts[b.id] || 0) - (articleCommentCounts[a.id] || 0))
+            .slice(0, 3);
+    }, [articles, articleCommentCounts]);
 
     return (
         <div className="flex gap-8 animate-in fade-in duration-700">
             <aside className="w-[240px] flex-shrink-0 space-y-10">
+                {/* Brand Sidebar */}
                 <div>
                     <div className="flex items-center gap-3 mb-1">
                         <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900 leading-tight">TOP BRAND AWARD</h3>
+                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900 leading-tight">TOP BRAND INDONESIA</h3>
                     </div>
                     <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-6 border-l-2 border-zinc-100 pl-2">sumber: www.topbrand-award.com</div>
-                    
-                    <div className="space-y-1 mb-2">
+                    <div className="space-y-1">
                         {TOP_BRANDS.map((brand, idx) => (
                             <div key={brand.name} className="px-1 py-1.5 flex items-center justify-between border-b border-zinc-50 group cursor-pointer hover:bg-zinc-50 transition-colors">
                                 <div className="flex items-center gap-4"><span className="text-[10px] font-black text-zinc-300 w-4">#{idx + 1}</span><span className="text-[11px] font-black text-zinc-700 tracking-wide uppercase group-hover:text-blue-600">{brand.name}</span></div>
-                                <div className="flex items-center gap-1.5"><svg className="w-2.5 h-2.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg><span className="text-[10px] font-black text-blue-500/60">{brand.share}</span></div>
+                                <span className="text-[10px] font-black text-blue-500/60">{brand.share}</span>
                             </div>
                         ))}
                     </div>
                 </div>
 
+                {/* Artikel Populer Sidebar - Compact with small previews and reduced spacing */}
                 <div>
-                    <div className="flex items-center gap-3 mb-6">
-                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">TRENDING NEWS</h3>
+                    <div className="flex items-center gap-3 mb-1">
+                        <ChatAlt2Icon className="w-5 h-5 text-red-600" strokeWidth={2.5} />
+                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900 leading-tight">ARTIKEL POPULER</h3>
                     </div>
-                    <div className="space-y-4">
-                        {trendingArticles.map((art, idx) => (
+                    <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-4 border-l-2 border-zinc-100 pl-2">DISKUSI TERHANGAT</div>
+                    <div className="space-y-3">
+                        {popularArticles.map((art) => (
                             <div 
                                 key={art.id} 
                                 onClick={() => setViewArticle(art)}
-                                className="group cursor-pointer border-b border-zinc-50 pb-4 last:border-0"
+                                className="group cursor-pointer border-b border-zinc-50 pb-3 last:border-0"
                             >
-                                <div className="flex gap-3">
-                                    <span className="text-xl font-black text-zinc-100 group-hover:text-blue-100 transition-colors leading-none">{idx + 1}</span>
-                                    <h4 className="text-[11px] font-black text-zinc-700 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors line-clamp-2 italic">
-                                        {art.title}
-                                    </h4>
+                                <div className="flex gap-3 items-start">
+                                    <div className="w-16 h-10 flex-shrink-0 bg-zinc-100 rounded-sm overflow-hidden border border-zinc-100">
+                                        <img src={art.cover_image_url} alt="" className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="text-[10px] font-black text-zinc-700 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors line-clamp-2 italic mb-1">
+                                            {art.title}
+                                        </h4>
+                                        <div className="flex items-center gap-1.5 text-zinc-300">
+                                            <ChatAlt2Icon className="w-2.5 h-2.5" strokeWidth={3} />
+                                            <span className="text-[8px] font-black">{articleCommentCounts[art.id] || 0} KOMENTAR</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Populer Tag Section */}
+                {/* Perangkat Baru Sidebar */}
                 <div>
-                    <div className="flex items-center gap-3 mb-6">
-                        <HashtagIcon className="w-5 h-5 text-blue-600" strokeWidth="2.5" /> {/* Updated Icon color */}
-                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">POPULER TAG</h3>
+                    <div className="flex items-center gap-3 mb-4">
+                         <svg className="w-5 h-5 text-[#ef4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><rect x="4" y="4" width="6" height="6" /><rect x="14" y="4" width="6" height="6" /><rect x="4" y="14" width="6" height="6" /><rect x="14" y="14" width="6" height="6" /></svg>
+                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900">PERANGKAT BARU</h3>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                        {popularTags.map(({ tag }) => (
-                            <button
-                                key={tag}
-                                onClick={() => onSetArticleFilterQuery?.(tag)} // Use local setter
-                                className="px-3 py-1.5 bg-blue-500/10 text-blue-600 text-[10px] font-black uppercase tracking-wider rounded-full hover:bg-blue-500/30 transition-colors border border-blue-500/20"
-                            >
-                                #{tag}
-                            </button>
+                    <div className="space-y-0">
+                        {smartphones.slice(0, 3).map(phone => (
+                            <div key={phone.id} onClick={() => onProductSelect?.(phone)} className="flex items-center gap-6 group cursor-pointer border-b border-zinc-100/50 py-1.5 last:border-0 transition-all hover:bg-zinc-50/50">
+                                <div className="w-24 h-24 bg-white border border-zinc-100 p-2 flex items-center justify-center rounded-sm flex-shrink-0 group-hover:border-red-600 transition-all shadow-sm">
+                                    <img src={phone.image_url} alt="" className="max-w-full max-h-full object-contain mix-blend-multiply transition-transform group-hover:scale-110" />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] leading-none mb-1.5">{phone.brand}</span>
+                                    <h4 className="text-[12px] font-black text-zinc-800 uppercase tracking-tighter leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">{phone.model_name}</h4>
+                                </div>
+                            </div>
                         ))}
-                        {popularTags.length === 0 && (
-                            <p className="text-[10px] font-bold text-zinc-400 uppercase italic">Tidak ada tag populer.</p>
-                        )}
                     </div>
                 </div>
 
-                {/* Banner Ads Section (Sidebar Ad) */}
                 <div className="w-full">
                     {sidebarAd?.image_url ? (
                       <a href={sidebarAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full">
-                         <img src={sidebarAd.image_url} alt="Promo" className="w-full h-auto rounded shadow-md" />
-                         {(sidebarAd.title || sidebarAd.subtitle) && (
-                           <div className="mt-2 text-center">
-                             <h4 className="text-[10px] font-black text-zinc-800 uppercase">{sidebarAd.title}</h4>
-                             <p className="text-[8px] font-bold text-zinc-400 uppercase">{sidebarAd.subtitle}</p>
-                           </div>
-                         )}
+                         <img src={sidebarAd.image_url} alt="Promo" className="w-full h-auto rounded shadow-md border border-zinc-100" />
                       </a>
                     ) : (
-                      <div className="h-[250px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
-                          <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
-                          <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
+                      <div className="aspect-[240/250] bg-[#f1f5f9] border border-zinc-100 flex flex-col items-center justify-center shadow-inner rounded-sm">
+                          <span className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.4em] mb-2 opacity-50">ADVERTISEMENT</span>
+                          <span className="text-zinc-400 font-black uppercase tracking-[0.2em] text-xl">PARTNER SPACE</span>
                       </div>
                     )}
                 </div>
@@ -299,85 +410,97 @@ const HomeTab: React.FC<HomeTabProps> = ({
                         <div className="mb-4">
                             <div className="flex gap-1 mb-3">{viewArticle.categories?.map(cat => <span key={cat} className="text-[10px] font-black text-red-600 border border-red-600 px-2 py-0.5 uppercase tracking-[0.4em]">{cat}</span>)}</div>
                             <h1 className="text-4xl font-black text-zinc-900 uppercase tracking-tighter leading-none mb-6 italic">{viewArticle.title}</h1>
-                            <div className="flex items-center justify-between border-y border-zinc-100 py-3 mb-8">
-                                <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center font-black text-[10px]">{(viewArticle.author_name || '1').charAt(0)}</div><div className="flex flex-col"><span className="text-[10px] font-black text-zinc-900 uppercase tracking-wider leading-none">{viewArticle.author_name || 'Redaksi 1AIX'}</span><span className="text-[8px] font-bold text-zinc-400 uppercase mt-1">{viewArticle.publish_date}</span></div></div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => handleShare('wa')} className="p-2 bg-emerald-500 text-white rounded hover:bg-emerald-600 transition-all"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></button>
-                                    <button onClick={() => handleShare('tw')} className="p-2 bg-zinc-900 text-white rounded hover:bg-zinc-800 transition-all"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></button>
-                                </div>
-                            </div>
                         </div>
                         <div className="w-full h-80 overflow-hidden rounded-sm mb-10 shadow-lg border border-zinc-100"><img src={viewArticle.cover_image_url} alt="" className="w-full h-full object-cover"/></div>
-                        <div className="prose prose-zinc max-w-none text-zinc-800 leading-loose text-base mb-20">
-                            <div className="text-zinc-500 font-bold leading-relaxed italic border-l-3 border-red-600 pl-4 bg-zinc-50 py-4 mb-8">"{viewArticle.summary}"</div>
+                        
+                        <div className="prose prose-zinc max-w-none text-zinc-800 text-base leading-loose mb-16">
                             <div className="whitespace-pre-wrap article-view-body" dangerouslySetInnerHTML={{ __html: parseMarkdown(viewArticle.content || '') }} />
                         </div>
 
-                        {/* Display Hashtags (Tags) - Updated for better visibility and spacing */}
-                        {viewArticle.tags && viewArticle.tags.split(/\s+/).filter(tag => tag.trim() !== '').length > 0 && (
-                            <div className="mt-12 mb-8 pt-6 border-t border-zinc-100 bg-[#f8fafc] p-8 rounded-sm shadow-sm flex flex-wrap gap-2 items-center">
-                                <span className="text-[10px] font-black text-zinc-900 uppercase tracking-widest mr-2">HASHTAGS:</span>
-                                {viewArticle.tags.split(/\s+/).filter(tag => tag.trim() !== '').map((tag, idx) => (
-                                    <span 
-                                        key={idx} 
-                                        className="text-[10px] font-black text-blue-600 uppercase tracking-wider rounded-full px-2 py-0.5 bg-blue-50 border border-blue-100"
-                                    >
-                                        {tag}
+                        {/* Hashtag Section */}
+                        {viewArticle.tags && (
+                            <div className="bg-[#f8fafc] border border-zinc-100 rounded-sm p-8 mb-10 flex flex-wrap items-center gap-3">
+                                <span className="text-[11px] font-black text-zinc-900 uppercase tracking-widest mr-2">HASHTAGS:</span>
+                                {viewArticle.tags.split(/\s+/).filter(tag => tag.trim()).map((tag, idx) => (
+                                    <span key={idx} className="bg-blue-50 text-blue-600 border border-blue-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                                        {tag.startsWith('#') ? tag : `#${tag}`}
                                     </span>
                                 ))}
                             </div>
                         )}
 
-                        {/* Banner Ads Section for Article Detail (Article Content Ad) */}
-                        <div className="w-full my-10">
-                          {articleAd?.image_url ? (
-                            <a href={articleAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full">
-                               <img src={articleAd.image_url} alt="Promo" className="w-full h-auto rounded shadow-lg" />
-                            </a>
-                          ) : (
-                            <div className="h-[120px] bg-zinc-100 border border-zinc-200 flex flex-col items-center justify-center shadow-inner rounded-sm">
-                              <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mb-1">ADVERTISEMENT</span>
-                              <span className="text-zinc-400 font-black uppercase tracking-widest text-xl">PARTNER SPACE</span>
+                        <div className="w-full mb-16">
+                            {articleAd?.image_url ? (
+                                <a href={articleAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full">
+                                    <img src={articleAd.image_url} alt="Promo" className="w-full h-auto rounded shadow-lg border border-zinc-100" />
+                                </a>
+                            ) : (
+                                <div className="w-full h-[140px] bg-[#f1f5f9] border border-zinc-100 flex flex-col items-center justify-center shadow-inner rounded-sm">
+                                    <span className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.4em] mb-2 opacity-50">ADVERTISEMENT</span>
+                                    <span className="text-zinc-400 font-black uppercase tracking-[0.2em] text-2xl">PARTNER SPACE</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Comment Section */}
+                        <div className="border-t border-zinc-100 pt-12 mb-32">
+                            <div className="flex items-center gap-3 mb-8">
+                                <ChatAlt2Icon className="w-6 h-6 text-red-600" strokeWidth={2.5} />
+                                <h3 className="text-xl font-black uppercase tracking-tighter italic">Diskusi & Komentar</h3>
                             </div>
-                          )}
-                        </div>
-
-                        {/* Tombol Bagikan Artikel */}
-                        <div className="flex flex-col items-center py-10 border-t border-zinc-100 mt-10">
-                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-4">SHARE THIS NEWS</span>
-                            <button 
-                                onClick={() => {
-                                    const slug = viewArticle.permalink.replace(/^\//, '');
-                                    const url = window.location.origin + '/#' + slug;
-                                    navigator.clipboard.writeText(url);
-                                    alert("LINK ARTIKEL BERHASIL DISALIN!");
-                                }}
-                                className="flex items-center gap-3 px-10 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-red-600 transition-all shadow-xl active:scale-95"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-                                SALIN LINK ARTIKEL
-                            </button>
-                        </div>
-
-                        <div className="border-t border-zinc-200 pt-12 mb-20">
-                            <h3 className="text-xl font-black uppercase tracking-tighter mb-8 italic">Diskusi & Komentar</h3>
-                            <div className="bg-[#f8fafc] border border-zinc-100 p-8 rounded mb-12">
+                            
+                            {/* Kotak Komentar Utama */}
+                            <div className="bg-[#f8fafc] border border-zinc-100 p-8 rounded-sm mb-12">
                                 {session ? (
                                     <div className="flex gap-4">
-                                        <div className="w-10 h-10 rounded bg-red-600 text-white flex items-center justify-center font-black flex-shrink-0">{(session.user.user_metadata?.full_name || session.user.email || 'U').charAt(0).toUpperCase()}</div>
-                                        <div className="flex-1 space-y-4"><textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Berikan pendapatmu tentang artikel ini..." className="w-full bg-white border border-zinc-200 p-4 rounded text-sm font-bold outline-none focus:border-red-600 transition-all resize-none" rows={3}/><button onClick={handlePostComment} className="px-8 py-3 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all">KIRIM KOMENTAR</button></div>
+                                        <div className="w-12 h-12 rounded-sm bg-red-600 text-white flex items-center justify-center font-black flex-shrink-0 text-xl shadow-lg border border-red-500/20">
+                                            {(session.user.user_metadata?.full_name || session.user.email || 'U').charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 space-y-4">
+                                            <textarea 
+                                                value={newComment} 
+                                                onChange={(e) => setNewComment(e.target.value)} 
+                                                placeholder="Berikan pendapatmu tentang artikel ini..." 
+                                                className="w-full bg-white border border-zinc-100 p-6 rounded-sm text-sm font-bold outline-none focus:border-red-600 transition-all shadow-sm resize-none" 
+                                                rows={3}
+                                            />
+                                            <button 
+                                                onClick={() => handlePostComment(null)} 
+                                                className="px-10 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-600 transition-all rounded-sm shadow-xl active:scale-95"
+                                            >
+                                                KIRIM KOMENTAR
+                                            </button>
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className="text-center py-6"><p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">Anda harus login untuk berkomentar</p><button onClick={onOpenLogin} className="px-8 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all">MASUK</button></div>
+                                    <div className="text-center py-6">
+                                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-6">ANDA HARUS LOGIN TERLEBIH DAHULU UNTUK BERKOMENTAR</p>
+                                        <button onClick={onOpenLogin} className="px-12 py-4 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all rounded-sm shadow-xl">MASUK SEKARANG</button>
+                                    </div>
                                 )}
                             </div>
-                            <div className="space-y-8">
-                                {comments.map(c => (
-                                    <div key={c.id} className="flex gap-4 group">
-                                        <div className="w-10 h-10 rounded bg-zinc-200 text-zinc-500 flex items-center justify-center font-black flex-shrink-0 uppercase">{c.user_name.charAt(0)}</div>
-                                        <div><div className="flex items-center gap-3 mb-1"><span className="text-[11px] font-black text-zinc-900 uppercase tracking-tight">{c.user_name}</span><span className="text-[8px] font-bold text-zinc-300 uppercase tracking-widest">{new Date(c.created_at).toLocaleString('id-ID')}</span></div><p className="text-[13px] font-bold text-zinc-600 leading-relaxed">{c.text}</p></div>
-                                    </div>
+
+                            {/* Daftar Komentar Threaded */}
+                            <div className="space-y-4">
+                                {parentComments.map(comment => (
+                                    <CommentItem 
+                                        key={comment.id} 
+                                        comment={comment} 
+                                        replyingToId={replyingToId}
+                                        replyText={replyText}
+                                        setReplyText={setReplyText}
+                                        handlePostComment={handlePostComment}
+                                        handleOpenReply={handleOpenReply}
+                                        setReplyingToId={setReplyingToId}
+                                        replyInputRef={replyInputRef}
+                                        replyComments={replyComments}
+                                    />
                                 ))}
+                                {comments.length === 0 && (
+                                    <div className="text-center py-10 opacity-20">
+                                        <span className="text-[10px] font-black uppercase tracking-[0.5em]">Belum Ada Komentar</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -385,7 +508,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
                     <div className="space-y-8 animate-in fade-in duration-700">
                         {loading ? <div className="text-center py-20 font-black text-zinc-200 animate-pulse uppercase tracking-[0.5em]">Loading News...</div> : (
                             <>
-                                {/* Hero Articles */}
                                 {heroArticles.length > 0 && (
                                     <div className="grid grid-cols-2 gap-px border border-zinc-200 rounded overflow-hidden shadow-sm">
                                         {heroArticles.map((art) => (
@@ -393,17 +515,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                                 <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                                                 <div className="absolute bottom-6 left-6 right-6">
-                                                    <div className="flex gap-2 mb-2">
-                                                        {(art.categories || []).map(cat => (
-                                                            <span key={cat} className="text-[8px] font-black bg-red-600 text-white px-1.5 py-0.5 uppercase tracking-widest rounded-sm">{cat}</span>
-                                                        ))}
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-zinc-400 text-[9px] font-bold uppercase mb-1">
-                                                        <span>{art.publish_date}</span>
-                                                        <span className="text-white/30">•</span>
-                                                        <ChatAlt2Icon className="w-3 h-3 text-zinc-400" strokeWidth={2} />
-                                                        <span>{articleCommentCounts[art.id] || 0}</span>
-                                                    </div>
                                                     <h2 className="text-2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors">{art.title}</h2>
                                                 </div>
                                             </div>
@@ -411,36 +522,32 @@ const HomeTab: React.FC<HomeTabProps> = ({
                                     </div>
                                 )}
 
-                                {/* Combined Recent and Past Articles */}
                                 {articlesAfterHero.length > 0 && (
-                                    <div className="pt-4">
-                                        <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-6 italic">Rekomendasi Lainnya</h3> {/* Single heading for combined list */}
-                                        <div className="grid grid-cols-1 gap-6">
+                                    <div className="pt-8">
+                                        <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-4 italic">Rekomendasi Lainnya</h3>
+                                        <div className="grid grid-cols-1 gap-4">
                                             {articlesAfterHero.slice(0, visibleArticlesAfterHero).map(art => (
-                                                <div key={art.id} className="flex gap-6 group cursor-pointer border-b border-zinc-100 pb-6 last:border-0" onClick={() => setViewArticle(art)}>
-                                                    <div className="w-40 h-24 flex-shrink-0 overflow-hidden bg-zinc-100 rounded-sm">
+                                                <div key={art.id} className="flex gap-4 group cursor-pointer border-b border-zinc-100 pb-4 last:border-0" onClick={() => setViewArticle(art)}>
+                                                    <div className="w-36 h-20 md:w-40 md:h-24 flex-shrink-0 overflow-hidden bg-zinc-100 rounded-sm shadow-sm border border-zinc-100">
                                                         <img src={art.cover_image_url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="" />
                                                     </div>
-                                                    <div className="flex flex-col justify-center">
-                                                        <div className="flex gap-1 mb-1">
+                                                    <div className="flex flex-col justify-center min-w-0">
+                                                        <div className="flex gap-1 mb-1 flex-wrap">
                                                             {(art.categories || []).map(cat => (
-                                                                <span key={cat} className="text-[8px] font-black text-red-600 border border-red-600/30 px-1 py-0.5 uppercase tracking-tighter rounded-sm">{cat}</span>
+                                                                <span key={cat} className="text-[7px] md:text-[8px] font-black text-red-600 border border-red-600/30 px-1 py-0.5 uppercase tracking-tighter rounded-sm">{cat}</span>
                                                             ))}
                                                         </div>
-                                                        <h4 className="text-base font-black text-zinc-900 uppercase tracking-tight leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
-                                                            {art.title}
-                                                        </h4>
-                                                        {/* Added summary here */}
+                                                        <h4 className="text-sm md:text-base font-black text-zinc-900 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors line-clamp-2 italic">{art.title}</h4>
                                                         {art.summary && (
-                                                            <p className="text-sm font-bold text-zinc-500 leading-relaxed mt-1 line-clamp-1">
-                                                                {art.summary}
-                                                            </p>
+                                                            <p className="text-[11px] md:text-xs font-bold text-zinc-400 leading-tight mt-1 line-clamp-1">{art.summary}</p>
                                                         )}
-                                                        <div className="flex items-center gap-2 text-sm font-bold text-zinc-400 uppercase mt-2">
+                                                        <div className="flex items-center gap-2 text-[10px] font-black text-zinc-300 uppercase mt-1.5">
+                                                            <div className="flex items-center gap-1">
+                                                                <ChatAlt2Icon className="w-3 h-3" strokeWidth={3} />
+                                                                <span>{articleCommentCounts[art.id] || 0}</span>
+                                                            </div>
+                                                            <span className="opacity-30">•</span>
                                                             <span>{art.publish_date}</span>
-                                                            <span className="text-zinc-300">•</span>
-                                                            <ChatAlt2Icon className="w-3.5 h-3.5 text-zinc-400" strokeWidth={2} />
-                                                            <span>{articleCommentCounts[art.id] || 0}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -463,7 +570,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
                     </div>
                 )}
             </div>
-            <style>{`.article-view-body strong { font-weight: 800; color: #000; } .article-view-body em { font-style: italic; } .article-view-body blockquote { margin: 1rem 0; } .article-view-body a { color: #3b82f6; text-decoration: underline; }`}</style>
+            <style>{`.article-view-body strong { font-weight: 800; color: #000; } .article-view-body em { font-style: italic; } .article-view-body blockquote { margin: 1rem 0; padding-left: 1rem; border-left: 4px solid #ef4444; font-style: italic; } .article-view-body a { color: #3b82f6; text-decoration: underline; } .article-view-body img { border-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin: 2rem 0; display: block; max-width: 100%; height: auto; }`}</style>
         </div>
     );
 };

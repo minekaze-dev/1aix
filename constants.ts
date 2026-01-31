@@ -1,4 +1,3 @@
-
 import { Brand, City, Category, ThreadCategory, Smartphone } from './types';
 
 export const BRANDS: Brand[] = [
@@ -31,14 +30,11 @@ export const NEWS_UPDATES = [
 ];
 
 export const TOP_BRANDS = [
-  { name: "SAMSUNG", share: "29.8%", trend: "up" },
-  { name: "OPPO", share: "17.4%", trend: "up" },
-  { name: "IPHONE", share: "14.2%", trend: "up" },
-  { name: "XIAOMI", share: "13.5%", trend: "up" },
-  { name: "VIVO", share: "11.2%", trend: "up" },
-  { name: "REALME", share: "7.9%", trend: "up" },
-  { name: "INFINIX", share: "3.2%", trend: "up" },
-  { name: "LAINNYA", share: "2.8%", trend: "up" },
+  { name: "SAMSUNG", share: "27.70%", trend: "up" },
+  { name: "OPPO", share: "22.20%", trend: "up" },
+  { name: "IPHONE", share: "13.80%", trend: "up" },
+  { name: "VIVO", share: "12.10%", trend: "up" },
+  { name: "XIAOMI (REDMI)", share: "6.90%", trend: "up" },
 ];
 
 export const DUMMY_SMARTPHONES: Smartphone[] = [];

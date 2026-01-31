@@ -3,7 +3,6 @@ import type { Smartphone, Brand, Article, AdConfig } from '../types';
 import { TOP_BRANDS } from '../constants';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { DisplayScreenIcon, CameraShutterIcon, CpuChipIcon, BatteryFullIcon } from './icons';
 
 interface CatalogTabProps {
     items: Smartphone[];
@@ -53,12 +52,6 @@ const SpecSection: React.FC<SpecSectionProps> = ({ icon, title, children }) => {
             <div className="flex-1">{children}</div>
         </div>
     );
-};
-
-const extractValue = (text: string | undefined, regex: RegExp, defaultValue: string = '') => {
-    if (!text) return defaultValue;
-    const match = text.match(regex);
-    return match && match[1] ? match[1].trim() : defaultValue;
 };
 
 const CatalogTab: React.FC<CatalogTabProps> = ({ 
@@ -149,6 +142,17 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
         }
     };
 
+    const handleShareProduct = () => {
+        const url = window.location.href;
+        const text = `Cek spesifikasi dan harga resmi ${selectedProduct?.brand} ${selectedProduct?.model_name} di 1AIX!`;
+        if (navigator.share) {
+            navigator.share({ title: '1AIX Gadget', text, url }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(url);
+            alert("LINK PRODUK BERHASIL DISALIN!");
+        }
+    };
+
     const filtered = items.filter(i => {
         const matchesBrand = !selectedBrand || i.brand.toLowerCase() === selectedBrand.toLowerCase();
         const matchesSearch = i.model_name.toLowerCase().includes(searchQuery.toLowerCase()) || i.brand.toLowerCase().includes(searchQuery.toLowerCase());
@@ -168,7 +172,7 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                 <div>
                     <div className="flex items-center gap-3 mb-1">
                         <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900 leading-tight">TOP BRAND AWARD</h3>
+                        <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-900 leading-tight">TOP BRAND INDONESIA</h3>
                     </div>
                     <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-6 border-l-2 border-zinc-100 pl-2">sumber: www.topbrand-award.com</div>
                     <div className="space-y-1 mb-8">{TOP_BRANDS.map((brand, idx) => (<div key={brand.name} className="px-1 py-1.5 flex items-center justify-between border-b border-zinc-50 group cursor-pointer hover:bg-zinc-50 transition-colors"><div className="flex items-center gap-4"><span className="text-[10px] font-black text-zinc-300 w-4">#{idx + 1}</span><span className="text-[11px] font-black text-zinc-700 tracking-wide uppercase group-hover:text-blue-600">{brand.name}</span></div><span className="text-[10px] font-black text-blue-500/60">{brand.share}</span></div>))}</div>
@@ -223,57 +227,25 @@ const CatalogTab: React.FC<CatalogTabProps> = ({
                             </div>
                             <div className="flex-1 flex flex-col justify-end">
                                 <div className="mb-6">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="text-[10px] font-black text-red-600 uppercase tracking-[0.2em] leading-none">{selectedProduct.brand} Official</div>
-                                        <div className="bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter leading-none">{selectedProduct.release_status}</div>
-                                        {selectedProduct.market_category && <div className="bg-zinc-900 text-white text-[8px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter leading-none border border-zinc-700">{selectedProduct.market_category}</div>}
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-[10px] font-black text-red-600 uppercase tracking-[0.2em] leading-none">{selectedProduct.brand} Official</div>
+                                            <div className="bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter leading-none">{selectedProduct.release_status}</div>
+                                            {selectedProduct.market_category && <div className="bg-zinc-900 text-white text-[8px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter leading-none border border-zinc-700">{selectedProduct.market_category}</div>}
+                                        </div>
+                                        <button onClick={handleShareProduct} className="p-2 text-zinc-400 hover:text-red-600 transition-colors" title="BAGIKAN">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                                        </button>
                                     </div>
                                     <h1 className="text-4xl font-black text-zinc-900 uppercase tracking-tighter leading-none mb-3">{selectedProduct.model_name}</h1>
                                     
-                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 py-4 mb-6 border-y border-zinc-100">
-                                        <div className="flex items-center gap-3 p-3 bg-zinc-50 rounded-sm">
-                                            <DisplayScreenIcon className="w-6 h-6 text-zinc-600 flex-shrink-0" />
-                                            <div>
-                                                <div className="text-[14px] font-black text-zinc-800 leading-none">
-                                                    {extractValue(selectedProduct.display_type, /(\d+\.?\d*)-inch/)}
-                                                </div>
-                                                <div className="text-[9px] font-bold text-zinc-400 uppercase leading-tight mt-1">
-                                                    {extractValue(selectedProduct.display_type, /(\d+x\d+\s*pixels)/)}
-                                                </div>
-                                            </div>
+                                    <div className="py-8 mb-6 border-y border-zinc-100 flex flex-col items-center justify-center bg-zinc-50 rounded-sm">
+                                        <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-2">ESTIMASI HARGA PASAR</div>
+                                        <div className="text-4xl font-black text-blue-600 tracking-tighter italic">
+                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(selectedProduct.price_srp)}
                                         </div>
-                                        <div className="flex items-center gap-3 p-3 bg-zinc-50 rounded-sm">
-                                            <CameraShutterIcon className="w-6 h-6 text-zinc-600 flex-shrink-0" />
-                                            <div>
-                                                <div className="text-[14px] font-black text-zinc-800 leading-none">
-                                                    {extractValue(selectedProduct.camera_main, /(\d+\s*MP)/)}
-                                                </div>
-                                                <div className="text-[9px] font-bold text-zinc-400 uppercase leading-tight mt-1">
-                                                    {extractValue(selectedProduct.camera_video_main, /(\d+p)/)}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-3 p-3 bg-zinc-50 rounded-sm">
-                                            <CpuChipIcon className="w-6 h-6 text-zinc-600 flex-shrink-0" />
-                                            <div>
-                                                <div className="text-[14px] font-black text-zinc-800 leading-none">
-                                                    {extractValue(selectedProduct.ram_storage, /(\d+GB\s*RAM|\d+GB)/)}
-                                                </div>
-                                                <div className="text-[9px] font-bold text-zinc-400 uppercase leading-tight mt-1">
-                                                    {selectedProduct.chipset}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-3 p-3 bg-zinc-50 rounded-sm">
-                                            <BatteryFullIcon className="w-6 h-6 text-zinc-600 flex-shrink-0" />
-                                            <div>
-                                                <div className="text-[14px] font-black text-zinc-800 leading-none">
-                                                    {selectedProduct.battery_capacity}
-                                                </div>
-                                                <div className="text-[9px] font-bold text-zinc-400 uppercase leading-tight mt-1">
-                                                    {extractValue(selectedProduct.charging, /(\d+W)/)}
-                                                </div>
-                                            </div>
+                                        <div className="mt-4 text-[9px] font-bold text-zinc-400 uppercase tracking-widest text-center px-6 leading-relaxed max-w-[500px]">
+                                            * HARGA PASAR DAPAT BERUBAH SEWAKTU-WAKTU TERGANTUNG WILAYAH DAN KEBIJAKAN TOKO RETAIL. DATA SRP RESMI SAAT PELUNCURAN.
                                         </div>
                                     </div>
                                     
