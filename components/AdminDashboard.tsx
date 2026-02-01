@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 import AdminGadgetMod from './AdminGadgetMod';
@@ -21,6 +21,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
   const [isEditingArticle, setIsEditingArticle] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // State for mobile sidebar visibility
+  
+  // New state for visitor filtering
+  const [visitorFilter, setVisitorFilter] = useState<'daily' | 'weekly' | 'monthly' | 'all'>('all');
+  const [rawAnalytics, setRawAnalytics] = useState<any[]>([]);
+
   const [stats, setStats] = useState({ 
     articles: 0, 
     phones: 0, 
@@ -44,6 +49,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
     const { data: analytics } = await supabase
         .from('site_analytics')
         .select('event_type, value, created_at');
+
+    setRawAnalytics(analytics || []);
 
     const totalVisitors = analytics?.filter(a => a.event_type === 'page_view').length || 0;
     const estimatedMobileVisitors = Math.round(totalVisitors * 0.6);
@@ -76,6 +83,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
       dailyActivity
     });
   };
+
+  // Memoized filtered visitor stats
+  const filteredVisitorStats = useMemo(() => {
+    if (!rawAnalytics.length) return { total: 0, mobile: 0, pc: 0 };
+    
+    const now = new Date();
+    const filtered = rawAnalytics.filter(a => {
+      if (a.event_type !== 'page_view') return false;
+      const date = new Date(a.created_at);
+      const diffMs = now.getTime() - date.getTime();
+      
+      if (visitorFilter === 'daily') return diffMs < (1000 * 60 * 60 * 24);
+      if (visitorFilter === 'weekly') return diffMs < (1000 * 60 * 60 * 24 * 7);
+      if (visitorFilter === 'monthly') return diffMs < (1000 * 60 * 60 * 24 * 30);
+      return true;
+    });
+
+    const total = filtered.length;
+    const mobile = Math.round(total * 0.6);
+    const pc = total - mobile;
+    
+    return { total, mobile, pc };
+  }, [rawAnalytics, visitorFilter]);
 
   useEffect(() => {
     if (activeTab === 'dashboard') fetchStats();
@@ -198,23 +228,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                     {[
-                        { label: 'TOTAL ARTIKEL', value: stats.articles, color: 'bg-blue-50 text-blue-600', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z' },
-                        { label: 'KATALOG HP', value: stats.phones, color: 'bg-indigo-50 text-indigo-600', icon: 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z' },
+                        { label: 'TOTAL ARTIKEL', value: <div className="text-xl font-black text-[#1e293b]">{stats.articles}</div>, color: 'bg-blue-50 text-blue-600', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z' },
+                        { label: 'KATALOG HP', value: <div className="text-xl font-black text-[#1e293b]">{stats.phones}</div>, color: 'bg-indigo-50 text-indigo-600', icon: 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z' },
                         { 
                             label: 'PENGUNJUNG', 
                             value: (
-                                <>
-                                    {stats.visitors}
-                                    <div className="text-[8px] font-bold text-zinc-400 uppercase leading-none mt-1">
-                                        (M: {stats.mobileVisitors} / PC: {stats.pcVisitors})
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex gap-1 mb-1">
+                                        {(['daily', 'weekly', 'monthly', 'all'] as const).map((f) => (
+                                            <button 
+                                                key={f}
+                                                onClick={(e) => { e.stopPropagation(); setVisitorFilter(f); }}
+                                                className={`text-[6px] font-black px-1.5 py-0.5 rounded-sm uppercase tracking-tighter transition-all ${visitorFilter === f ? 'bg-emerald-500 text-white' : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'}`}
+                                            >
+                                                {f === 'daily' ? 'HARI' : f === 'weekly' ? 'MINGGU' : f === 'monthly' ? 'BULAN' : 'ALL'}
+                                            </button>
+                                        ))}
                                     </div>
-                                </>
+                                    <div className="text-xl font-black text-[#1e293b]">{filteredVisitorStats.total}</div>
+                                    <div className="text-[8px] font-bold text-zinc-400 uppercase leading-none">
+                                        (M: {filteredVisitorStats.mobile} / PC: {filteredVisitorStats.pc})
+                                    </div>
+                                </div>
                             ), 
                             color: 'bg-emerald-50 text-emerald-600', 
                             icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z' 
                         },
-                        { label: 'KOMENTAR', value: stats.comments, color: 'bg-orange-50 text-orange-600', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
-                        { label: 'REGISTERED', value: stats.members, color: 'bg-zinc-100 text-zinc-600', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+                        { label: 'KOMENTAR', value: <div className="text-xl font-black text-[#1e293b]">{stats.comments}</div>, color: 'bg-orange-50 text-orange-600', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
+                        { label: 'REGISTERED', value: <div className="text-xl font-black text-[#1e293b]">{stats.members}</div>, color: 'bg-zinc-100 text-zinc-600', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
                     ].map((card, i) => (
                         <div key={i} className="bg-white p-6 border border-zinc-100 rounded-2xl shadow-sm hover:shadow-md transition-all">
                             <div className="flex items-center justify-between mb-3">
@@ -223,9 +264,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ session, onLogout, onDa
                                 </div>
                             </div>
                             <div className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-1">{card.label}</div>
-                            <div className="text-xl font-black text-[#1e293b]">
-                                {card.value}
-                            </div>
+                            {card.value}
                         </div>
                     ))}
                 </div>
