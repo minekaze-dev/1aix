@@ -213,6 +213,7 @@ export default function App() {
                 onProductSelect={handleProductSelect}
                 sidebarAd={ads['sidebar']}
                 articleAd={ads['article']}
+                onOpenLogin={() => setShowAuthModal(true)}
             />
         )}
         {activeTab === 'Katalog' && (
@@ -228,6 +229,7 @@ export default function App() {
             setMinPrice={setMinPrice} 
             maxPrice={maxPrice} 
             setMaxPrice={setMaxPrice}
+            onOpenLogin={() => setShowAuthModal(true)}
           />
         )}
         {activeTab === 'Segera Rilis' && <ComingSoonTab items={smartphones} publishedAiData={tkdnMonitorData} />}
@@ -260,7 +262,7 @@ export default function App() {
           {session && (
             isAdmin ? (
               <button onClick={() => { window.location.hash = '#/admin'; }} className={`flex flex-col items-center gap-1.5 min-w-[60px] ${activeTab === 'Admin' ? 'text-red-500' : 'text-zinc-500'}`}>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z M14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z M4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z M14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z" /></svg>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z M14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z M4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z M14 16a2 2 0 012-2h2a2 2 0 012v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z" /></svg>
                 <span className="text-[8px] font-black uppercase tracking-tighter">ADMIN</span>
               </button>
             ) : (
