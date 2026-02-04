@@ -85,6 +85,7 @@ export default function App() {
             summary: post.excerpt ? decodeHtml(post.excerpt.replace(/<[^>]*>?/gm, '')).substring(0, 160) : '', // Decode ringkasan
             content: post.content, 
             cover_image_url: post.featured_image || 'https://via.placeholder.com/800x400?text=1AIX+News',
+            tags: post.tags ? Object.keys(post.tags).map(t => `#${t}`).join(' ') : '', // MEMASUKKAN TAGS DARI WP
             publish_date: new Date(post.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
             categories: post.categories ? Object.values(post.categories).map((cat: any) => cat.name.toUpperCase()) : ['NEWS'],
             permalink: `/news/${post.slug}`,

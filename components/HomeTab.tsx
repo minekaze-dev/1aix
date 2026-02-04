@@ -148,6 +148,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
     const [replyText, setReplyText] = useState("");
     const [articleCommentCounts, setArticleCommentCounts] = useState<Record<string, number>>({});
     const [isBookmarked, setIsBookmarked] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(10);
     
     const replyInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -282,6 +283,8 @@ const HomeTab: React.FC<HomeTabProps> = ({
 
     const heroArticles = filteredArticles.slice(0, 2);
     const articlesAfterHero = filteredArticles.slice(2);
+    const displayedArticlesAfterHero = articlesAfterHero.slice(0, visibleCount);
+    
     const parentComments = useMemo(() => comments.filter(c => !c.parent_id), [comments]);
     const replyComments = useMemo(() => comments.filter(c => c.parent_id), [comments]);
     const popularArticles = useMemo(() => [...articles].sort((a, b) => (articleCommentCounts[b.id] || 0) - (articleCommentCounts[a.id] || 0)).slice(0, 3), [articles, articleCommentCounts]);
@@ -313,6 +316,10 @@ const HomeTab: React.FC<HomeTabProps> = ({
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex gap-1">{(viewArticle.categories || []).map(cat => <span key={cat} className="text-[10px] font-black text-red-600 border border-red-600 px-2 py-0.5 uppercase tracking-[0.4em]">{cat}</span>)}</div>
                                 <div className="flex items-center gap-1">
+                                    {/* AUTHOR NAME SECTION */}
+                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mr-2 border-r border-zinc-100 pr-3 hidden sm:inline-block">
+                                        BY {viewArticle.author_name}
+                                    </span>
                                     <button onClick={toggleBookmark} className={`p-2 transition-colors ${isBookmarked ? 'text-red-600' : 'text-zinc-300 hover:text-red-600'}`} title="SIMPAN KE FAVORIT">
                                         <svg className="w-5 h-5" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                                     </button>
@@ -323,7 +330,26 @@ const HomeTab: React.FC<HomeTabProps> = ({
                         </div>
                         <div className="w-full h-80 overflow-hidden rounded-sm mb-10 shadow-lg border border-zinc-100"><img src={viewArticle.cover_image_url} alt="" className="w-full h-full object-cover"/></div>
                         <div className="mb-16"><div className="article-view-body" dangerouslySetInnerHTML={{ __html: viewArticle.content }} /></div>
-                        <div className="flex flex-wrap items-center gap-4 mb-12 pt-6 border-t border-zinc-50"><span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">BAGIKAN:</span><div className="flex gap-2"><a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-[#1877f2] text-white text-[9px] font-black uppercase tracking-widest rounded-sm hover:opacity-90 transition-all shadow-sm">Facebook</a><a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(viewArticle.title)}&url=${encodeURIComponent(window.location.href)}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-[#000000] text-white text-[9px] font-black uppercase tracking-widest rounded-sm hover:opacity-90 transition-all shadow-sm border border-zinc-800">X (Twitter)</a><a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(viewArticle.title + ' ' + window.location.href)}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-[#25d366] text-white text-[9px] font-black uppercase tracking-widest rounded-sm hover:opacity-90 transition-all shadow-sm">WhatsApp</a></div></div>
+                        <div className="flex flex-wrap items-center gap-4 mb-12 pt-6 border-t border-zinc-50">
+                            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">BAGIKAN:</span>
+                            <div className="flex gap-2">
+                                <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-[#1877f2] text-white text-[9px] font-black uppercase tracking-widest rounded-sm hover:opacity-90 transition-all shadow-sm">Facebook</a>
+                                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(viewArticle.title)}&url=${encodeURIComponent(window.location.href)}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-[#000000] text-white text-[9px] font-black uppercase tracking-widest rounded-sm hover:opacity-90 transition-all shadow-sm border border-zinc-800">X (Twitter)</a>
+                                <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(viewArticle.title + ' ' + window.location.href)}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-[#25d366] text-white text-[9px] font-black uppercase tracking-widest rounded-sm hover:opacity-90 transition-all shadow-sm">WhatsApp</a>
+                            </div>
+                        </div>
+                        
+                        {/* TAGS SECTION */}
+                        {viewArticle.tags && (
+                            <div className="mb-10 flex flex-wrap gap-2">
+                                {viewArticle.tags.split(' ').filter(t => t.startsWith('#')).map((tag, idx) => (
+                                    <span key={idx} className="text-[9px] font-black text-zinc-500 uppercase tracking-widest bg-zinc-100 px-3 py-1.5 rounded-sm hover:bg-zinc-200 transition-colors cursor-default border border-zinc-200/50">
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="hidden lg:block mb-16">{articleAd?.image_url ? (<a href={articleAd.target_url} target="_blank" rel="noopener noreferrer" className="block w-full overflow-hidden shadow-md"><img src={articleAd.image_url} alt="Ads" className="w-full h-auto object-cover max-h-[120px] rounded-sm" /></a>) : (<div className="h-[120px] bg-[#f8fafc] border border-zinc-100 flex flex-col items-center justify-center shadow-inner rounded-sm"><span className="text-[8px] font-black text-zinc-300 uppercase tracking-[0.4em] mb-2 opacity-50">ADVERTISEMENT</span><span className="text-zinc-400 font-black uppercase tracking-[0.2em] text-xl opacity-60">PARTNER SPACE</span></div>)}</div>
                         <div className="border-t border-zinc-100 pt-12 mb-32"><div className="flex items-center gap-3 mb-8"><ChatAlt2Icon className="w-6 h-6 text-red-600" strokeWidth={2.5} /><h3 className="text-xl font-black uppercase tracking-tighter italic">Diskusi & Komentar</h3></div>
                             <div className="bg-[#f8fafc] border border-zinc-100 p-8 rounded-sm mb-12"><div className="flex gap-4"><div className="w-12 h-12 rounded-sm bg-red-600 text-white flex items-center justify-center font-black flex-shrink-0 text-xl shadow-lg border border-red-500/20">{session ? (session.user.user_metadata?.full_name || session.user.email || 'U').charAt(0).toUpperCase() : '?'}</div><div className="flex-1 space-y-4"><textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Berikan pendapatmu tentang artikel ini..." className="w-full bg-white border border-zinc-100 p-6 rounded-sm text-sm font-bold outline-none focus:border-red-600 transition-all shadow-sm resize-none" rows={3}/><button onClick={() => handlePostComment(null)} className="px-10 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-600 transition-all rounded-sm shadow-xl active:scale-95">KIRIM KOMENTAR</button></div></div></div>
@@ -334,7 +360,13 @@ const HomeTab: React.FC<HomeTabProps> = ({
                     <div className="space-y-8 animate-in fade-in duration-700">
                         {articles.length === 0 ? <div className="text-center py-20 font-black text-zinc-200 animate-pulse uppercase tracking-[0.5em]">Loading News...</div> : (<>
                             {heroArticles.length > 0 && (<div className="grid grid-cols-2 gap-px border border-zinc-200 rounded overflow-hidden shadow-sm h-[280px]">{heroArticles.map((art) => (<div key={art.id} className="relative h-full overflow-hidden group cursor-pointer border-l border-zinc-200" onClick={() => setViewArticle(art)}><img src={art.cover_image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" /><div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div><div className="absolute top-4 left-4 flex flex-wrap gap-1">{(art.categories || []).map(cat => (<span key={cat} className="text-[7px] font-black text-white bg-red-600 px-1.5 py-0.5 uppercase tracking-widest rounded-sm shadow-md border border-red-500/20">{cat}</span>))}</div><div className="absolute bottom-6 left-6 right-6"><div className="flex items-center gap-2 mb-2"><span className="text-[7.5px] font-black text-zinc-300 uppercase tracking-widest bg-black/60 px-1.5 py-0.5 rounded-sm">{art.publish_date}</span></div><h2 className="text-2xl font-black text-white italic tracking-tighter leading-tight uppercase group-hover:text-blue-400 transition-colors drop-shadow-xl">{art.title}</h2></div></div>))}</div>)}
-                            {articlesAfterHero.length > 0 && (<div className="pt-8"><h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-4 italic">Rekomendasi Artikel Lainnya</h3><div className="grid grid-cols-1 gap-4">{articlesAfterHero.map(art => (<div key={art.id} className="flex gap-4 group cursor-pointer border-b border-zinc-100 pb-4 last:border-0" onClick={() => setViewArticle(art)}><div className="w-36 h-20 md:w-40 md:h-24 flex-shrink-0 overflow-hidden bg-zinc-100 rounded-sm shadow-sm border border-zinc-100"><img src={art.cover_image_url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="" /></div><div className="flex flex-col justify-center min-w-0"><div className="flex gap-1 mb-1 flex-wrap">{(art.categories || []).map(cat => (<span key={cat} className="text-[7px] md:text-[8px] font-black text-red-600 border border-red-600/30 px-1 py-0.5 uppercase tracking-tighter rounded-sm">{cat}</span>))}</div><h4 className="text-base md:text-lg font-black text-zinc-900 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors line-clamp-2 italic">{art.title}</h4><p className="text-[11px] font-bold text-zinc-400 uppercase tracking-tight line-clamp-1 mt-1">{art.summary}</p><div className="flex items-center gap-2 text-[10px] font-black text-zinc-300 uppercase mt-2"><div className="flex items-center gap-1"><ChatAlt2Icon className="w-3 h-3" strokeWidth={3} /><span>{articleCommentCounts[art.id] || 0}</span></div><span className="opacity-30">•</span><span>{art.publish_date}</span></div></div></div>))}</div></div>)}
+                            {articlesAfterHero.length > 0 && (<div className="pt-8"><h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-4 italic">Rekomendasi Artikel Lainnya</h3><div className="grid grid-cols-1 gap-4">{displayedArticlesAfterHero.map(art => (<div key={art.id} className="flex gap-4 group cursor-pointer border-b border-zinc-100 pb-4 last:border-0" onClick={() => setViewArticle(art)}><div className="w-36 h-20 md:w-40 md:h-24 flex-shrink-0 overflow-hidden bg-zinc-100 rounded-sm shadow-sm border border-zinc-100"><img src={art.cover_image_url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="" /></div><div className="flex flex-col justify-center min-w-0"><div className="flex gap-1 mb-1 flex-wrap">{(art.categories || []).map(cat => (<span key={cat} className="text-[7px] md:text-[8px] font-black text-red-600 border border-red-600/30 px-1 py-0.5 uppercase tracking-tighter rounded-sm">{cat}</span>))}</div><h4 className="text-base md:text-lg font-black text-zinc-900 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors line-clamp-2 italic">{art.title}</h4><p className="text-[11px] font-bold text-zinc-400 uppercase tracking-tight line-clamp-1 mt-1">{art.summary}</p><div className="flex items-center gap-2 text-[10px] font-black text-zinc-300 uppercase mt-2"><div className="flex items-center gap-1"><ChatAlt2Icon className="w-3 h-3" strokeWidth={3} /><span>{articleCommentCounts[art.id] || 0}</span></div><span className="opacity-30">•</span><span>{art.publish_date}</span></div></div></div>))}</div>
+                            {articlesAfterHero.length > visibleCount && (
+                                <div className="pt-8 flex justify-center">
+                                    <button onClick={() => setVisibleCount(prev => prev + 10)} className="px-12 py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.3em] rounded-sm hover:bg-red-600 transition-all shadow-xl active:scale-95">MUAT LEBIH BANYAK</button>
+                                </div>
+                            )}
+                            </div>)}
                         </>)}
                     </div>
                 )}
