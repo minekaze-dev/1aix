@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { TOP_BRANDS } from '../constants';
 import type { Session } from '@supabase/supabase-js';
@@ -281,6 +280,15 @@ const HomeTab: React.FC<HomeTabProps> = ({
         return articles.filter(a => a.title.toLowerCase().includes(queryToUse.toLowerCase()) || a.summary.toLowerCase().includes(queryToUse.toLowerCase()));
     }, [articles, articleFilterQuery, globalSearchQuery]);
 
+    // PRE-PROCESS CONTENT: Fix YouTube player errors by ensuring iframes have proper allow attributes
+    const processedContent = useMemo(() => {
+        if (!viewArticle?.content) return "";
+        return viewArticle.content.replace(
+            /<iframe/g, 
+            '<iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen'
+        );
+    }, [viewArticle?.content]);
+
     const heroArticles = filteredArticles.slice(0, 2);
     const articlesAfterHero = filteredArticles.slice(2);
     const displayedArticlesAfterHero = articlesAfterHero.slice(0, visibleCount);
@@ -329,7 +337,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
                             <h1 className="text-4xl font-black text-zinc-900 uppercase tracking-tighter leading-none mb-6 italic">{viewArticle.title}</h1>
                         </div>
                         <div className="w-full h-80 overflow-hidden rounded-sm mb-10 shadow-lg border border-zinc-100"><img src={viewArticle.cover_image_url} alt="" className="w-full h-full object-cover"/></div>
-                        <div className="mb-16"><div className="article-view-body" dangerouslySetInnerHTML={{ __html: viewArticle.content }} /></div>
+                        <div className="mb-16"><div className="article-view-body" dangerouslySetInnerHTML={{ __html: processedContent }} /></div>
                         <div className="flex flex-wrap items-center gap-4 mb-12 pt-6 border-t border-zinc-50">
                             <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">BAGIKAN:</span>
                             <div className="flex gap-2">
